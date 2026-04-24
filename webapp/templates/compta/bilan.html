@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Bilan comptable — SelfAgriBook{% endblock %}
+{% block content %}
+
+<div class="mb-4 flex items-start justify-between flex-wrap gap-3">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-100">📉 Bilan comptable simplifié</h1>
+    <p class="text-sm text-slate-400 mt-1">
+      Photo patrimoniale — Actif (ce qu'on a) ↔ Passif (comment c'est financé).
+      Calculé en direct depuis le journal. Incluant le résultat net de l'exercice en capitaux propres.
+    </p>
+  </div>
+  <div class="flex flex-wrap gap-2">
+    <a href="/compta" class="btn-sm inline-block px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-xs text-slate-300">📊 Journal</a>
+    <a href="/compta/resultat" class="btn-sm inline-block px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-xs text-slate-300">📈 Compte de résultat</a>
+  </div>
+</div>
+
+{% if not data.actif and not data.passif %}
+<div class="card p-8 text-center text-slate-400">
+  <div class="text-5xl mb-3">📭</div>
+  <div>Aucune écriture dans le hub compta — bilan vide.</div>
+  <a href="/compta" class="inline-block mt-3 text-sm text-green-400 hover:text-green-300 underline">
+    → Ajouter des écritures au journal
+  </a>
+</div>
+{% else %}
+
+<!-- Indicateur équilibre -->
+<div class="card !p-3 mb-4 {% if data.equilibre %}!bg-green-900/20 !border-green-700{% else %}!bg-amber-900/20 !border-amber-700{% endif %}">
+  <div class="flex items-center justify-between text-sm">
+    {% if data.equilibre %}
+    <span class="text-green-300">✓ <strong>Bilan équilibré</strong> — Actif = Passif (principe comptable fondamental respecté)</span>
+    {% else %}
+    <span class="text-amber-300">⚠ <strong>Déséquilibre détecté</strong> — Actif ≠ Passif (écart : {{ "{:+,.2f}".format(data.ecart).replace(",", " ").replace(".", ",") }} €)</span>
+    {% endif %}
+    <span class="text-slate-400 text-xs">
+      Résultat net injecté en capitaux propres : <span class="font-mono {% if data.resultat_net >= 0 %}text-green-300{% else %}text-red-300{% endif %}">{% if data.resultat_net >= 0 %}+{% endif %}{{ "{:,.2f}".format(data.resultat_net).replace(",", " ").replace(".", ",") }} €</span>
+    </span>
+  </div>
+</div>
+
+<div class="grid md:grid-cols-2 gap-4">
+  <!-- ACTIF -->
+  <div class="card !p-0 overflow-hidden">
+    <div class="bg-green-900/30 border-b border-green-700 px-4 py-2">
+      <h2 class="font-bold text-green-300">💰 ACTIF</h2>
+      <div class="text-xs text-green-400">Ce que l'exploitation possède ou lui est dû</div>
+    </div>
+    {% for groupe, lignes in data.actif.items() %}
+    <div class="border-t border-slate-800">
+      <div class="bg-slate-800/40 px-3 py-1.5 text-xs font-semibold text-slate-300 uppercase tracking-wider">{{ groupe }}</div>
+      <table class="w-full text-sm">
+        <tbody>
+          {% for l in lignes %}
+          <tr class="border-t border-slate-800">
+            <td class="px-3 py-1.5 text-slate-300"><code class="text-green-400 text-xs">{{ l.compte }}</code></td>
+            <td class="px-3 py-1.5 text-slate-400 text-xs truncate max-w-[200px]">{{ l.label.split(' — ')[1] if ' — ' in l.label else '' }}</td>
+            <td class="px-3 py-1.5 text-right text-slate-100 font-mono text-xs">{{ "{:,.2f}".format(l.montant).replace(",", " ").replace(".", ",") }} €</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+    <div class="bg-green-900/40 border-t-2 border-green-700 px-3 py-3">
+      <div class="flex justify-between items-center">
+        <span class="font-bold text-green-300">TOTAL ACTIF</span>
+        <span class="text-xl font-bold text-green-200 font-mono">{{ "{:,.2f}".format(data.total_actif).replace(",", " ").replace(".", ",") }} €</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASSIF -->
+  <div class="card !p-0 overflow-hidden">
+    <div class="bg-purple-900/30 border-b border-purple-700 px-4 py-2">
+      <h2 class="font-bold text-purple-300">💳 PASSIF</h2>
+      <div class="text-xs text-purple-400">Comment l'actif est financé (apports + dettes)</div>
+    </div>
+    {% for groupe, lignes in data.passif.items() %}
+    <div class="border-t border-slate-800">
+      <div class="bg-slate-800/40 px-3 py-1.5 text-xs font-semibold text-slate-300 uppercase tracking-wider">{{ groupe }}</div>
+      <table class="w-full text-sm">
+        <tbody>
+          {% for l in lignes %}
+          <tr class="border-t border-slate-800">
+            <td class="px-3 py-1.5 text-slate-300"><code class="text-purple-400 text-xs">{{ l.compte }}</code></td>
+            <td class="px-3 py-1.5 text-slate-400 text-xs truncate max-w-[200px]">{{ l.label.split(' — ')[1] if ' — ' in l.label else '' }}</td>
+            <td class="px-3 py-1.5 text-right font-mono text-xs {% if l.montant < 0 %}text-red-300{% else %}text-slate-100{% endif %}">{{ "{:+,.2f}".format(l.montant).replace(",", " ").replace(".", ",") if l.montant < 0 else "{:,.2f}".format(l.montant).replace(",", " ").replace(".", ",") }} €</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+    <div class="bg-purple-900/40 border-t-2 border-purple-700 px-3 py-3">
+      <div class="flex justify-between items-center">
+        <span class="font-bold text-purple-300">TOTAL PASSIF</span>
+        <span class="text-xl font-bold text-purple-200 font-mono">{{ "{:,.2f}".format(data.total_passif).replace(",", " ").replace(".", ",") }} €</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endif %}
+
+<div class="card !p-3 mt-4 text-[11px] text-slate-500">
+  <strong class="text-slate-400">Méthode :</strong>
+  Chaque compte du journal est affecté au bilan selon sa classe PCG (2 immos / 3 stocks / 4 tiers / 5 dispo / 1 capitaux).
+  Les comptes 4xx basculent actif (créances) ou passif (dettes) selon le sens du solde. Le résultat net du compte de résultat
+  est injecté en capitaux propres (compte 120). Recalcul en direct à chaque requête — aucune table de cache.
+</div>
+
+{% endblock %}

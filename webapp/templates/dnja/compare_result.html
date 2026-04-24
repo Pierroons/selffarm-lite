@@ -1,0 +1,79 @@
+{# Fragment HTMX comparaison 2 scénarios #}
+
+<div class="grid md:grid-cols-2 gap-4 mb-4">
+
+  <div class="card">
+    <div class="text-xs text-slate-500 uppercase tracking-wider">Scénario A</div>
+    <div class="font-bold text-slate-100">{{ a.label }}</div>
+    <div class="mt-2 text-sm text-slate-400">{{ a.result.hypotheses.candidat }}</div>
+    {% if a.result.ebe_uth_atteint %}
+    <div class="mt-2 badge badge-green">✓ DNJA atteint — {{ "{:,.0f}".format(a.result.ebe_uth_annee_cible|float).replace(",", " ") }} €</div>
+    {% else %}
+    <div class="mt-2 badge badge-red">✗ Sous seuil</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="text-xs text-slate-500 uppercase tracking-wider">Scénario B</div>
+    <div class="font-bold text-slate-100">{{ b.label }}</div>
+    <div class="mt-2 text-sm text-slate-400">{{ b.result.hypotheses.candidat }}</div>
+    {% if b.result.ebe_uth_atteint %}
+    <div class="mt-2 badge badge-green">✓ DNJA atteint — {{ "{:,.0f}".format(b.result.ebe_uth_annee_cible|float).replace(",", " ") }} €</div>
+    {% else %}
+    <div class="mt-2 badge badge-red">✗ Sous seuil</div>
+    {% endif %}
+  </div>
+
+</div>
+
+<div class="card mb-4">
+  <h3 class="font-bold text-slate-100 mb-3">Compte de résultat N+4 — comparaison</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Poste</th>
+        <th class="text-right">Scénario A</th>
+        <th class="text-right">Scénario B</th>
+        <th class="text-right">Δ (B − A)</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for row in comparison %}
+      <tr {% if row.highlight %}class="border-t-2 border-slate-600 font-bold"{% endif %}>
+        <td class="{% if row.highlight %}text-slate-100{% else %}text-slate-400{% endif %}">{{ row.label }}</td>
+        <td class="text-right">{{ "{:,.0f}".format(row.a|float).replace(",", " ") }} €</td>
+        <td class="text-right">{{ "{:,.0f}".format(row.b|float).replace(",", " ") }} €</td>
+        <td class="text-right
+          {% if row.delta > 0 and row.positive_good %}text-green-400
+          {% elif row.delta > 0 and not row.positive_good %}text-red-400
+          {% elif row.delta < 0 and row.positive_good %}text-red-400
+          {% elif row.delta < 0 and not row.positive_good %}text-green-400
+          {% else %}text-slate-400{% endif %}">
+          {% if row.delta > 0 %}+{% endif %}{{ "{:,.0f}".format(row.delta|float).replace(",", " ") }} €
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h3 class="font-bold text-slate-100 mb-3">🎯 Synthèse comparative</h3>
+  <div class="grid md:grid-cols-2 gap-4 text-sm">
+    <div>
+      <div class="text-xs text-slate-500 uppercase tracking-wider mb-2">Si on choisit B sur A</div>
+      <ul class="space-y-1 text-slate-300">
+        {% for s in synthese %}
+        <li>{{ s }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div>
+      <div class="text-xs text-slate-500 uppercase tracking-wider mb-2">Actions</div>
+      <div class="flex flex-col gap-2">
+        <a href="/dnja/pdf?example={{ a.slug }}" class="btn-ghost btn text-center">📄 PDF Scénario A</a>
+        <a href="/dnja/pdf?example={{ b.slug }}" class="btn-ghost btn text-center">📄 PDF Scénario B</a>
+      </div>
+    </div>
+  </div>
+</div>

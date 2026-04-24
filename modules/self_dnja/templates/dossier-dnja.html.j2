@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Dossier prévisionnel DNJA — {{ hypotheses.candidat }}</title>
+<style>
+@page {
+    size: A4;
+    margin: 20mm 18mm;
+    @bottom-center {
+        content: "Dossier prévisionnel DNJA — " counter(page) " / " counter(pages);
+        font-size: 9pt;
+        color: #888;
+    }
+    @top-right {
+        content: "{{ hypotheses.candidat }} — {{ genere_le }}";
+        font-size: 9pt;
+        color: #888;
+    }
+}
+
+body {
+    font-family: 'DejaVu Sans', 'Helvetica', sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.4;
+    color: #1e293b;
+}
+
+h1 {
+    font-size: 18pt;
+    color: #0f172a;
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 6px;
+    margin-top: 0;
+}
+
+h2 {
+    font-size: 13pt;
+    color: #334155;
+    margin-top: 18px;
+    border-left: 3px solid #16a34a;
+    padding-left: 8px;
+}
+
+h3 {
+    font-size: 11pt;
+    color: #475569;
+    margin-top: 10px;
+}
+
+.meta {
+    color: #64748b;
+    font-size: 9pt;
+    margin-bottom: 14px;
+}
+
+.verdict {
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin: 14px 0;
+    font-size: 11pt;
+}
+
+.verdict.ok {
+    background: #dcfce7;
+    border-left: 4px solid #16a34a;
+    color: #14532d;
+}
+
+.verdict.ko {
+    background: #fee2e2;
+    border-left: 4px solid #dc2626;
+    color: #7f1d1d;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 18px;
+    font-size: 9.5pt;
+}
+
+th, td {
+    border: 1px solid #cbd5e1;
+    padding: 5px 7px;
+    text-align: right;
+}
+
+th:first-child, td:first-child {
+    text-align: left;
+}
+
+thead th {
+    background: #f1f5f9;
+    font-weight: bold;
+    color: #0f172a;
+}
+
+tbody tr:nth-child(odd) {
+    background: #fafbfc;
+}
+
+tr.total {
+    font-weight: bold;
+    background: #e0f2fe !important;
+}
+
+tr.subheader td {
+    background: #f8fafc;
+    border-top: 2px solid #cbd5e1;
+    padding-top: 8px;
+}
+
+tr.subline td {
+    color: #64748b;
+    font-size: 8.5pt;
+    padding: 3px 7px;
+    border-color: #f1f5f9;
+}
+
+tr.subline td:first-child {
+    padding-left: 16px;
+}
+
+ul.compact {
+    margin: 4px 0 10px;
+    padding-left: 20px;
+}
+
+ul.compact li {
+    margin-bottom: 2px;
+}
+
+.footer-note {
+    margin-top: 20px;
+    padding: 8px 12px;
+    background: #fff7ed;
+    border-left: 3px solid #f59e0b;
+    font-size: 9pt;
+    color: #7c2d12;
+}
+</style>
+</head>
+<body>
+
+<h1>Dossier prévisionnel d'installation — DNJA</h1>
+
+<div class="meta">
+<p style="margin: 0 0 4px 0;"><strong>Candidat :</strong> {{ hypotheses.candidat }}</p>
+{% if hypotheses.adresse_exploitation %}
+<p style="margin: 0 0 4px 0;"><strong>Adresse de l'exploitation :</strong> {{ hypotheses.adresse_exploitation }}{% if hypotheses.code_postal %} — {{ hypotheses.code_postal }}{% endif %} {{ hypotheses.commune }}</p>
+{% else %}
+<p style="margin: 0 0 4px 0;"><strong>Commune :</strong> {{ hypotheses.commune }}</p>
+{% endif %}
+<p style="margin: 0;">Installation prévue : {{ hypotheses.date_installation }} &mdash; Statut : {{ hypotheses.statut_juridique }} &mdash; Régime : {{ hypotheses.regime_fiscal }} &mdash; UTH : {{ hypotheses.uth }} &mdash; Généré le {{ genere_le }} par self-dnja v{{ version }}</p>
+</div>
+
+<h2>1. Synthèse du prévisionnel</h2>
+
+{% if ebe_uth_atteint %}
+<div class="verdict ok">
+    ✅ <strong>EBE/UTH année {{ lignes[-1].annee }} :
+    {{ "{:,.0f}".format(ebe_uth_annee_cible|float).replace(",", " ") }} €</strong>
+    &mdash; seuil DNJA NA {{ "{:,.0f}".format(ebe_uth_seuil|float).replace(",", " ") }} € ATTEINT.
+</div>
+{% else %}
+<div class="verdict ko">
+    ⚠️ <strong>EBE/UTH année {{ lignes[-1].annee }} :
+    {{ "{:,.0f}".format(ebe_uth_annee_cible|float).replace(",", " ") }} €</strong>
+    &mdash; seuil DNJA NA {{ "{:,.0f}".format(ebe_uth_seuil|float).replace(",", " ") }} € NON ATTEINT.
+    Le prévisionnel doit être renforcé (immobilisations, aides étalées, CA ajusté) avant instruction CDOA.
+</div>
+{% endif %}
+
+<h2>2. Activités de l'exploitation</h2>
+
+<table>
+<thead><tr>
+<th>Activité</th>
+<th>Surface (ha)</th>
+<th>Qté annuelle (plein régime)</th>
+<th>Prix HT</th>
+<th>Bio ?</th>
+<th>Montée en charge</th>
+</tr></thead>
+<tbody>
+{% for a in hypotheses.activites %}
+<tr>
+  <td>{{ a.nom }}</td>
+  <td>{{ a.surface_ha }}</td>
+  <td>
+    {%- if a.quantite_annuelle -%}
+      {{ a.quantite_annuelle }} {{ a.unite_vente }}
+    {%- elif a.rendement_t_ha -%}
+      {{ a.rendement_t_ha }} t/ha × {{ a.surface_ha }} ha
+    {%- endif -%}
+  </td>
+  <td>{{ a.prix_vente_ht }} €/{{ a.unite_vente }}</td>
+  <td>{{ "Oui" if a.bio else "Non" }}</td>
+  <td>{{ a.montee_en_charge | join(" / ") }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<h2>3. Comptes de résultat prévisionnels (horizon {{ hypotheses.horizon_annees }} ans)</h2>
+
+<table>
+<thead><tr>
+<th>Poste</th>
+{% for l in lignes %}<th>Année {{ l.annee }}</th>{% endfor %}
+</tr></thead>
+<tbody>
+<tr>
+  <td>Produits d'exploitation (CA HT)</td>
+  {% for l in lignes %}<td>{{ "{:,.0f}".format(l.produits_exploitation|float).replace(",", " ") }} €</td>{% endfor %}
+</tr>
+<tr class="subheader">
+  <td><strong>− Charges d'exploitation (total)</strong></td>
+  {% for l in lignes %}<td>{{ "{:,.0f}".format(l.charges_exploitation|float).replace(",", " ") }} €</td>{% endfor %}
+</tr>
+{% for c in hypotheses.charges_recurrentes %}
+<tr class="subline">
+  <td>&nbsp;&nbsp;&nbsp;&nbsp;├─ {{ c.nom }}</td>
+  {% for l in lignes %}
+  <td>
+    {% if c.annee_demarrage|default(1) <= l.annee %}
+      {{ "{:,.0f}".format(c.montant_annuel_ht|float).replace(",", " ") }} €
+    {% else %}—{% endif %}
+  </td>
+  {% endfor %}
+</tr>
+{% endfor %}
+
+<tr class="subheader">
+  <td><strong>+ Aides de revenu (total)</strong></td>
+  {% for l in lignes %}<td>{{ "{:,.0f}".format(l.aides_revenu|float).replace(",", " ") }} €</td>{% endfor %}
+</tr>
+{% for a in hypotheses.aides %}
+{% if not a.est_subvention_capital %}
+<tr class="subline">
+  <td>&nbsp;&nbsp;&nbsp;&nbsp;├─ {{ a.nom }}</td>
+  {% for l in lignes %}
+  <td>
+    {% if a.annee_versement == l.annee %}
+      {{ "{:,.0f}".format(a.montant|float).replace(",", " ") }} €
+    {% else %}—{% endif %}
+  </td>
+  {% endfor %}
+</tr>
+{% endif %}
+{% endfor %}
+
+<tr class="total">
+  <td>= EBE</td>
+  {% for l in lignes %}<td>{{ "{:,.0f}".format(l.ebe|float).replace(",", " ") }} €</td>{% endfor %}
+</tr>
+
+<tr class="subheader">
+  <td><strong>− Amortissements (total)</strong></td>
+  {% for l in lignes %}<td>{{ "{:,.0f}".format(l.amortissements|float).replace(",", " ") }} €</td>{% endfor %}
+</tr>
+{% for imm in hypotheses.immobilisations %}
+<tr class="subline">
+  <td>&nbsp;&nbsp;&nbsp;&nbsp;├─ {{ imm.nom }}</td>
+  {% for l in lignes %}
+  <td>
+    {% set age = l.annee - imm.annee_acquisition %}
+    {% if age >= 0 and age < imm.duree_amortissement %}
+      {% set assiette = imm.montant_ht|float * (100 - imm.subvention_pct|float) / 100 %}
+      {% set amort_an = assiette / imm.duree_amortissement|float %}
+      {{ "{:,.0f}".format(amort_an).replace(",", " ") }} €
+    {% else %}—{% endif %}
+  </td>
+  {% endfor %}
+</tr>
+{% endfor %}
+
+<tr class="subheader">
+  <td><strong>− Cotisations MSA (total)</strong></td>
+  {% for l in lignes %}<td>{{ "{:,.0f}".format(l.charges_sociales|float).replace(",", " ") }} €</td>{% endfor %}
+</tr>
+<tr class="subline">
+  <td>&nbsp;&nbsp;&nbsp;&nbsp;├─ Base annuelle MSA</td>
+  {% for l in lignes %}<td>{{ "{:,.0f}".format(hypotheses.cotisations_msa.cotisation_base_annuelle|float).replace(",", " ") }} €</td>{% endfor %}
+</tr>
+<tr class="subline">
+  <td>&nbsp;&nbsp;&nbsp;&nbsp;├─ Exonération JA dégressive (%)</td>
+  {% for l in lignes %}
+  <td>
+    {% if hypotheses.cotisations_msa.exoneration_ja_active %}
+      {% set idx = l.annee - 1 %}
+      {% if idx < hypotheses.cotisations_msa.pct_exoneration|length %}
+        −{{ hypotheses.cotisations_msa.pct_exoneration[idx] }} %
+      {% else %}0 %{% endif %}
+    {% else %}0 %{% endif %}
+  </td>
+  {% endfor %}
+</tr>
+<tr class="total">
+  <td>= Résultat avant impôt</td>
+  {% for l in lignes %}<td>{{ "{:,.0f}".format(l.resultat|float).replace(",", " ") }} €</td>{% endfor %}
+</tr>
+<tr>
+  <td>− IR estimé (JA art. 73 B, -50 %)</td>
+  {% for l in lignes %}<td>{{ "{:,.0f}".format(l.ir_estime|float).replace(",", " ") }} €</td>{% endfor %}
+</tr>
+<tr class="total">
+  <td>= Résultat net après IR</td>
+  {% for l in lignes %}<td>{{ "{:,.0f}".format(l.resultat_net_apres_ir|float).replace(",", " ") }} €</td>{% endfor %}
+</tr>
+<tr>
+  <td>Revenu disponible mensuel (EBE − MSA − IR) / 12</td>
+  {% for l in lignes %}<td>{{ "{:,.0f}".format(l.revenu_disponible_mensuel|float).replace(",", " ") }} €</td>{% endfor %}
+</tr>
+<tr>
+  <td>Prélèvements privés annuels (rémunération exploitant)</td>
+  {% for l in lignes %}<td>{{ "{:,.0f}".format(l.prelevements_annuels|float).replace(",", " ") }} €</td>{% endfor %}
+</tr>
+</tbody>
+</table>
+
+<h2>4. Immobilisations</h2>
+
+<table>
+<thead><tr>
+<th>Bien</th>
+<th>Montant HT</th>
+<th>Année d'acquisition</th>
+<th>Durée amort.</th>
+<th>Subvention</th>
+<th>Base amortissable</th>
+</tr></thead>
+<tbody>
+{% for i in hypotheses.immobilisations %}
+<tr>
+  <td>{{ i.nom }}</td>
+  <td>{{ "{:,.0f}".format(i.montant_ht|float).replace(",", " ") }} €</td>
+  <td>N+{{ i.annee_acquisition }}</td>
+  <td>{{ i.duree_amortissement }} ans</td>
+  <td>{{ i.subvention_pct }} %</td>
+  <td>{{ "{:,.0f}".format((i.montant_ht|float) * (100 - i.subvention_pct|float) / 100).replace(",", " ") }} €</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<h2>5. Aides publiques mobilisées</h2>
+
+<table>
+<thead><tr>
+<th>Aide</th>
+<th>Montant</th>
+<th>Année</th>
+<th>Nature</th>
+</tr></thead>
+<tbody>
+{% for a in hypotheses.aides %}
+<tr>
+  <td>{{ a.nom }}</td>
+  <td>{{ "{:,.0f}".format(a.montant|float).replace(",", " ") }} €</td>
+  <td>N+{{ a.annee_versement }}</td>
+  <td>{{ "Subvention capital" if a.est_subvention_capital else "Aide revenu" }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<h2>6. Charges récurrentes d'exploitation</h2>
+
+<table>
+<thead><tr>
+<th>Poste</th>
+<th>Montant HT / an</th>
+<th>Catégorie</th>
+</tr></thead>
+<tbody>
+{% for c in hypotheses.charges_recurrentes %}
+<tr>
+  <td>{{ c.nom }}</td>
+  <td>{{ "{:,.0f}".format(c.montant_annuel_ht|float).replace(",", " ") }} €</td>
+  <td>{{ c.categorie }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<h2>7. Cotisations MSA — exonération JA</h2>
+
+<p>Cotisation MSA base annuelle estimée :
+<strong>{{ "{:,.0f}".format(hypotheses.cotisations_msa.cotisation_base_annuelle|float).replace(",", " ") }} €</strong>.
+Barème dégressif d'exonération JA appliqué :</p>
+
+<ul class="compact">
+{% for pct in hypotheses.cotisations_msa.pct_exoneration %}
+<li>Année {{ loop.index }} : exonération {{ pct }} % → à payer
+  {{ "{:,.0f}".format((hypotheses.cotisations_msa.cotisation_base_annuelle|float) * (100 - pct|float) / 100).replace(",", " ") }} €</li>
+{% endfor %}
+</ul>
+
+{% if ratios_n4 %}
+<h2>8. Ratios économiques clés (N+{{ lignes[-1].annee }})</h2>
+
+<table>
+<thead><tr><th>Indicateur</th><th>Valeur</th><th>Référence / cible</th></tr></thead>
+<tbody>
+<tr>
+  <td>Taux de marge EBE (EBE / CA)</td>
+  <td>{{ ratios_n4.taux_marge_ebe_pct }} %</td>
+  <td>Cible agri &ge; 30 %</td>
+</tr>
+<tr>
+  <td>CA / UTH</td>
+  <td>{{ "{:,.0f}".format(ratios_n4.ca_par_uth|float).replace(",", " ") }} €</td>
+  <td>Seuil viabilité &ge; 22 000 € (1 SMIC)</td>
+</tr>
+<tr>
+  <td>Poids des aides dans le CA</td>
+  <td>{{ ratios_n4.poids_aides_pct }} %</td>
+  <td>Indicateur dépendance aides PAC</td>
+</tr>
+<tr>
+  <td>Prélèvements / EBE</td>
+  <td>{{ ratios_n4.prelevements_sur_ebe_pct }} %</td>
+  <td>Idéal &lt; 80 % (laisse marge autofinancement)</td>
+</tr>
+</tbody>
+</table>
+{% endif %}
+
+{% if bilan_n4 %}
+<h2>9. Bilan prévisionnel simplifié (fin N+{{ lignes[-1].annee }})</h2>
+
+<table>
+<thead><tr><th>Actif</th><th>Montant</th><th>Passif</th><th>Montant</th></tr></thead>
+<tbody>
+<tr>
+  <td>Immobilisations nettes</td>
+  <td>{{ "{:,.0f}".format(bilan_n4.immobilisations_nettes|float).replace(",", " ") }} €</td>
+  <td>Capital exploitant</td>
+  <td>{{ "{:,.0f}".format(bilan_n4.capital_exploitant|float).replace(",", " ") }} €</td>
+</tr>
+<tr>
+  <td>Stocks (fleurs en séchage, huile)</td>
+  <td>{{ "{:,.0f}".format(bilan_n4.stocks|float).replace(",", " ") }} €</td>
+  <td>Subventions étalées</td>
+  <td>{{ "{:,.0f}".format(bilan_n4.subventions_etalees|float).replace(",", " ") }} €</td>
+</tr>
+<tr>
+  <td>Créances clients</td>
+  <td>{{ "{:,.0f}".format(bilan_n4.creances|float).replace(",", " ") }} €</td>
+  <td>Dettes fournisseurs / autres</td>
+  <td>{{ "{:,.0f}".format(bilan_n4.dettes|float).replace(",", " ") }} €</td>
+</tr>
+<tr>
+  <td>Trésorerie</td>
+  <td>{{ "{:,.0f}".format(bilan_n4.tresorerie|float).replace(",", " ") }} €</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr class="total">
+  <td>TOTAL ACTIF</td>
+  <td>{{ "{:,.0f}".format(bilan_n4.total_actif|float).replace(",", " ") }} €</td>
+  <td>TOTAL PASSIF</td>
+  <td>{{ "{:,.0f}".format(bilan_n4.total_passif|float).replace(",", " ") }} €</td>
+</tr>
+</tbody>
+</table>
+{% endif %}
+
+{% if marges_brutes_n4 %}
+<h2>10. Marge brute par activité (N+{{ lignes[-1].annee }})</h2>
+
+<table>
+<thead><tr>
+<th>Activité</th><th>CA HT</th><th>Charges variables allouées</th><th>Marge brute</th><th>Taux</th>
+</tr></thead>
+<tbody>
+{% for m in marges_brutes_n4 %}
+<tr>
+  <td>{{ m.nom }}</td>
+  <td>{{ "{:,.0f}".format(m.ca_annuel|float).replace(",", " ") }} €</td>
+  <td>{{ "{:,.0f}".format(m.charges_variables_allouees|float).replace(",", " ") }} €</td>
+  <td><strong>{{ "{:,.0f}".format(m.marge_brute|float).replace(",", " ") }} €</strong></td>
+  <td>{{ m.taux_marge_pct }} %</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+
+{% if seuil_rentabilite %}
+<h2>11. Seuil de rentabilité (point mort N+{{ lignes[-1].annee }})</h2>
+
+<table>
+<thead><tr><th>Indicateur</th><th>Valeur</th><th>Lecture</th></tr></thead>
+<tbody>
+<tr>
+  <td>Charges fixes annuelles (structure + MSA + amort.)</td>
+  <td>{{ "{:,.0f}".format(seuil_rentabilite.charges_fixes_annuelles|float).replace(",", " ") }} €</td>
+  <td>à couvrir pour atteindre le seuil</td>
+</tr>
+<tr>
+  <td>Taux de marge sur coûts variables</td>
+  <td>{{ seuil_rentabilite.taux_marge_sur_couts_variables }} %</td>
+  <td>(CA − CV) / CA</td>
+</tr>
+<tr class="total">
+  <td><strong>CA seuil (point mort)</strong></td>
+  <td><strong>{{ "{:,.0f}".format(seuil_rentabilite.ca_seuil|float).replace(",", " ") }} €</strong></td>
+  <td>CA minimum pour ne perdre ni gagner</td>
+</tr>
+<tr>
+  <td>Couverture actuelle (CA N+{{ lignes[-1].annee }} / CA seuil)</td>
+  <td>{{ seuil_rentabilite.couverture_actuelle_pct }} %</td>
+  <td>{% if seuil_rentabilite.couverture_actuelle_pct|float >= 110 %}✓ confortable{% elif seuil_rentabilite.couverture_actuelle_pct|float >= 100 %}⚠ tangent{% else %}✗ sous seuil{% endif %}</td>
+</tr>
+</tbody>
+</table>
+{% endif %}
+
+<h2>12. CAF — Capacité d'Autofinancement</h2>
+
+<table>
+<thead><tr><th>Indicateur</th>{% for l in lignes %}<th>N+{{ l.annee }}</th>{% endfor %}</tr></thead>
+<tbody>
+<tr>
+  <td>Résultat courant</td>
+  {% for l in lignes %}<td>{{ "{:,.0f}".format(l.resultat|float).replace(",", " ") }} €</td>{% endfor %}
+</tr>
+<tr>
+  <td>+ Amortissements (charges non décaissées)</td>
+  {% for l in lignes %}<td>{{ "{:,.0f}".format(l.amortissements|float).replace(",", " ") }} €</td>{% endfor %}
+</tr>
+<tr class="total">
+  <td><strong>= CAF (capacité d'autofinancement)</strong></td>
+  {% for l in lignes %}
+  <td><strong>{{ "{:,.0f}".format((l.resultat + l.amortissements)|float).replace(",", " ") }} €</strong></td>
+  {% endfor %}
+</tr>
+</tbody>
+</table>
+
+{% if plan_financement %}
+<h2>13. Plan de financement initial</h2>
+
+<table>
+<thead><tr>
+<th>BESOINS</th><th>Montant</th><th>RESSOURCES</th><th>Montant</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td>Investissements (CAPEX total)</td>
+  <td>{{ "{:,.0f}".format(plan_financement.capex_total|float).replace(",", " ") }} €</td>
+  <td>DNJA TOTALE (acompte + solde)</td>
+  <td>{{ "{:,.0f}".format(plan_financement.dnja|float).replace(",", " ") }} €</td>
+</tr>
+<tr>
+  <td></td><td></td>
+  <td style="padding-left: 20px; font-size: 9pt;">&nbsp;&nbsp;├─ acompte 80 % à l'installation (N+1)</td>
+  <td style="font-size: 9pt;">{{ "{:,.0f}".format(plan_financement.dnja_acompte|float).replace(",", " ") }} €</td>
+</tr>
+<tr>
+  <td></td><td></td>
+  <td style="padding-left: 20px; font-size: 9pt;">&nbsp;&nbsp;└─ solde 20 % à l'issue de la {{ plan_financement.dnja_annee_solde }}e année</td>
+  <td style="font-size: 9pt;">{{ "{:,.0f}".format(plan_financement.dnja_solde|float).replace(",", " ") }} €</td>
+</tr>
+<tr>
+  <td>BFR (stocks + créances clients)</td>
+  <td>{{ "{:,.0f}".format(plan_financement.bfr|float).replace(",", " ") }} €</td>
+  <td>Apport personnel exploitant</td>
+  <td>{{ "{:,.0f}".format(plan_financement.apport_personnel|float).replace(",", " ") }} €</td>
+</tr>
+<tr>
+  <td>Trésorerie de sécurité</td>
+  <td>{{ "{:,.0f}".format(plan_financement.tresorerie_securite|float).replace(",", " ") }} €</td>
+  <td>Subventions d'équipement (part amortissable)</td>
+  <td>{{ "{:,.0f}".format(plan_financement.subventions_capital|float).replace(",", " ") }} €</td>
+</tr>
+<tr>
+  <td></td><td></td>
+  <td>Emprunt bancaire</td>
+  <td>{{ "{:,.0f}".format(plan_financement.emprunt|float).replace(",", " ") }} €</td>
+</tr>
+<tr class="total">
+  <td><strong>TOTAL BESOINS</strong></td>
+  <td><strong>{{ "{:,.0f}".format(plan_financement.total_besoins|float).replace(",", " ") }} €</strong></td>
+  <td><strong>TOTAL RESSOURCES</strong></td>
+  <td><strong>{{ "{:,.0f}".format(plan_financement.total_ressources|float).replace(",", " ") }} €</strong></td>
+</tr>
+<tr>
+  <td colspan="2"></td>
+  <td><strong>Écart (ressources − besoins)</strong></td>
+  <td {% if plan_financement.ecart|float >= 0 %}style="color: green; font-weight: bold;"{% else %}style="color: red; font-weight: bold;"{% endif %}>
+    {{ "{:,.0f}".format(plan_financement.ecart|float).replace(",", " ") }} €
+  </td>
+</tr>
+</tbody>
+</table>
+{% endif %}
+
+{% if plan_tresorerie %}
+<h2>14. Plan de trésorerie mensuel (horizon {{ hypotheses.horizon_annees }} ans)</h2>
+
+{% for l in lignes %}
+<h3 style="font-size: 10pt; margin-top: 10px; color: #334155;">Année N+{{ l.annee }}</h3>
+<table style="font-size: 8.5pt;">
+<thead><tr>
+<th>Mois</th><th>Entrées</th><th>Sorties</th><th>Solde mois</th><th>Solde cumulé</th>
+</tr></thead>
+<tbody>
+{% for mois in plan_tresorerie %}
+{% if mois.annee == l.annee %}
+<tr>
+  <td>{{ mois.label }}</td>
+  <td>{{ "{:,.0f}".format(mois.entrees|float).replace(",", " ") }} €</td>
+  <td>{{ "{:,.0f}".format(mois.sorties|float).replace(",", " ") }} €</td>
+  <td {% if mois.solde_du_mois|float < 0 %}style="color: red;"{% endif %}>
+    {{ "{:,.0f}".format(mois.solde_du_mois|float).replace(",", " ") }} €
+  </td>
+  <td {% if mois.solde_cumule|float < 0 %}style="color: red; font-weight: bold;"{% else %}style="color: green;"{% endif %}>
+    {{ "{:,.0f}".format(mois.solde_cumule|float).replace(",", " ") }} €
+  </td>
+</tr>
+{% endif %}
+{% endfor %}
+</tbody>
+</table>
+{% endfor %}
+{% endif %}
+
+{% if hypotheses.afficher_engagements_reglementaires %}
+<h2>15. Engagements réglementaires DNJA</h2>
+
+<table>
+<thead><tr><th>Engagement (CdC V3 — 17/02/2025)</th><th>Valeur / choix</th></tr></thead>
+<tbody>
+<tr>
+  <td>Éco-conditionnalité (1 des 3 en N+4)</td>
+  <td><strong>{% if hypotheses.choix_eco_conditionnalite == "AB_97pct" %}Certification AB ≥ 97 % SAU
+  {% elif hypotheses.choix_eco_conditionnalite == "ecoregime_bio" %}Écorégime bio niveau supérieur / spécifique AB
+  {% elif hypotheses.choix_eco_conditionnalite == "HVE" %}Certification Haute Valeur Environnementale
+  {% else %}{{ hypotheses.choix_eco_conditionnalite }}{% endif %}</strong></td>
+</tr>
+<tr>
+  <td>Étude économique (structure agréée Région NA)</td>
+  <td>
+    {% if hypotheses.structure_etude_economique %}
+      <strong>{{ hypotheses.structure_etude_economique }}</strong>
+    {% else %}
+      <em>à définir après RDV PAIT 23</em>
+    {% endif %}
+  </td>
+</tr>
+<tr>
+  <td>Date prévue d'affiliation MSA chef exploitation</td>
+  <td>
+    {% if hypotheses.date_affiliation_msa_prevue %}
+      <strong>{{ hypotheses.date_affiliation_msa_prevue }}</strong>
+      <span style="color: #666; font-size: 9pt;">(doit être &lt; 6 mois après attribution DNJA)</span>
+    {% else %}
+      <em>à préciser</em>
+    {% endif %}
+  </td>
+</tr>
+<tr>
+  <td>Siège d'exploitation en Nouvelle-Aquitaine</td>
+  <td>✓ {{ hypotheses.commune }}</td>
+</tr>
+<tr>
+  <td>Tenue d'une comptabilité conforme au PCG agricole</td>
+  <td>✓ engagement à respecter (outil self-agri-book / Cerfrance / ADEAR)</td>
+</tr>
+<tr>
+  <td>Maintien comme exploitant pendant 4 ans minimum</td>
+  <td>✓ engagement intrinsèque du projet</td>
+</tr>
+</tbody>
+</table>
+
+<h3 style="font-size: 10pt; margin-top: 12px; color: #334155;">Échéancier DNJA prévisionnel</h3>
+
+<table>
+<thead><tr><th>Étape</th><th>Date prévue</th></tr></thead>
+<tbody>
+<tr><td>RDV PAIT departemental</td><td>avril 2026</td></tr>
+<tr><td>Étude économique par structure agréée (AITA — aide 599,25 € × 2)</td><td>mai 2026</td></tr>
+<tr><td>Dépôt dossier DNJA (portail MDNA Région NA)</td><td>juin 2026</td></tr>
+<tr><td>Instance CDOA d'instruction</td><td>juillet 2026</td></tr>
+<tr><td>Attribution de l'aide — notification</td><td>août 2026</td></tr>
+<tr><td>Affiliation MSA chef exploitation (&lt; 6 mois post-attribution)</td>
+    <td>{{ hypotheses.date_affiliation_msa_prevue or "septembre 2026" }}</td></tr>
+<tr><td>Versement DNJA — <strong>acompte 80 %</strong> ({{ "{:,.0f}".format(plan_financement.dnja_acompte|float).replace(",", " ") if plan_financement else "19 600" }} €)</td><td>septembre 2026</td></tr>
+<tr><td>Fin d'engagement 4 ans + versement <strong>solde 20 %</strong> ({{ "{:,.0f}".format(plan_financement.dnja_solde|float).replace(",", " ") if plan_financement else "4 900" }} €, conditionné au respect du PE)</td><td>septembre 2030</td></tr>
+</tbody>
+</table>
+{% endif %}
+
+{% if hypotheses.calendrier_cultural %}
+<h2>16. Calendrier cultural annuel</h2>
+
+<table>
+<thead><tr><th>Mois</th><th>Activité</th><th>Durée</th></tr></thead>
+<tbody>
+{% for e in hypotheses.calendrier_cultural %}
+<tr>
+  <td>{{ e.mois }}</td>
+  <td>{{ e.activite }}</td>
+  <td>{{ e.duree }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+
+{% if hypotheses.temps_travail %}
+<h2>17. Répartition du temps de travail UTH (cible 1 800 h/an)</h2>
+
+<table>
+<thead><tr><th>Activité</th><th>Heures/an</th><th>% total</th></tr></thead>
+<tbody>
+{% set total_h = hypotheses.temps_travail.chanvre_culture + hypotheses.temps_travail.transformation_huile + hypotheses.temps_travail.maraichage + hypotheses.temps_travail.vente_admin + hypotheses.temps_travail.autre %}
+<tr>
+  <td>Culture chanvre</td>
+  <td>{{ hypotheses.temps_travail.chanvre_culture }} h</td>
+  <td>{% if total_h > 0 %}{{ (hypotheses.temps_travail.chanvre_culture / total_h * 100)|round(1) }} %{% endif %}</td>
+</tr>
+<tr>
+  <td>Transformation huile CBD</td>
+  <td>{{ hypotheses.temps_travail.transformation_huile }} h</td>
+  <td>{% if total_h > 0 %}{{ (hypotheses.temps_travail.transformation_huile / total_h * 100)|round(1) }} %{% endif %}</td>
+</tr>
+<tr>
+  <td>Maraîchage</td>
+  <td>{{ hypotheses.temps_travail.maraichage }} h</td>
+  <td>{% if total_h > 0 %}{{ (hypotheses.temps_travail.maraichage / total_h * 100)|round(1) }} %{% endif %}</td>
+</tr>
+<tr>
+  <td>Vente + administratif</td>
+  <td>{{ hypotheses.temps_travail.vente_admin }} h</td>
+  <td>{% if total_h > 0 %}{{ (hypotheses.temps_travail.vente_admin / total_h * 100)|round(1) }} %{% endif %}</td>
+</tr>
+{% if hypotheses.temps_travail.autre > 0 %}
+<tr>
+  <td>Autre</td>
+  <td>{{ hypotheses.temps_travail.autre }} h</td>
+  <td>{% if total_h > 0 %}{{ (hypotheses.temps_travail.autre / total_h * 100)|round(1) }} %{% endif %}</td>
+</tr>
+{% endif %}
+<tr class="total">
+  <td>TOTAL</td>
+  <td>{{ total_h }} h</td>
+  <td>{% if total_h > 0 %}100 %{% endif %}</td>
+</tr>
+</tbody>
+</table>
+{% endif %}
+
+<div class="footer-note">
+<strong>Note méthodologique.</strong> Ce dossier est produit par l'outil <code>self-dnja</code>
+(SelfFarm-Lite, AGPL-3.0-or-later) à partir d'un YAML d'hypothèses structurées.
+Les montants d'aides sont à jour au {{ genere_le }}, à reconfirmer en séance CDOA.
+Les seuils EBE/UTH s'appuient sur le barème 2026 Nouvelle-Aquitaine zone défavorisée
+(22 000 € cible N+4). L'impôt sur le revenu est estimé avec l'abattement JA art. 73 B CGI
+(−50 % sur 5 premières années) et le barème IR par part 2026 (célibataire sans enfant).
+Ce document est un support de réflexion : il ne se substitue pas à l'étude économique
+officielle AITA qui devra être validée par une structure agréée.
+</div>
+
+{% if hypotheses.afficher_memos_pedagogiques %}
+<div style="page-break-before: always;"></div>
+<h2>Annexe — Mémos de lecture</h2>
+<p style="font-size: 9pt; color: #64748b; margin-bottom: 12px;">
+Rappels de formules, lectures et usages pour accompagner le pilotage du prévisionnel.
+Destinés à l'exploitant·e ; non exigés par l'administration.
+</p>
+
+<div style="background: #f0f9ff; border-left: 3px solid #0284c7; padding: 8px 12px; margin-top: 10px; font-size: 9pt;">
+<p style="margin: 0 0 4px 0; font-weight: bold; color: #0369a1;">Mémo §10 — Marge brute</p>
+<p style="margin: 0;">La marge brute = CA − charges variables directement imputables à l'activité
+(semences, intrants, conditionnement, analyses, commissions, expédition). Classée par rentabilité,
+elle oriente le pilotage : privilégier les activités au taux de marge élevé.</p>
+</div>
+
+<div style="background: #f0f9ff; border-left: 3px solid #0284c7; padding: 8px 12px; margin-top: 10px; font-size: 9pt;">
+<p style="margin: 0 0 4px 0; font-weight: bold; color: #0369a1;">Mémo §12 — CAF (Capacité d'Autofinancement)</p>
+<p style="margin: 0 0 6px 0;"><strong>Formule :</strong> Résultat net courant + dotations aux amortissements (+ provisions nettes, non appliqué ici). Les amortissements sont des charges comptables non décaissées : on les réintègre pour retrouver le cash réellement généré.</p>
+<p style="margin: 0 0 6px 0;"><strong>Lecture :</strong> la CAF représente le flux de trésorerie dégagé par l'exploitation sur un exercice, avant remboursement d'emprunts et avant nouveaux investissements. C'est ce que l'exploitation « sort » en cash chaque année.</p>
+<p style="margin: 0;"><strong>Usages :</strong> (1) banquier — ratio annuité/CAF &lt; 40 % pour accepter un prêt ; (2) Chambre — capacité à autofinancer les investissements futurs sans recours systématique à l'emprunt ; (3) DNJA — cohérence avec l'engagement de maintien 4 ans, la CAF doit rester positive sur tout l'horizon.</p>
+</div>
+
+<div style="background: #f0f9ff; border-left: 3px solid #0284c7; padding: 8px 12px; margin-top: 10px; font-size: 9pt;">
+<p style="margin: 0 0 4px 0; font-weight: bold; color: #0369a1;">Mémo §14 — Saisonnalité &amp; versement DNJA</p>
+<p style="margin: 0 0 6px 0;">Lissage des CA selon saisonnalité bio-agri : 10 % jan-mars, 30 % avr-juin, 30 % juil-sep, 30 % oct-déc.
+Aides placées à leur mois effectif de versement (DNJA sept, ACJA oct, CAB mai, CI-AB avril).</p>
+<p style="margin: 0;"><strong>DNJA (titre principal)</strong> : acompte 80 % versé à l'installation (septembre N+1),
+solde 20 % versé en septembre N+{{ plan_financement.dnja_annee_solde if plan_financement else 5 }} conditionné au respect du plan d'entreprise.
+L'horizon du prévisionnel étant de {{ hypotheses.horizon_annees }} ans, le solde peut ne pas apparaître dans la chronique des tableaux de tréso.</p>
+</div>
+
+<div style="background: #fef2f2; border-left: 3px solid #dc2626; padding: 8px 12px; margin-top: 10px; font-size: 9pt;">
+<p style="margin: 0 0 4px 0; font-weight: bold; color: #b91c1c;">Mémo §14 — Vigilance solde cumulé</p>
+<p style="margin: 0;">Toute valeur négative dans la colonne « Solde cumulé » indique un besoin de trésorerie
+(découvert ou apport). Identifier les mois à risque pour anticiper un prêt court terme ou
+décaler certains investissements.</p>
+</div>
+{% endif %}
+
+</body>
+</html>

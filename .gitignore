@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Données locales
+*.sqlite3
+*.db
+data/
+exports/
+*.log
+
+# YAML hypothèses persos (PII — adresse, nom complet, chiffres réels d'installation)
+# Garder uniquement hypotheses-demo-publique.yaml (anonymisé Marie DUPONT Dordogne)
+examples/hypotheses-pierroons*.yaml
+examples/hypotheses-perso*.yaml
+
+# Fixtures bancaires sensibles (relevés réels qui auraient échappé au fake-first)
+modules/self_banking/fixtures/sg_real_*.pdf
+modules/self_banking/fixtures/private/
+
+# Backups locaux
+*.bak
+*.bak-*
+
+# Editeurs
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db

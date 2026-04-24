@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Parcelles — SelfFarm-Lite{% endblock %}
+{% block content %}
+
+<div class="mb-4">
+  <h1 class="text-2xl font-bold text-slate-100">🗺️ Parcellaire IGN</h1>
+  <p class="text-sm text-slate-400">
+    Fond orthophoto + cadastre Géoportail IGN · 100 % open data gouv.fr · sans clé API.
+    Recherche par numéro cadastral ou clic sur carte (mode sélection).
+  </p>
+</div>
+
+<div class="card p-0 overflow-hidden" style="height: calc(100vh - 220px);">
+  <iframe src="/parcelles/carto" class="w-full h-full border-0"></iframe>
+</div>
+
+<div class="mt-4 text-xs text-slate-500">
+  Sources : IGN Géoplateforme (data.geopf.fr), Api Carto cadastre (apicarto.ign.fr),
+  api-adresse.data.gouv.fr. Attribution © IGN-F/Géoportail.
+</div>
+
+{% endblock %}

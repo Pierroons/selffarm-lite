@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Éditeur YAML — SelfFarm-Lite{% endblock %}
+{% block content %}
+
+<div class="mb-6 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-100">✏️ Éditeur YAML hypothèses</h1>
+    <p class="text-sm text-slate-400">Modifie un scénario existant + recalcul inline + sauvegarde.</p>
+  </div>
+</div>
+
+<div class="grid md:grid-cols-[400px_1fr] gap-4">
+
+  <!-- Sidebar : sélection + chargement -->
+  <aside class="card">
+    <h2 class="font-bold text-slate-200 mb-3">Charger un scénario</h2>
+    <select id="load-select" class="w-full mb-2">
+      {% for ex in examples %}
+      <option value="{{ ex.slug }}">{{ ex.label }}</option>
+      {% endfor %}
+    </select>
+    <button
+      hx-get="/dnja/editor/load"
+      hx-include="#load-select"
+      hx-target="#editor-form"
+      hx-swap="innerHTML"
+      class="btn w-full">
+      📂 Charger dans l'éditeur
+    </button>
+
+    <div class="mt-4 pt-4 border-t border-slate-700 text-xs text-slate-500">
+      Modifie les valeurs dans le formulaire de droite puis clique
+      <strong>Calculer</strong> pour voir l'impact en direct. Pour sauver un
+      nouveau scénario, utilise <strong>Enregistrer sous…</strong>.
+    </div>
+  </aside>
+
+  <!-- Form d'édition -->
+  <div id="editor-form">
+    <div class="card text-center py-12 text-slate-400">
+      <div class="text-5xl mb-3">👈</div>
+      <div>Charge un scénario pour commencer.</div>
+    </div>
+  </div>
+
+</div>
+
+<div id="editor-result" class="mt-6"></div>
+
+{% endblock %}

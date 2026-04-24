@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Comparaison de scénarios DNJA{% endblock %}
+{% block content %}
+
+<div class="mb-6 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-100">🔬 Comparaison de scénarios</h1>
+    <p class="text-sm text-slate-400">Compare deux prévisionnels côte-à-côte avec deltas automatiques.</p>
+  </div>
+  <a href="/dnja" class="btn-ghost btn">← Simulateur</a>
+</div>
+
+<form
+  hx-get="/dnja/compare/run"
+  hx-target="#comparison"
+  hx-swap="innerHTML"
+  hx-trigger="change"
+  class="card mb-4 grid md:grid-cols-2 gap-4">
+  <div>
+    <label class="text-xs text-slate-400 uppercase tracking-wider">Scénario A (référence)</label>
+    <select name="a" class="w-full">
+      {% for ex in examples %}
+      <option value="{{ ex.slug }}" {% if ex.slug == default_a %}selected{% endif %}>
+        {{ ex.label }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label class="text-xs text-slate-400 uppercase tracking-wider">Scénario B (comparaison)</label>
+    <select name="b" class="w-full">
+      {% for ex in examples %}
+      <option value="{{ ex.slug }}" {% if ex.slug == default_b %}selected{% endif %}>
+        {{ ex.label }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+</form>
+
+<div id="comparison">
+  {# Chargé auto par HTMX lors du select #}
+  <div class="card text-center py-8 text-slate-400">
+    Sélectionne deux scénarios pour voir la comparaison.
+  </div>
+</div>
+
+<script>
+// Trigger initial auto-load
+document.addEventListener('DOMContentLoaded', () => {
+  htmx.trigger(document.querySelector('form'), 'change');
+});
+</script>
+
+{% endblock %}

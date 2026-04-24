@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}SelfFarm-Lite — Accueil{% endblock %}
+{% block content %}
+
+<div class="mb-8">
+  <h1 class="text-3xl font-bold mb-2 text-slate-100">Tableau de bord</h1>
+  <p class="text-slate-400">
+    Modules agricoles pour jeunes agriculteurs français — prévisionnel DNJA, catalogue
+    d'aides publiques, cartographie IGN, comptabilité réelle légère.
+  </p>
+</div>
+
+<div class="grid md:grid-cols-2 gap-4 mb-8">
+  <a href="/dnja" class="card no-underline block transition">
+    <div class="text-4xl mb-3">📊</div>
+    <h2 class="text-xl font-bold text-slate-100 mb-2">Prévisionnel DNJA</h2>
+    <p class="text-sm text-slate-400 mb-3">
+      Moteur de calcul sur 4 ans : produits, EBE, résultat, IR JA, ratios, bilan,
+      scénarios stress, calendrier cultural. Export PDF prêt pour la CDOA.
+    </p>
+    <div class="text-xs text-slate-500">
+      {{ stats.dnja_examples }} exemple(s) prêt(s)
+    </div>
+  </a>
+
+  <a href="/aides" class="card no-underline block transition">
+    <div class="text-4xl mb-3">💶</div>
+    <h2 class="text-xl font-bold text-slate-100 mb-2">Catalogue d'aides</h2>
+    <p class="text-sm text-slate-400 mb-3">
+      {{ stats.aides_count }} aides agricoles 2026 sourcées aux portails officiels
+      (Légifrance, BOFiP, FranceAgriMer, MSA, Nouvelle-Aquitaine, CD le departement…).
+      Filtrable par statut, zone, catégorie.
+    </p>
+    <div class="text-xs text-amber-500">🏗️ V1 orienté JA — V2 ouvrira aux NA/AGRI/PME (été 2026)</div>
+    <div class="text-xs text-slate-500 mt-1">
+      Enveloppe indicative cumulée : {{ stats.aides_min }} – {{ stats.aides_max }} €
+    </div>
+  </a>
+
+  <a href="/parcelles" class="card no-underline block transition">
+    <div class="text-4xl mb-3">🗺️</div>
+    <h2 class="text-xl font-bold text-slate-100 mb-2">Parcellaire IGN</h2>
+    <p class="text-sm text-slate-400 mb-3">
+      Visualisation des parcelles cadastrales sur orthophoto IGN (Géoplateforme).
+      Recherche par n° cadastre ou clic sur carte. Multi-commune.
+    </p>
+    <div class="text-xs text-slate-500">Prototype v0.1 fonctionnel</div>
+  </a>
+
+  <a href="/invoice" class="card no-underline block transition">
+    <div class="text-4xl mb-3">🧾</div>
+    <h2 class="text-xl font-bold text-slate-100 mb-2">SelfInvoice (Factur-X)</h2>
+    <p class="text-sm text-slate-400 mb-3">
+      Facturation électronique Factur-X native (PDF/A-3 + XML profils BASIC/EN16931/EXT).
+      Multi-régime : franchise TVA, micro-BA, réel. Générateur live de factures démo.
+    </p>
+    <div class="text-xs text-green-500">✅ Démo live — 3 régimes</div>
+  </a>
+
+  <a href="/compta" class="card no-underline block transition">
+    <div class="text-4xl mb-3">📚</div>
+    <h2 class="text-xl font-bold text-slate-100 mb-2">SelfAgriBook (Compta)</h2>
+    <p class="text-sm text-slate-400 mb-3">
+      Hub compta central — écritures comptables auto depuis tous les modules
+      (factures → 411/701, achats → 6011/401). Plan comptable agricole officiel,
+      journal, balance. Zéro double saisie.
+    </p>
+    <div class="text-xs text-green-500">✅ Hub live — auto-écritures self_invoice</div>
+  </a>
+</div>
+
+<div class="card">
+  <h3 class="font-bold text-slate-100 mb-2">🚀 Quickstart</h3>
+  <ol class="text-sm text-slate-400 space-y-1 list-decimal list-inside">
+    <li>Ouvre <a href="/dnja" class="text-green-500">/dnja</a> et clique "Calculer" sur le scénario
+        pré-rempli → tu verras apparaître l'EBE/UTH, ratios, scénarios stress en inline.</li>
+    <li>Télécharge le PDF de synthèse → prêt pour la CDOA (CHAMBRE ou PERSO selon ton choix).</li>
+    <li>Explore <a href="/aides" class="text-green-500">/aides</a> pour voir les aides cumulables.</li>
+    <li>Vérifie tes parcelles dans <a href="/parcelles" class="text-green-500">/parcelles</a>.</li>
+  </ol>
+</div>
+
+{% endblock %}

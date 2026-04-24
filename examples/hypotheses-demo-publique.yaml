@@ -1,0 +1,278 @@
+# PRÉVISIONNEL DÉMO PUBLIQUE — JA fictif·ve à titre illustratif
+#
+# Ce YAML sert UNIQUEMENT de démo publique sur selffarm.my-self.fr
+# Aucune donnée réelle : JA, adresse, chiffres sont anonymisés.
+# Toute ressemblance avec une exploitation réelle serait fortuite.
+#
+# Scénario : installation 2026 maraîchage bio + PPAM (plantes à parfum,
+# aromatiques et médicinales), 1 ha, Dordogne. Cohérent avec le profil JA
+# Nouvelle-Aquitaine zone rurale. Chiffres réalistes mais non représentatifs
+# d'une exploitation nommée.
+#
+# Généré : 24 avril 2026
+
+candidat: DUPONT Marie (démo publique — JA fictif)
+date_installation: 2026-09-01
+adresse_exploitation: "12 Chemin des Mésanges"
+code_postal: "24000"
+commune: Bourg-de-Démonstration
+departement: Dordogne
+statut_juridique: entreprise-individuelle
+regime_fiscal: reel-simplifie
+horizon_annees: 4
+uth: 1.0
+
+activites:
+  - nom: Maraîchage bio diversifié (40 légumes sur planches permanentes)
+    surface_ha: 0.6
+    quantite_annuelle: 3500
+    prix_vente_ht: 5.50
+    unite_vente: kg
+    bio: true
+    annee_pleine_production: 3
+    montee_en_charge: [0.4, 0.7, 1.0, 1.0]
+
+  - nom: PPAM bio (lavande, thym, menthe, mélisse — séchage)
+    surface_ha: 0.3
+    quantite_annuelle: 90
+    prix_vente_ht: 45.00
+    unite_vente: kg
+    bio: true
+    annee_pleine_production: 3
+    montee_en_charge: [0.3, 0.6, 1.0, 1.0]
+
+  - nom: Tisanes conditionnées (mix PPAM — vente directe)
+    surface_ha: 0.1
+    quantite_annuelle: 600
+    prix_vente_ht: 8.00
+    unite_vente: sachet
+    bio: true
+    annee_pleine_production: 2
+    montee_en_charge: [0.5, 1.0, 1.0, 1.0]
+
+charges_recurrentes:
+  - nom: Semences et plants bio (maraîchage + PPAM)
+    montant_annuel_ht: 850
+    categorie: intrants
+
+  - nom: Compost + engrais verts bio
+    montant_annuel_ht: 500
+    categorie: intrants
+
+  - nom: Sachets + étiquettes tisanes (vrac en gros)
+    montant_annuel_ht: 350
+    categorie: conditionnement
+
+  - nom: Consommables séchoir + transformation PPAM
+    montant_annuel_ht: 200
+    categorie: transformation
+
+  - nom: Électricité séchoir + frigo cave
+    montant_annuel_ht: 450
+    categorie: energie
+
+  - nom: Carburant + petit outillage thermique
+    montant_annuel_ht: 850
+    categorie: mecanisation
+
+  - nom: Eau irrigation
+    montant_annuel_ht: 300
+    categorie: eau
+
+  - nom: Assurance exploitation
+    montant_annuel_ht: 400
+    categorie: assurance
+
+  - nom: Fermage 1 ha (terre agricole bio)
+    montant_annuel_ht: 200
+    categorie: foncier
+
+  - nom: Certification bio Ecocert
+    montant_annuel_ht: 550
+    categorie: certification
+
+  - nom: Vente directe (marché + AMAP) + frais de caisse
+    montant_annuel_ht: 500
+    categorie: commercialisation
+
+  - nom: Téléphone pro + internet + compta
+    montant_annuel_ht: 400
+    categorie: administratif
+
+  - nom: Adhésions professionnelles (GAB + ADEAR + VIVEA)
+    montant_annuel_ht: 200
+    categorie: administratif
+
+  - nom: Entretien outillage + pièces
+    montant_annuel_ht: 350
+    categorie: mecanisation
+    annee_demarrage: 2
+
+  - nom: Provision aléas climatiques (5 % CA moyen)
+    montant_annuel_ht: 1200
+    categorie: provisions
+
+immobilisations:
+  - nom: Serre tunnel maraîchère 80 m² NEUVE
+    montant_ht: 6500
+    annee_acquisition: 2
+    duree_amortissement: 10
+    subvention_pct: 40
+
+  - nom: Système d'irrigation goutte-à-goutte
+    montant_ht: 1200
+    annee_acquisition: 2
+    duree_amortissement: 7
+    subvention_pct: 40
+
+  - nom: Tracteur compact + outils adaptés (occasion 10 ans)
+    montant_ht: 7000
+    annee_acquisition: 2
+    duree_amortissement: 7
+    subvention_pct: 30
+
+  - nom: Séchoir PPAM artisanal (claies + ventilation)
+    montant_ht: 1800
+    annee_acquisition: 1
+    duree_amortissement: 8
+    subvention_pct: 30
+
+  - nom: Matériel transformation tisanes (ensacheuse, balance, stérilisateur)
+    montant_ht: 1500
+    annee_acquisition: 1
+    duree_amortissement: 7
+    subvention_pct: 30
+
+  - nom: Informatique + logiciels + imprimante
+    montant_ht: 900
+    annee_acquisition: 1
+    duree_amortissement: 4
+    subvention_pct: 0
+
+aides:
+  - nom: DNJA Nouvelle-Aquitaine zone défavorisée (acompte 80 % + solde 20 %)
+    montant: 24500
+    annee_versement: 1
+    est_subvention_capital: false
+
+  - nom: ACJA an 1
+    montant: 4300
+    annee_versement: 1
+    est_subvention_capital: false
+  - nom: ACJA an 2
+    montant: 4300
+    annee_versement: 2
+    est_subvention_capital: false
+  - nom: ACJA an 3
+    montant: 4300
+    annee_versement: 3
+    est_subvention_capital: false
+  - nom: ACJA an 4
+    montant: 4300
+    annee_versement: 4
+    est_subvention_capital: false
+
+  - nom: Écorégime bio an 1
+    montant: 92
+    annee_versement: 1
+    est_subvention_capital: false
+  - nom: Écorégime bio an 2
+    montant: 92
+    annee_versement: 2
+    est_subvention_capital: false
+  - nom: Écorégime bio an 3
+    montant: 92
+    annee_versement: 3
+    est_subvention_capital: false
+  - nom: Écorégime bio an 4
+    montant: 92
+    annee_versement: 4
+    est_subvention_capital: false
+
+  - nom: CAB an 1
+    montant: 225
+    annee_versement: 1
+    est_subvention_capital: false
+  - nom: CAB an 2
+    montant: 225
+    annee_versement: 2
+    est_subvention_capital: false
+  - nom: CAB an 3
+    montant: 225
+    annee_versement: 3
+    est_subvention_capital: false
+  - nom: CAB an 4
+    montant: 225
+    annee_versement: 4
+    est_subvention_capital: false
+
+  - nom: CI-AB an 2
+    montant: 3800
+    annee_versement: 2
+    est_subvention_capital: false
+  - nom: CI-AB an 3
+    montant: 3800
+    annee_versement: 3
+    est_subvention_capital: false
+  - nom: CI-AB an 4
+    montant: 3800
+    annee_versement: 4
+    est_subvention_capital: false
+
+cotisations_msa:
+  exoneration_ja_active: true
+  cotisation_base_annuelle: 4200
+  pct_exoneration: [65, 55, 35, 25, 15]
+
+salariat:
+  salaire_net_mensuel: 0
+  fin_prevue_annee: null
+
+prelevements_mensuels: 1400
+article_73b_actif: true
+
+temps_travail:
+  chanvre_culture: 0
+  transformation_huile: 200
+  maraichage: 1100
+  vente_admin: 400
+  autre: 100
+
+presentation_narrative: |
+  DÉMO PUBLIQUE — installation fictive d'une JA en Dordogne (Bourg-de-Démonstration).
+  Combinaison maraîchage bio diversifié (40 légumes) + PPAM bio (lavande, thym, menthe,
+  mélisse) transformées en tisanes artisanales. Vente directe AMAP + marché + magasin
+  de producteurs. Démarrage progressif sur 4 ans, plein régime N+4.
+  Ce prévisionnel sert uniquement à illustrer les fonctionnalités de SelfFarm-Lite.
+
+plan_financement_apport_personnel: 5000
+plan_financement_emprunt: 8000
+bfr_besoin: 3000
+tresorerie_securite: 3000
+
+choix_eco_conditionnalite: "AB_97pct"
+structure_etude_economique: "Chambre d'agriculture Dordogne / CER France"
+date_affiliation_msa_prevue: 2026-09-15
+
+afficher_engagements_reglementaires: true
+afficher_memos_pedagogiques: true
+
+calendrier_cultural:
+  - mois: "Janvier–Février"
+    activite: "Préparation sols, commande semences, planification cultures"
+    duree: "3-4 semaines"
+  - mois: "Mars"
+    activite: "Semis maraîchage précoces sous abri, plantation PPAM"
+    duree: "3-4 semaines"
+  - mois: "Avril–Mai"
+    activite: "Repiquage maraîchage, entretien planches, lutte contre les adventices"
+    duree: "8 semaines"
+  - mois: "Juin–Août"
+    activite: "Récoltes continues maraîchage, cueillette PPAM, séchage, ensachage tisanes"
+    duree: "12 semaines"
+  - mois: "Septembre–Octobre"
+    activite: "Récoltes tardives, préparation sol hiver, engrais verts"
+    duree: "6-8 semaines"
+  - mois: "Novembre–Décembre"
+    activite: "Comptabilité, bilan, préparation saison suivante, formations VIVEA"
+    duree: "4-6 semaines"

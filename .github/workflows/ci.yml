@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Tests ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.12', '3.13']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install system deps for WeasyPrint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[facturx,dev]"
+
+      - name: Lint (ruff)
+        run: ruff check modules/
+
+      - name: Type check (mypy)
+        run: mypy --ignore-missing-imports --no-strict-optional modules/ || true
+
+      - name: Run pytest
+        run: pytest modules/ -v --cov=modules --cov-report=term-missing
+
+  yaml-validate:
+    name: Valide YAML data
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip pyyaml pydantic
+      - name: Validate aides-agri-2026.yaml loads correctly
+        run: |
+          PYTHONPATH=modules python3 -c "
+          from self_aid.loader import load_all
+          aides = load_all()
+          assert len(aides) >= 10, f'Trop peu d aides : {len(aides)}'
+          print(f'{len(aides)} aides chargées OK')
+          "
+
+      - name: Validate PCG agricole YAML
+        run: |
+          python3 -c "
+          import yaml
+          from pathlib import Path
+          d = yaml.safe_load(Path('modules/self_agri_book/data/pcg-agricole-2026.yaml').read_text())
+          assert len(d.get('classes', [])) == 9, 'PCG doit avoir 9 classes'
+          print('PCG agricole OK')
+          "
