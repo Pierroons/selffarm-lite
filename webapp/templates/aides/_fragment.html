@@ -1,0 +1,38 @@
+{# Fragment HTMX : liste d'aides filtrée #}
+
+{% if aides %}
+<div class="mb-3 text-sm text-slate-400">
+  <strong class="text-slate-100">{{ aides|length }}</strong> aide(s) trouvée(s)
+  — cumul : {{ cumul_min }} – {{ cumul_max }} €
+</div>
+
+<div class="grid md:grid-cols-2 gap-3">
+{% for a in aides %}
+<a href="/aides/{{ a.id }}" class="card no-underline block">
+  <div class="flex items-start justify-between gap-2 mb-2">
+    <h3 class="font-bold text-slate-100 text-sm flex-1">{{ a.nom }}</h3>
+    <span class="badge badge-blue">{{ a.categorie }}</span>
+  </div>
+  <div class="text-lg font-bold text-green-400 mb-1">
+    {% if a.montant.valeur_min == a.montant.valeur_max %}
+      {{ "{:,.0f}".format(a.montant.valeur_min|float).replace(",", " ") }} {{ a.montant.unite }}
+    {% else %}
+      {{ "{:,.0f}".format(a.montant.valeur_min|float).replace(",", " ") }} –
+      {{ "{:,.0f}".format(a.montant.valeur_max|float).replace(",", " ") }} {{ a.montant.unite }}
+    {% endif %}
+  </div>
+  <div class="text-xs text-slate-400">
+    {{ a.id }} · source : {{ a.source.autorite }}
+  </div>
+  {% if a.notes %}
+  <div class="text-xs text-slate-500 mt-2 line-clamp-2">{{ a.notes[:120] }}{% if a.notes|length > 120 %}…{% endif %}</div>
+  {% endif %}
+</a>
+{% endfor %}
+</div>
+{% else %}
+<div class="card text-center py-8 text-slate-400">
+  <div class="text-4xl mb-3">🔍</div>
+  <div>Aucune aide ne correspond aux critères.</div>
+</div>
+{% endif %}

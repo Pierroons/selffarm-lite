@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Facture {{ facture.numero }}</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 15mm 20mm 15mm;
+    @bottom-center {
+      content: "Facture {{ facture.numero }} — page " counter(page) " / " counter(pages);
+      font-family: "DejaVu Sans", sans-serif;
+      font-size: 8pt;
+      color: #888;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { font-family: "DejaVu Sans", Arial, sans-serif; font-size: 10pt; color: #222; line-height: 1.45; margin: 0; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #2a5d3a; padding-bottom: 10mm; margin-bottom: 10mm; }
+  .brand { font-size: 22pt; font-weight: bold; color: #2a5d3a; letter-spacing: -0.5pt; }
+  .brand-sub { font-size: 9pt; color: #666; margin-top: 2mm; }
+  .meta { text-align: right; font-size: 9.5pt; }
+  .meta .doc-title { font-size: 18pt; font-weight: bold; color: #222; margin-bottom: 3mm; }
+  .meta .doc-num { color: #2a5d3a; font-family: "DejaVu Sans Mono", monospace; font-size: 11pt; margin-bottom: 2mm; }
+  .regime-badge {
+    display: inline-block;
+    margin-top: 3mm;
+    padding: 1.5mm 3mm;
+    border-radius: 2mm;
+    font-size: 8.5pt;
+    font-weight: 600;
+  }
+  .regime-franchise { background: #e0f2fe; color: #0369a1; border: 1px solid #0284c7; }
+  .regime-micro-ba { background: #fef3c7; color: #92400e; border: 1px solid #d97706; }
+  .regime-reel { background: #dcfce7; color: #15803d; border: 1px solid #16a34a; }
+  .parties { display: flex; gap: 8mm; margin-bottom: 10mm; }
+  .party { flex: 1; border: 1px solid #ddd; border-radius: 2mm; padding: 5mm; }
+  .party-label { font-size: 8pt; text-transform: uppercase; color: #888; letter-spacing: 1pt; margin-bottom: 2mm; }
+  .party-name { font-weight: bold; font-size: 11pt; margin-bottom: 2mm; }
+  .party-line { font-size: 9.5pt; color: #444; }
+  .party-legal { font-size: 8.5pt; color: #666; margin-top: 3mm; padding-top: 3mm; border-top: 1px dashed #ddd; }
+  table.lines { width: 100%; border-collapse: collapse; margin-bottom: 8mm; }
+  table.lines thead th { background: #2a5d3a; color: white; padding: 3mm 2mm; text-align: left; font-size: 9pt; font-weight: 600; }
+  table.lines thead th.num { text-align: right; width: 22mm; }
+  table.lines tbody td { padding: 3mm 2mm; border-bottom: 1px solid #eee; font-size: 9.5pt; vertical-align: top; }
+  table.lines tbody td.num { text-align: right; font-family: "DejaVu Sans Mono", monospace; }
+  table.lines tbody tr:nth-child(even) td { background: #f8f8f6; }
+  .totals { float: right; width: 75mm; border: 1px solid #ddd; border-radius: 2mm; margin-bottom: 8mm; page-break-inside: avoid; break-inside: avoid; }
+  .totals .row { display: flex; justify-content: space-between; padding: 2mm 4mm; font-size: 10pt; }
+  .totals .row.total-ttc { background: #2a5d3a; color: white; font-weight: bold; font-size: 11pt; border-radius: 0 0 2mm 2mm; }
+  .totals .row + .row { border-top: 1px solid #eee; }
+  .totals .row.total-ttc + .row { border-top: 0; }
+  .totals .label { color: #666; }
+  .totals .value { font-family: "DejaVu Sans Mono", monospace; }
+  .totals .row.total-ttc .label, .totals .row.total-ttc .value { color: white; }
+  /* Bloc footer complet (totaux + mentions + paiement) doit rester insécable */
+  .footer-block { page-break-inside: avoid; break-inside: avoid; }
+  .footer-block::after { content: ""; display: block; clear: both; }
+  .franchise-mention { clear: both; padding: 4mm; background: #fef9e7; border-left: 3px solid #d97706; font-size: 9pt; color: #92400e; margin-bottom: 6mm; font-style: italic; }
+  .payment { clear: both; background: #f8f8f6; padding: 4mm; border-radius: 2mm; font-size: 9pt; margin-bottom: 4mm; }
+  .payment strong { color: #2a5d3a; }
+  .payment-line { margin-bottom: 1.5mm; }
+  .legal { font-size: 8pt; color: #777; line-height: 1.4; border-top: 1px solid #eee; padding-top: 4mm; margin-top: 6mm; }
+  .legal strong { color: #2a5d3a; }
+  .facturx-stamp {
+    position: absolute;
+    bottom: 12mm;
+    right: 15mm;
+    font-size: 7pt;
+    color: #2a5d3a;
+    border: 1px solid #2a5d3a;
+    padding: 1mm 2mm;
+    border-radius: 1mm;
+    background: white;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="brand">{{ vendeur.nom_commercial }}</div>
+    <div class="brand-sub">{{ vendeur.activite }}</div>
+  </div>
+  <div class="meta">
+    <div class="doc-title">FACTURE</div>
+    <div class="doc-num">N° {{ facture.numero }}</div>
+    <div><strong>Émission :</strong> {{ facture.date_emission_fr }}</div>
+    <div><strong>Prestation :</strong> {{ facture.date_prestation_fr }}</div>
+    <div><strong>Échéance :</strong> {{ facture.date_echeance_fr }}</div>
+    <div class="regime-badge regime-{{ regime.slug }}">{{ regime.badge }}</div>
+  </div>
+</div>
+
+<div class="parties">
+  <div class="party">
+    <div class="party-label">Émetteur</div>
+    <div class="party-name">{{ vendeur.nom }}</div>
+    <div class="party-line">{{ vendeur.forme }} — {{ vendeur.nom_commercial }}</div>
+    <div class="party-line">{{ vendeur.adresse }}</div>
+    <div class="party-line">{{ vendeur.cp }} {{ vendeur.ville }} — France</div>
+    <div class="party-legal">
+      <strong>SIRET :</strong> {{ vendeur.siret }} <em style="color:#888">(fictif — démo)</em><br>
+      <strong>Code APE :</strong> {{ vendeur.ape }}<br>
+      {% if regime.slug != 'franchise' %}
+      <strong>TVA intra. :</strong> {{ vendeur.tva }}
+      {% else %}
+      <em style="color:#92400e">Franchise en base de TVA — Art. 293 B CGI</em>
+      {% endif %}
+    </div>
+  </div>
+  <div class="party">
+    <div class="party-label">Client</div>
+    <div class="party-name">{{ client.nom }}</div>
+    <div class="party-line">{{ client.adresse }}</div>
+    <div class="party-line">{{ client.cp }} {{ client.ville }} — France</div>
+    <div class="party-legal">
+      <strong>SIRET :</strong> {{ client.siret }} <em style="color:#888">(fictif — démo)</em><br>
+      <strong>TVA intra. :</strong> {{ client.tva }}<br>
+      Contact : {{ client.email }}
+    </div>
+  </div>
+</div>
+
+<table class="lines">
+  <thead>
+    <tr>
+      <th>Désignation</th>
+      <th class="num">Qté</th>
+      <th class="num">PU HT</th>
+      <th class="num">TVA</th>
+      <th class="num">Total HT</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for ligne in lignes %}
+    <tr>
+      <td>
+        <strong>{{ ligne.nom }}</strong>
+        {% if ligne.detail %}<br><small style="color:#666">{{ ligne.detail }}</small>{% endif %}
+      </td>
+      <td class="num">{{ ligne.qte }}</td>
+      <td class="num">{{ "%.2f"|format(ligne.pu_ht) }} €</td>
+      <td class="num">{% if regime.slug == 'franchise' %}—{% else %}{{ "%.1f"|format(ligne.tva_pct) }} %{% endif %}</td>
+      <td class="num">{{ "%.2f"|format(ligne.total_ht) }} €</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="footer-block">
+<div class="totals">
+  <div class="row"><span class="label">Total HT</span><span class="value">{{ "%.2f"|format(totaux.total_ht) }} €</span></div>
+  {% if regime.slug != 'franchise' %}
+    {% for taux, montant in totaux.tva_par_taux.items() %}
+    <div class="row"><span class="label">TVA {{ taux }} %</span><span class="value">{{ "%.2f"|format(montant) }} €</span></div>
+    {% endfor %}
+  {% else %}
+    <div class="row"><span class="label">TVA</span><span class="value">Non applicable</span></div>
+  {% endif %}
+  <div class="row total-ttc"><span class="label">Total TTC</span><span class="value">{{ "%.2f"|format(totaux.total_ttc) }} €</span></div>
+</div>
+
+{% if regime.slug == 'franchise' %}
+<div class="franchise-mention">
+  <strong>TVA non applicable, Article 293 B du CGI.</strong>
+  {{ vendeur.nom_commercial }} bénéficie du régime de la franchise en base de TVA.
+</div>
+{% endif %}
+
+{% if regime.abattement_73b %}
+<div class="franchise-mention" style="background: #e0f7e6; border-left-color: #16a34a; color: #15803d;">
+  <strong>JA — Abattement Article 73 B CGI applicable</strong> sur le bénéfice imposable de l'exercice.
+  Taux d'abattement : 50 % (années 1 à 5 post-installation MSA).
+</div>
+{% endif %}
+
+<div class="payment">
+  <div class="payment-line"><strong>Mode de paiement :</strong> virement bancaire sous 30 jours (échéance {{ facture.date_echeance_fr }})</div>
+  <div class="payment-line"><strong>IBAN :</strong> FR76 0000 0000 0000 0000 0000 000 — <strong>BIC :</strong> XXXXXXXXXXX <em style="color:#888;font-size:8.5pt">(fictif — démo)</em></div>
+  <div class="payment-line"><strong>Référence à porter :</strong> {{ facture.numero }}</div>
+</div>
+</div><!-- /.footer-block -->
+
+<!-- Bloc légal également insécable -->
+<div style="page-break-inside: avoid; break-inside: avoid;">
+
+<div class="legal">
+  <strong>Pénalités de retard :</strong> en cas de retard de paiement, seront appliquées les pénalités
+  au taux minimum légal (3 × taux d'intérêt légal) ainsi qu'une indemnité forfaitaire pour frais
+  de recouvrement de 40 € (art. L.441-10 Code de commerce). <strong>Pas d'escompte pour paiement anticipé.</strong>
+  <br><br>
+  <strong>Factur-X :</strong> document conforme au profil {{ facture.facturx_profile }} (norme européenne EN 16931,
+  obligatoire en France à partir du 1<sup>er</sup> septembre 2026 pour la réception, 2027-2028 pour l'émission).
+  <br>
+  Généré par <strong>SelfInvoice</strong> — écosystème MySelf — AGPL-3.0-or-later.
+</div>
+</div><!-- /bloc légal insécable -->
+
+<div class="facturx-stamp">📎 Factur-X {{ facture.facturx_profile }}</div>
+
+</body>
+</html>

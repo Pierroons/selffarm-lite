@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}SelfFarm-Lite{% endblock %}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'bg-0': '#0f172a',
+        'bg-1': '#1e293b',
+        'bg-2': '#334155',
+        'accent': '#16a34a',
+      }
+    }
+  }
+}
+</script>
+<style>
+body { background: #0f172a; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; }
+a { color: #16a34a; }
+a:hover { color: #22c55e; }
+.card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 16px; }
+.card:hover { border-color: #16a34a; }
+.btn { padding: 8px 16px; background: #16a34a; color: white; border-radius: 6px; display: inline-block; font-weight: 600; }
+.btn:hover { background: #15803d; color: white; }
+.btn-ghost { background: transparent; border: 1px solid #475569; color: #e2e8f0; }
+.btn-ghost:hover { background: #334155; color: #e2e8f0; }
+input, textarea, select { background: #0f172a; color: #e2e8f0; border: 1px solid #475569; border-radius: 4px; padding: 6px 10px; }
+input:focus, textarea:focus, select:focus { outline: none; border-color: #16a34a; }
+table { border-collapse: collapse; width: 100%; }
+table th, table td { padding: 8px 12px; border-bottom: 1px solid #334155; text-align: left; font-size: 13px; }
+table thead th { background: #1e293b; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; }
+table tbody tr:hover { background: #1e293b; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.badge-green { background: #14532d; color: #86efac; }
+.badge-amber { background: #78350f; color: #fbbf24; }
+.badge-red { background: #7f1d1d; color: #fca5a5; }
+.badge-blue { background: #1e3a8a; color: #93c5fd; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<header class="border-b border-slate-700 bg-slate-900">
+  <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-3 no-underline">
+      <span class="text-2xl">🌿</span>
+      <div>
+        <div class="text-lg font-bold text-slate-100">SelfFarm-Lite</div>
+        <div class="text-xs text-slate-400">Modules agricoles JA — AGPL</div>
+      </div>
+    </a>
+    <nav class="flex gap-4 text-sm">
+      <a href="/dnja" class="text-slate-300 hover:text-green-400 no-underline">📊 DNJA</a>
+      <a href="/dnja/compare" class="text-slate-300 hover:text-green-400 no-underline">🔬 Compare</a>
+      <a href="/dnja/editor" class="text-slate-300 hover:text-green-400 no-underline">✏️ Éditeur</a>
+      <a href="/aides" class="text-slate-300 hover:text-green-400 no-underline">💶 Aides</a>
+      <a href="/parcelles" class="text-slate-300 hover:text-green-400 no-underline">🗺️ Parcelles</a>
+      <a href="/invoice" class="text-slate-300 hover:text-green-400 no-underline">🧾 Invoice</a>
+      <a href="/compta" class="text-slate-300 hover:text-green-400 no-underline">📚 Compta</a>
+      <a href="/docs" class="text-slate-400 hover:text-slate-200 no-underline text-xs" title="Swagger">API</a>
+    </nav>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 py-6">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="border-t border-slate-800 mt-12 py-6 text-center text-xs text-slate-500">
+  SelfFarm-Lite v{{ version }} — AGPL-3.0-or-later — partie de l'écosystème
+  <a href="https://github.com/Pierroons/myself" class="text-green-500">MySelf</a>
+</footer>
+
+</body>
+</html>

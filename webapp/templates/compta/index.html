@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% block title %}Compta — SelfAgriBook · SelfFarm-Lite{% endblock %}
+{% block content %}
+
+<div class="mb-4">
+  <h1 class="text-2xl font-bold text-slate-100">📊 SelfAgriBook — Hub compta</h1>
+  <p class="text-sm text-slate-400 mt-1">
+    Journal des écritures comptables alimenté en temps réel par tous les modules MySelf
+    (factures, achats, banque, immos). Zéro double saisie, dédup automatique par <code class="text-green-400 text-xs">(source_module, source_id)</code>.
+  </p>
+</div>
+
+<!-- Bandeau démo publique partagée -->
+<div class="mb-4 p-3 rounded border bg-amber-900/20 border-amber-800 text-amber-200 text-xs">
+  <strong>⚠ Démo publique partagée</strong> — la base SQLite est commune à tous les visiteurs.
+  Si quelqu'un d'autre teste en même temps, vos écritures se mélangent et un reset purge pour tout le monde.
+  En installation réelle MySelf, la DB est locale (<code class="text-amber-300">~/.selffarm/compta.db</code>)
+  et isolée par utilisateur·ice.
+</div>
+
+<!-- Navigation documents compta -->
+<div class="mb-4 flex flex-wrap gap-2 text-sm items-center">
+  <a href="/compta" class="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white rounded font-semibold transition">
+    📊 Journal (ici)
+  </a>
+  <a href="/compta/resultat" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded font-semibold transition">
+    📈 Compte de résultat
+  </a>
+  <a href="/compta/bilan" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded font-semibold transition">
+    📉 Bilan comptable
+  </a>
+  <a href="/compta/export-fec" download
+     class="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white rounded font-semibold transition"
+     title="Fichier des Écritures Comptables — format DGFIP obligatoire (art. L47 A-I LPF)">
+    📦 Export FEC (DGFIP)
+  </a>
+</div>
+
+<!-- Barre d'actions interactives -->
+<div class="card mb-4 !p-3">
+  <div class="flex flex-wrap gap-2 items-center text-sm">
+    <span class="text-slate-400 font-semibold">🧪 Démo interactive :</span>
+    <button
+      hx-post="/compta/generer-vente"
+      hx-target="#flash-message"
+      hx-swap="innerHTML"
+      hx-on::after-request="setTimeout(() => window.location.reload(), 1500)"
+      class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded font-semibold text-xs transition cursor-pointer">
+      💰 Ajouter une vente rapide (411/701)
+    </button>
+    <button
+      hx-post="/compta/generer-achat"
+      hx-target="#flash-message"
+      hx-swap="innerHTML"
+      hx-on::after-request="setTimeout(() => window.location.reload(), 1500)"
+      class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded font-semibold text-xs transition cursor-pointer">
+      🧺 Ajouter un achat (6011/401)
+    </button>
+    <button
+      hx-post="/compta/importer-releve"
+      hx-target="#flash-message"
+      hx-swap="innerHTML"
+      hx-on::after-request="setTimeout(() => window.location.reload(), 2500)"
+      class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded font-semibold text-xs transition cursor-pointer"
+      title="Simule self_banking : importe un relevé, réconcilie les factures 411, enregistre prélèvements + frais bancaires">
+      🏦 Importer relevé bancaire (self_banking)
+    </button>
+    <a href="/compta/facture-du-journal" target="_blank"
+       class="inline-block px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white rounded font-semibold text-xs transition"
+       title="Consolide les dernières ventes 411/701 du journal en UNE facture PDF/A-3 Factur-X">
+      🧾 Facture Factur-X du journal
+    </a>
+    <button
+      hx-post="/compta/rejouer-derniere-vente"
+      hx-target="#flash-message"
+      hx-swap="innerHTML"
+      hx-on::after-request="setTimeout(() => window.location.reload(), 1800)"
+      class="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded font-semibold text-xs transition cursor-pointer"
+      title="Tente de re-créer l'écriture pour la dernière facture — démontre la dédup">
+      ♻️ Re-tenter dernière facture
+    </button>
+    <button
+      onclick="if (confirm('Purger TOUTES les écritures comptables ? (reset démo)')) { fetch('/compta/reset-demo', {method:'POST', headers:{'HX-Request':'true'}}).then(r => r.text()).then(html => { document.getElementById('flash-message').innerHTML = html; setTimeout(() => window.location.reload(), 1500); }); }"
+      class="px-3 py-1.5 bg-rose-700 hover:bg-rose-600 text-white rounded font-semibold text-xs transition cursor-pointer ml-auto">
+      🧹 Reset démo
+    </button>
+    <button
+      onclick="window.location.reload()"
+      class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded font-semibold text-xs transition cursor-pointer"
+      title="Recharge la page pour voir le journal mis à jour">
+      🔄 Recharger
+    </button>
+  </div>
+  <div id="flash-message" class="mt-3"></div>
+  <div class="mt-3 text-[11px] text-slate-500 border-t border-slate-700 pt-2 space-y-1">
+    <div>
+      <strong class="text-slate-400">Vente rapide</strong>
+      (<span class="text-sky-400">411/701</span>) : saisie directe compta, pas de PDF —
+      idéal vente directe marché/AMAP.
+    </div>
+    <div>
+      <strong class="text-slate-400">Achat</strong>
+      (<span class="text-amber-400">6011-6062/401</span>) : charge d'exploitation — compost, carburant, certification, location…
+    </div>
+    <div>
+      <strong class="text-slate-400">Import relevé bancaire</strong>
+      (<span class="text-purple-400">self_banking → 512/...</span>) : 3e flux automatique —
+      <strong>lettrage auto</strong> des factures 411 (virements reçus) + prélèvements récurrents (MSA, EDF, assurance) + frais bancaires.
+    </div>
+    <div>
+      <strong class="text-slate-400">Facture Factur-X du journal</strong>
+      (<span class="text-green-400">consolide les ventes 411/701 du journal</span>) :
+      ⚡ la <em>source de vérité est le hub compta</em>. Lignes = écritures réelles,
+      pas aléatoires. Document légal PDF/A-3 + XML EN16931.
+    </div>
+    <div class="pt-1 italic">
+      Les 3 flux alimentent le <strong>même hub</strong> — chaque module déclare sa source
+      (<code>self_compta_manuel</code>, <code>self_achats</code>, <code>self_invoice</code>),
+      la dédup par <code>source_module + source_id</code> garantit l'idempotence.
+    </div>
+  </div>
+</div>
+
+<!-- Stats globales -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+  <div class="card !p-4">
+    <div class="text-xs text-slate-500 uppercase tracking-wider">Écritures</div>
+    <div class="text-2xl font-bold text-green-400 mt-1">{{ stats.nb_ecritures }}</div>
+  </div>
+  <div class="card !p-4">
+    <div class="text-xs text-slate-500 uppercase tracking-wider">Volume total</div>
+    <div class="text-2xl font-bold text-slate-100 mt-1">{{ "{:,.0f}".format(stats.total_volume).replace(",", " ") }} €</div>
+  </div>
+  <div class="card !p-4">
+    <div class="text-xs text-slate-500 uppercase tracking-wider">Modules sources</div>
+    <div class="text-sm text-slate-300 mt-1">
+      {% for src, n in stats.par_source.items() %}
+      <div><code class="text-xs text-green-400">{{ src }}</code> : {{ n }}</div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="card !p-4">
+    <div class="text-xs text-slate-500 uppercase tracking-wider">Statut</div>
+    <div class="mt-1">
+      <span class="inline-block bg-green-900/30 text-green-400 border border-green-700 rounded px-2 py-0.5 text-xs">
+        V1 hub live
+      </span>
+    </div>
+  </div>
+</div>
+
+<div class="grid md:grid-cols-[1fr_320px] gap-6">
+
+  <!-- Journal -->
+  <div class="card !p-0 overflow-hidden">
+    <div class="bg-slate-800 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
+      <h2 class="font-bold text-slate-200">Journal des écritures</h2>
+      <span class="text-xs text-slate-500">100 dernières — ordre antéchrono</span>
+    </div>
+    {% if not ecritures %}
+    <div class="p-8 text-center text-slate-400">
+      <div class="text-5xl mb-3">📭</div>
+      <div>Aucune écriture pour l'instant.</div>
+      <a href="/invoice" class="inline-block mt-3 text-sm text-green-400 hover:text-green-300 underline">
+        → Générer une facture pour tester l'auto-écriture
+      </a>
+    </div>
+    {% else %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-800/60 text-slate-400 text-xs uppercase tracking-wider">
+          <tr>
+            <th class="px-3 py-2 text-left">Date</th>
+            <th class="px-3 py-2 text-left">Pièce</th>
+            <th class="px-3 py-2 text-left">Libellé</th>
+            <th class="px-3 py-2 text-left">Débit</th>
+            <th class="px-3 py-2 text-left">Crédit</th>
+            <th class="px-3 py-2 text-right">TTC</th>
+            <th class="px-3 py-2 text-center">Source</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in ecritures %}
+          <tr class="border-t border-slate-800 hover:bg-slate-800/40 transition">
+            <td class="px-3 py-2 text-slate-400 text-xs whitespace-nowrap">{{ e.date_operation }}</td>
+            <td class="px-3 py-2"><code class="text-xs text-green-400">{{ e.numero_piece }}</code></td>
+            <td class="px-3 py-2 text-slate-200 text-xs max-w-[260px] truncate" title="{{ e.libelle }}">{{ e.libelle }}</td>
+            <td class="px-3 py-2 text-slate-300 text-xs"><code>{{ e.compte_debit }}</code> <span class="text-slate-500">{{ e.compte_debit_label.split(' — ')[1] if ' — ' in e.compte_debit_label else '' }}</span></td>
+            <td class="px-3 py-2 text-slate-300 text-xs"><code>{{ e.compte_credit }}</code> <span class="text-slate-500">{{ e.compte_credit_label.split(' — ')[1] if ' — ' in e.compte_credit_label else '' }}</span></td>
+            <td class="px-3 py-2 text-right text-slate-100 font-mono text-xs">{{ e.montant_ttc }} €</td>
+            <td class="px-3 py-2 text-center text-xs">
+              {% if e.source_module == 'self_invoice' %}
+                <span class="inline-block bg-sky-900/40 text-sky-300 border border-sky-800 rounded px-1.5 py-0.5" title="{{ e.metadata.get('regime', '') }} — profil {{ e.metadata.get('facturx_profile', '') }}">
+                  self_invoice
+                </span>
+              {% elif e.source_module %}
+                <span class="inline-block bg-slate-700/40 text-slate-300 border border-slate-600 rounded px-1.5 py-0.5">{{ e.source_module }}</span>
+              {% else %}
+                <span class="text-slate-500">manuel</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Balance + info -->
+  <aside class="space-y-4">
+    <div class="card !p-0 overflow-hidden">
+      <div class="bg-slate-800 px-4 py-2 border-b border-slate-700">
+        <h2 class="font-bold text-slate-200">Balance par compte</h2>
+      </div>
+      {% if balance %}
+      <table class="w-full text-xs">
+        <thead class="bg-slate-800/40 text-slate-500 text-[10px] uppercase tracking-wider">
+          <tr>
+            <th class="px-2 py-1 text-left">Compte</th>
+            <th class="px-2 py-1 text-right">Débit</th>
+            <th class="px-2 py-1 text-right">Crédit</th>
+            <th class="px-2 py-1 text-right">Solde</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in balance %}
+          <tr class="border-t border-slate-800">
+            <td class="px-2 py-1 text-slate-300"><code class="text-green-400">{{ b.compte }}</code></td>
+            <td class="px-2 py-1 text-right text-slate-400 font-mono">{{ "{:.0f}".format(b.total_debit or 0) }}</td>
+            <td class="px-2 py-1 text-right text-slate-400 font-mono">{{ "{:.0f}".format(b.total_credit or 0) }}</td>
+            <td class="px-2 py-1 text-right font-mono {{ 'text-green-400' if b.solde > 0 else ('text-red-400' if b.solde < 0 else 'text-slate-500') }}">{{ "{:+.0f}".format(b.solde) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="p-4 text-center text-xs text-slate-500">Pas encore de balance.</div>
+      {% endif %}
+    </div>
+
+    <div class="card !p-4 text-xs text-slate-400 space-y-2">
+      <h3 class="text-slate-300 font-semibold">Architecture hub</h3>
+      <p>Une seule table <code class="text-green-400">ecritures_comptables</code>. Chaque module MySelf y pousse ses auto-écritures :</p>
+      <ul class="list-disc list-inside space-y-0.5 ml-1">
+        <li><code class="text-sky-400">self_invoice</code> → 411/701</li>
+        <li><code class="text-amber-400">self_achats</code> → 6011/401 (V2)</li>
+        <li><code class="text-purple-400">self_banking</code> → 512/411 (V2)</li>
+        <li><code class="text-rose-400">self_immos</code> → 2154/404 (V3)</li>
+        <li><code class="text-emerald-400">self_aides</code> → 512/74 (V3)</li>
+      </ul>
+      <p class="pt-1 border-t border-slate-700">Stockage SQLite local <code class="text-[10px]">~/.selffarm/compta.db</code>. Aucun cloud, aucun SaaS.</p>
+    </div>
+  </aside>
+
+</div>
+
+{% endblock %}

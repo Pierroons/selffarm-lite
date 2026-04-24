@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Catalogue des aides — SelfFarm-Lite{% endblock %}
+{% block content %}
+
+<div class="mb-4">
+  <h1 class="text-2xl font-bold text-slate-100">💶 Catalogue d'aides agricoles 2026</h1>
+  <p class="text-sm text-slate-400">
+    {{ count_total }} aides sourcées aux portails officiels (Légifrance, BOFiP, FranceAgriMer,
+    MSA, Nouvelle-Aquitaine, CD le departement). Cumul indicatif :
+    <strong class="text-green-400">{{ enveloppe_min }} – {{ enveloppe_max }} €</strong>
+  </p>
+</div>
+
+<!-- Bandeau V1 catalogue en cours -->
+<div class="mb-4 p-3 rounded border bg-amber-900/20 border-amber-800 text-amber-200 text-xs">
+  <strong>🏗️ self_aid V1 — module en construction active</strong><br>
+  Le catalogue actuel est <strong>orienté JA en installation</strong> (profil V1).
+  <br><br>
+  <strong>V2 (été 2026)</strong> élargira aux profils <strong>NA</strong> (nouvel agri &gt; 40 ans),
+  <strong>AGRI</strong> (exploitations en vitesse de croisière) et <strong>PME agri</strong>.
+  À venir : PCAE, FAM investissements, conversion énergie, prime HVE, aléa climatique FNSR, DPB standard, FRR+ standard…
+  <br><br>
+  <em>Distribution hybride : catalogue national hébergé sur GitHub (raw), cache local côté user
+  (<code class="text-amber-300">~/.selffarm/cache/</code>), mises à jour bimensuelles (1<sup>er</sup> + 15 du mois).</em>
+</div>
+
+<!-- Filtres HTMX -->
+<form
+  hx-get="/aides/filter"
+  hx-target="#aides-list"
+  hx-trigger="input delay:300ms, change"
+  hx-swap="innerHTML"
+  class="card mb-4 grid md:grid-cols-4 gap-3">
+
+  <div>
+    <label class="text-xs text-slate-400 uppercase tracking-wider">Mot-clé</label>
+    <input type="search" name="mot_cle" placeholder="chanvre, bio, dnja…" class="w-full">
+  </div>
+
+  <div>
+    <label class="text-xs text-slate-400 uppercase tracking-wider">Catégorie</label>
+    <select name="categorie" class="w-full">
+      <option value="">Toutes</option>
+      {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label class="text-xs text-slate-400 uppercase tracking-wider">Statut cible</label>
+    <select name="statut" class="w-full">
+      <option value="">Tous</option>
+      <option value="ja-installation">JA installation</option>
+      <option value="ja-pre-installation">JA pré-installation</option>
+      <option value="agriculteur-bio">Agriculteur bio</option>
+      <option value="agriculteur-conversion-bio">Conversion bio</option>
+      <option value="agriculteur-chanvre">Agri chanvre</option>
+      <option value="agriculteur-reel">Régime réel</option>
+    </select>
+  </div>
+
+  <div>
+    <label class="text-xs text-slate-400 uppercase tracking-wider">Zone</label>
+    <select name="zone" class="w-full">
+      <option value="">Toutes</option>
+      <option value="le departement">le departement</option>
+      <option value="NA">Nouvelle-Aquitaine</option>
+      <option value="France">France entière</option>
+    </select>
+  </div>
+</form>
+
+<div id="aides-list">
+  {% include "aides/_fragment.html" %}
+</div>
+
+{% endblock %}

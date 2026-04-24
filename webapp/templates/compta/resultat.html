@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Compte de résultat — SelfAgriBook{% endblock %}
+{% block content %}
+
+<div class="mb-4 flex items-start justify-between flex-wrap gap-3">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-100">📈 Compte de résultat</h1>
+    <p class="text-sm text-slate-400 mt-1">
+      Produits (classe 7) vs Charges (classe 6) — calculé en direct depuis le journal du hub.
+      Résultat = Produits − Charges.
+    </p>
+  </div>
+  <div class="flex flex-wrap gap-2">
+    <a href="/compta" class="btn-sm inline-block px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-xs text-slate-300">📊 Journal</a>
+    <a href="/compta/bilan" class="btn-sm inline-block px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-xs text-slate-300">📉 Bilan</a>
+  </div>
+</div>
+
+{% if not data.produits and not data.charges %}
+<div class="card p-8 text-center text-slate-400">
+  <div class="text-5xl mb-3">📭</div>
+  <div>Aucune opération comptable — pas de résultat à calculer.</div>
+  <a href="/compta" class="inline-block mt-3 text-sm text-green-400 hover:text-green-300 underline">
+    → Ajouter des écritures dans le journal
+  </a>
+</div>
+{% else %}
+
+<div class="grid md:grid-cols-2 gap-4 mb-4">
+  <!-- PRODUITS -->
+  <div class="card !p-0 overflow-hidden">
+    <div class="bg-sky-900/30 border-b border-sky-700 px-4 py-2">
+      <h2 class="font-bold text-sky-300">📈 PRODUITS (classe 7)</h2>
+      <div class="text-xs text-sky-400">Ce que l'exploitation a vendu / reçu</div>
+    </div>
+    <table class="w-full text-sm">
+      <tbody>
+        {% for p in data.produits %}
+        <tr class="border-t border-slate-800">
+          <td class="px-3 py-2 text-slate-300"><code class="text-sky-400">{{ p.compte }}</code></td>
+          <td class="px-3 py-2 text-slate-400 text-xs">{{ p.label.split(' — ')[1] if ' — ' in p.label else '' }}</td>
+          <td class="px-3 py-2 text-right text-slate-100 font-mono">{{ "{:,.2f}".format(p.montant).replace(",", " ").replace(".", ",") }} €</td>
+        </tr>
+        {% endfor %}
+        <tr class="border-t-2 border-sky-700 bg-sky-900/20">
+          <td colspan="2" class="px-3 py-2 font-bold text-sky-300">Total produits</td>
+          <td class="px-3 py-2 text-right font-bold text-sky-200 font-mono">{{ "{:,.2f}".format(data.total_produits).replace(",", " ").replace(".", ",") }} €</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CHARGES -->
+  <div class="card !p-0 overflow-hidden">
+    <div class="bg-amber-900/30 border-b border-amber-700 px-4 py-2">
+      <h2 class="font-bold text-amber-300">📉 CHARGES (classe 6)</h2>
+      <div class="text-xs text-amber-400">Ce que l'exploitation a dépensé / consommé</div>
+    </div>
+    <table class="w-full text-sm">
+      <tbody>
+        {% for c in data.charges %}
+        <tr class="border-t border-slate-800">
+          <td class="px-3 py-2 text-slate-300"><code class="text-amber-400">{{ c.compte }}</code></td>
+          <td class="px-3 py-2 text-slate-400 text-xs">{{ c.label.split(' — ')[1] if ' — ' in c.label else '' }}</td>
+          <td class="px-3 py-2 text-right text-slate-100 font-mono">{{ "{:,.2f}".format(c.montant).replace(",", " ").replace(".", ",") }} €</td>
+        </tr>
+        {% endfor %}
+        <tr class="border-t-2 border-amber-700 bg-amber-900/20">
+          <td colspan="2" class="px-3 py-2 font-bold text-amber-300">Total charges</td>
+          <td class="px-3 py-2 text-right font-bold text-amber-200 font-mono">{{ "{:,.2f}".format(data.total_charges).replace(",", " ").replace(".", ",") }} €</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- RÉSULTAT NET -->
+<div class="card !p-4 {% if data.is_benefice %}!bg-green-900/20 !border-green-700{% else %}!bg-red-900/20 !border-red-700{% endif %}">
+  <div class="flex items-center justify-between">
+    <div>
+      <div class="text-xs text-slate-400 uppercase tracking-wider">Résultat net de l'exercice</div>
+      <div class="text-3xl font-bold font-mono mt-1 {% if data.is_benefice %}text-green-300{% else %}text-red-300{% endif %}">
+        {% if data.is_benefice %}+{% endif %}{{ "{:,.2f}".format(data.resultat_net).replace(",", " ").replace(".", ",") }} €
+      </div>
+    </div>
+    <div class="text-right text-sm text-slate-400">
+      <div>Produits : <span class="text-sky-300 font-mono">{{ "{:,.2f}".format(data.total_produits).replace(",", " ").replace(".", ",") }} €</span></div>
+      <div>Charges : <span class="text-amber-300 font-mono">{{ "{:,.2f}".format(data.total_charges).replace(",", " ").replace(".", ",") }} €</span></div>
+      <div class="mt-1 pt-1 border-t border-slate-700 text-xs">
+        {% if data.is_benefice %}
+        <span class="text-green-400">✓ BÉNÉFICE</span> — ce qui va en +capitaux propres au bilan
+        {% else %}
+        <span class="text-red-400">⚠ DÉFICIT</span> — ce qui va en −capitaux propres au bilan
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endif %}
+
+<div class="card !p-3 mt-4 text-[11px] text-slate-500">
+  <strong class="text-slate-400">Méthode :</strong>
+  Les montants sont calculés en direct depuis la table <code class="text-green-400">ecritures_comptables</code>
+  du hub compta. Produits = Σ (crédits − débits) sur les comptes 7xxx. Charges = Σ (débits − crédits) sur 6xxx.
+  Pas de hardcode, pas de cache — chaque requête relit la base.
+</div>
+
+{% endblock %}
