@@ -25,12 +25,27 @@ sys.path.insert(0, str(BASE_DIR / "modules"))
 sys.path.insert(0, str(BASE_DIR))
 
 from webapp import __version__
-from webapp.routes.home import router as home_router
-from webapp.routes.dnja import router as dnja_router
-from webapp.routes.aides import router as aides_router
-from webapp.routes.parcelles import router as parcelles_router
-from webapp.routes.invoice import router as invoice_router
-from webapp.routes.compta import router as compta_router
+from webapp.routes import home as home_module
+from webapp.routes import dnja as dnja_module
+from webapp.routes import aides as aides_module
+from webapp.routes import parcelles as parcelles_module
+from webapp.routes import invoice as invoice_module
+from webapp.routes import compta as compta_module
+
+home_router = home_module.router
+dnja_router = dnja_module.router
+aides_router = aides_module.router
+parcelles_router = parcelles_module.router
+invoice_router = invoice_module.router
+compta_router = compta_module.router
+
+# Variable d'environnement injectée comme global Jinja2 (visible dans tous templates)
+# - 'prod' (défaut) : pas de bandeau, comportement normal
+# - 'dev'           : bandeau orange "ENV DEV — données purgeables"
+ENV_NAME = os.environ.get("SELFFARM_ENV", "prod")
+for _route_module in (home_module, dnja_module, aides_module, parcelles_module, invoice_module, compta_module):
+    if hasattr(_route_module, "templates"):
+        _route_module.templates.env.globals["env"] = ENV_NAME
 
 log = logging.getLogger("selffarm-webapp")
 

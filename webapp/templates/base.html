@@ -46,6 +46,12 @@ table tbody tr:hover { background: #1e293b; }
 </head>
 <body class="min-h-screen">
 
+{% if env == 'dev' %}
+<div style="background: linear-gradient(90deg, #f59e0b, #d97706); color: #1c1917; text-align: center; padding: 6px 12px; font-weight: 600; font-size: 13px; letter-spacing: 0.3px;">
+  🚧 <strong>ENV DEV</strong> — branche <code style="background:rgba(0,0,0,0.15);padding:1px 6px;border-radius:3px;font-family:monospace">develop</code> · données purgeables, pas de garantie · prod stable sur <a href="https://selffarm.my-self.fr" style="color:#1c1917;text-decoration:underline;font-weight:700">selffarm.my-self.fr</a>
+</div>
+{% endif %}
+
 <header class="border-b border-slate-700 bg-slate-900">
   <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
     <a href="/" class="flex items-center gap-3 no-underline">
