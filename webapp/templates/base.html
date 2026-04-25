@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}SelfFarm-Lite{% endblock %}</title>
+<link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+<meta name="theme-color" content="#0f1419">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/htmx.org@1.9.12"></script>
 <script>
@@ -55,10 +57,10 @@ table tbody tr:hover { background: #1e293b; }
 <header class="border-b border-slate-700 bg-slate-900">
   <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
     <a href="/" class="flex items-center gap-3 no-underline">
-      <span class="text-2xl">🌿</span>
+      <img src="/static/img/myself-mark.svg" alt="MySelf" width="32" height="32" style="display: block;">
       <div>
         <div class="text-lg font-bold text-slate-100">SelfFarm-Lite</div>
-        <div class="text-xs text-slate-400">Modules agricoles JA — AGPL</div>
+        <div class="text-xs text-slate-400">Étage applicatif MySelf — AGPL-3.0</div>
       </div>
     </a>
     <nav class="flex gap-4 text-sm">
