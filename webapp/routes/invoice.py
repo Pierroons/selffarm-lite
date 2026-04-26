@@ -280,8 +280,17 @@ def _hook_compta_vente(data: dict) -> tuple[int | None, bool]:
 
 @router.get("/nouvelle", response_class=HTMLResponse)
 async def invoice_nouvelle_form(request: Request):
-    """Formulaire de saisie d'une nouvelle facture (V1)."""
+    """Formulaire de saisie d'une nouvelle facture (V1).
+
+    Le numéro est calculé via le compteur séquentiel DB (peek seul, pas
+    d'incrément à l'affichage — l'incrément se fait au POST /creer).
+    """
     today = date.today()
+    try:
+        from self_agri_book.storage import peek_numero_facture
+        next_numero = peek_numero_facture(today.year, "F")
+    except Exception:
+        next_numero = f"F-{today.year}-0001"
     return templates.TemplateResponse(
         "invoice/form.html",
         {
@@ -289,7 +298,7 @@ async def invoice_nouvelle_form(request: Request):
             "today": today.isoformat(),
             "echeance_default": (today + timedelta(days=30)).isoformat(),
             "regimes": REGIMES,
-            "next_numero": f"F-{today.year}-0001",  # à raffiner avec compteur DB plus tard
+            "next_numero": next_numero,
         },
     )
 
@@ -374,7 +383,15 @@ async def invoice_creer(request: Request):
         date_echeance = date.fromisoformat(form.get("date_echeance", "") or (today + timedelta(days=30)).isoformat())
     except Exception:
         date_echeance = today + timedelta(days=30)
-    numero = (form.get("numero", "") or f"F-{today.year}-{random.randint(1, 9999):04d}").strip()
+
+    # Numéro séquentiel DB-driven : on IGNORE la valeur du form (confiance zéro
+    # côté client). Le compteur garantit la non-corruption + la non-duplication.
+    # Conformité CGI art. 289-II : numérotation continue sans saut.
+    try:
+        from self_agri_book.storage import next_numero_facture
+        numero = next_numero_facture(today.year, "F")
+    except Exception:
+        numero = (form.get("numero", "") or f"F-{today.year}-{random.randint(1, 9999):04d}").strip()
 
     profile = "BASIC" if regime_key == "franchise" else "EN16931"
 

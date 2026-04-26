@@ -27,8 +27,8 @@
     <h2 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px;">Identité & régime</h2>
     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
       <div>
-        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">N° facture</label>
-        <input type="text" name="numero" value="{{ next_numero }}" required style="width: 100%; font-family: monospace;">
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">N° facture · <span style="color: var(--forest-400); font-size: 9.5px;">séquentiel auto · CGI art. 289-II</span></label>
+        <input type="text" name="numero" value="{{ next_numero }}" readonly style="width: 100%; font-family: monospace; opacity: 0.75; cursor: not-allowed; background: rgba(0,0,0,0.20);">
       </div>
       <div>
         <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Date d'échéance</label>
