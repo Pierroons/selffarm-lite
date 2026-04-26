@@ -219,6 +219,9 @@ table tbody tr:hover { background: rgba(22, 101, 52, 0.06); }
       <a href="/invoice" class="nav-link {% if _path.startswith('/invoice') %}active{% endif %}">Invoice</a>
       <a href="/compta" class="nav-link {% if _path.startswith('/compta') %}active{% endif %}">Compta</a>
       <span style="width: 1px; height: 16px; background: var(--border-default); margin: 0 4px;"></span>
+      {% if env != 'demo' %}
+      <a href="/backup" class="nav-link {% if _path.startswith('/backup') %}active{% endif %}" style="font-size: 11.5px;" title="Sauvegarde / restauration">⤓ Backup</a>
+      {% endif %}
       <a href="/docs" class="nav-link" style="font-size: 11.5px;" title="Swagger API">API</a>
     </nav>
     <button class="mobile-nav-btn" style="display:none; background:transparent; border:1px solid var(--border-default); color:var(--text-primary); padding:6px 10px; border-radius:5px;" onclick="document.getElementById('mobile-drawer').classList.toggle('hidden')">
@@ -233,6 +236,9 @@ table tbody tr:hover { background: rgba(22, 101, 52, 0.06); }
     <a href="/parcelles" class="block py-2 nav-link">Parcelles</a>
     <a href="/invoice" class="block py-2 nav-link">Invoice</a>
     <a href="/compta" class="block py-2 nav-link">Compta</a>
+    {% if env != 'demo' %}
+    <a href="/backup" class="block py-2 nav-link">⤓ Backup</a>
+    {% endif %}
     <a href="/docs" class="block py-2 nav-link">API</a>
   </div>
 </header>

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Sauvegarde — SelfFarm-Lite{% endblock %}
+{% block content %}
+
+<!-- HEADER -->
+<div style="margin-bottom: 22px;">
+  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+    <span style="font-size: 11px; color: var(--text-muted); letter-spacing: 0.6px; text-transform: uppercase; font-weight: 600;">Module · live</span>
+    <span style="display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);"></span>
+  </div>
+  <h1 style="font-size: 28px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; margin-bottom: 6px;">
+    Sauvegarde <span style="color: var(--forest-500); font-style: italic; font-weight: 500;">& restauration</span>
+  </h1>
+  <p style="font-size: 13.5px; color: var(--text-secondary); max-width: 820px; line-height: 1.55;">
+    Export ZIP portable de ta compta — DB SQLite + manifest signé SHA256 + notice. Restaure n'importe où, n'importe quand. <strong style="color: var(--text-primary);">Aucun cloud, tout reste à toi.</strong>
+  </p>
+</div>
+
+<!-- STATS DB COURANTE -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 22px;">
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 13px 15px;">
+    <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Écritures</div>
+    <div style="font-size: 22px; font-weight: 700; color: var(--forest-400); font-family: 'Fraunces', serif;">{{ stats.nb_ecritures }}</div>
+  </div>
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 13px 15px;">
+    <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Période</div>
+    <div style="font-size: 12.5px; color: var(--text-primary); margin-top: 4px; line-height: 1.4;">
+      {% if stats.first_date %}
+        {{ stats.first_date }}<br><span style="color: var(--text-muted);">→</span> {{ stats.last_date }}
+      {% else %}
+        <span style="color: var(--text-muted);">aucune écriture</span>
+      {% endif %}
+    </div>
+  </div>
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 13px 15px;">
+    <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Taille DB</div>
+    <div style="font-size: 22px; font-weight: 700; color: var(--text-primary); font-family: 'Fraunces', serif;">
+      {% if db_size < 1024 %}{{ db_size }} o
+      {% elif db_size < 1024 * 1024 %}{{ "%.1f"|format(db_size / 1024) }} Ko
+      {% else %}{{ "%.1f"|format(db_size / 1024 / 1024) }} Mo
+      {% endif %}
+    </div>
+  </div>
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 13px 15px;">
+    <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Sources</div>
+    {% if stats.sources %}
+      <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.55; margin-top: 2px;">
+      {% for k, v in stats.sources.items() %}
+        <div><code style="color: #86efac; font-size: 10.5px;">{{ k }}</code> · {{ v }}</div>
+      {% endfor %}
+      </div>
+    {% else %}
+      <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">—</div>
+    {% endif %}
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr; gap: 14px;" class="md:!grid-cols-2">
+
+  <!-- TÉLÉCHARGER -->
+  <div class="card" style="padding: 18px;">
+    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">Télécharger une sauvegarde</h2>
+    <p style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 14px;">
+      Génère un fichier <code style="font-size: 11px;">.zip</code> contenant ta DB compta + un manifest signé SHA256 + une notice de restauration. Portable entre OS et entre versions.
+    </p>
+    {% if db_exists and stats.nb_ecritures > 0 %}
+    <a href="/backup/download" class="btn" style="display: block; text-align: center; font-size: 13.5px; padding: 11px 18px;">↓ Télécharger le ZIP</a>
+    <div style="margin-top: 10px; font-size: 11px; color: var(--text-muted); text-align: center;">
+      Format : <code style="font-size: 10.5px;">selffarm-backup-AAAAMMJJ-HHMMSS-Necr.zip</code>
+    </div>
+    {% else %}
+    <button disabled class="btn" style="width: 100%; opacity: 0.5; cursor: not-allowed; font-size: 13.5px; padding: 11px 18px;">↓ Télécharger le ZIP</button>
+    <div style="margin-top: 10px; font-size: 11px; color: var(--text-muted); text-align: center;">
+      Aucune écriture encore — saisis au moins une facture / vente avant de sauvegarder.
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- RESTAURER -->
+  <div class="card" style="padding: 18px;">
+    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">Restaurer depuis un fichier</h2>
+    <p style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 14px;">
+      Charge un ZIP précédemment exporté. <strong style="color: #f4c47a;">L'ancienne DB est sauvegardée</strong> en <code style="font-size: 10.5px;">compta.db.bak-AAAAMMJJ-HHMMSS</code> avant remplacement.
+    </p>
+    <form action="/backup/restore" method="post" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 10px;">
+      <input type="file" name="archive" accept=".zip" required style="font-size: 12px; padding: 8px;">
+      <button type="submit" class="btn btn-ghost" style="font-size: 13px;" onclick="return confirm('Restaurer cette archive ? L\\'ancienne DB sera renommée .bak.');">↑ Restaurer</button>
+    </form>
+  </div>
+
+</div>
+
+<!-- DETAILS TECHNIQUES -->
+<div class="card" style="margin-top: 14px; padding: 14px 16px; font-size: 12px; color: var(--text-secondary); line-height: 1.65;">
+  <h3 style="font-size: 12.5px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">Où vit ta sauvegarde</h3>
+  <div>
+    DB locale : <code style="font-size: 11px; color: #86efac;">{{ db_path }}</code>
+  </div>
+  <div style="margin-top: 4px;">
+    <strong style="color: var(--text-primary);">Aucune ligne ne quitte ta machine.</strong> Tu décides quand télécharger, où stocker ton ZIP (clé USB, NAS, autre PC, fournisseur cloud chiffré de ton choix). Format SQLite ouvert garanti lisible avec n'importe quel client SQL pendant des décennies.
+  </div>
+  <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-subtle); font-size: 11px; color: var(--text-muted);">
+    <strong>Astuce automatisation</strong> — pour un backup auto quotidien :
+    <pre style="background: rgba(0,0,0,0.18); padding: 8px 10px; border-radius: 4px; font-size: 10.5px; color: var(--text-secondary); margin-top: 4px; overflow-x: auto;"># crontab -e
+0 2 * * *  curl -s http://127.0.0.1:8001/backup/download -o ~/backups/selffarm-$(date +\%F).zip</pre>
+  </div>
+</div>
+
+{% endblock %}
