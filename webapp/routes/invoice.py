@@ -235,12 +235,15 @@ async def invoice_index(request: Request):
     )
 
 
-def _hook_compta_vente(data: dict) -> tuple[int | None, bool]:
+def _hook_compta_vente(data: dict, pdf_bytes: bytes | None = None) -> tuple[int | None, bool]:
     """Enregistre l'auto-écriture de vente dans le hub compta self_agri_book.
 
     Pour une facture émise :
         Débit 411 Clients
         Crédit 701 Ventes produits finis (+ 44571 TVA collectée si applicable)
+
+    L'écriture est verrouillée immédiatement (locked=1) et signée par
+    hash_pdf (SHA256 du PDF Factur-X émis). Conformité PAF CGI art. 289-VII.
 
     Retourne (ecriture_id, created) :
         - created=True  → nouvelle écriture
@@ -250,8 +253,10 @@ def _hook_compta_vente(data: dict) -> tuple[int | None, bool]:
     if compta_save_ecriture is None:
         return None, False
     try:
+        import hashlib
         regime_slug = data["regime"]["slug"]
         libelle = f"Vente — {data['client']['nom']} ({data['vendeur']['nom_commercial']})"
+        hash_pdf = hashlib.sha256(pdf_bytes).hexdigest() if pdf_bytes else None
         eid, created = compta_save_ecriture(
             date_operation=date.today(),
             journal="VEN",
@@ -264,6 +269,8 @@ def _hook_compta_vente(data: dict) -> tuple[int | None, bool]:
             montant_tva=data["totaux"]["total_tva"],
             source_module="self_invoice",
             source_id=data["facture"]["numero"],
+            hash_pdf=hash_pdf,
+            locked=True,  # Conformité PAF : facture émise = immédiatement verrouillée
             metadata_json=json.dumps({
                 "regime": regime_slug,
                 "facturx_profile": data["facture"]["facturx_profile"],
@@ -420,7 +427,7 @@ async def invoice_creer(request: Request):
     html_str = tmpl.render(**data)
     pdf_bytes = HTML(string=html_str).write_pdf()
 
-    ecriture_id, ecriture_created = _hook_compta_vente(data)
+    ecriture_id, ecriture_created = _hook_compta_vente(data, pdf_bytes=pdf_bytes)
 
     filename = f"{numero}_{regime_key}.pdf"
     return Response(
@@ -453,7 +460,7 @@ async def invoice_generer_demo(regime: str | None = None):
     pdf_bytes = HTML(string=html_str).write_pdf()
 
     # Hook compta : auto-écriture 411/701 dans le hub self_agri_book
-    ecriture_id, ecriture_created = _hook_compta_vente(data)
+    ecriture_id, ecriture_created = _hook_compta_vente(data, pdf_bytes=pdf_bytes)
 
     filename = f"{data['facture']['numero']}_{data['regime']['slug']}.pdf"
     return Response(
