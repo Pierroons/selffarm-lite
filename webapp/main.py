@@ -31,6 +31,7 @@ from webapp.routes import aides as aides_module
 from webapp.routes import parcelles as parcelles_module
 from webapp.routes import invoice as invoice_module
 from webapp.routes import compta as compta_module
+from webapp.routes import backup as backup_module
 
 home_router = home_module.router
 dnja_router = dnja_module.router
@@ -38,12 +39,13 @@ aides_router = aides_module.router
 parcelles_router = parcelles_module.router
 invoice_router = invoice_module.router
 compta_router = compta_module.router
+backup_router = backup_module.router
 
 # Variable d'environnement injectée comme global Jinja2 (visible dans tous templates)
 # - 'prod' (défaut) : pas de bandeau, comportement normal
 # - 'dev'           : bandeau orange "ENV DEV — données purgeables"
 ENV_NAME = os.environ.get("SELFFARM_ENV", "prod")
-for _route_module in (home_module, dnja_module, aides_module, parcelles_module, invoice_module, compta_module):
+for _route_module in (home_module, dnja_module, aides_module, parcelles_module, invoice_module, compta_module, backup_module):
     if hasattr(_route_module, "templates"):
         _route_module.templates.env.globals["env"] = ENV_NAME
 
@@ -86,6 +88,7 @@ app.include_router(aides_router)
 app.include_router(parcelles_router)
 app.include_router(invoice_router)
 app.include_router(compta_router)
+app.include_router(backup_router)
 
 
 @app.get("/healthz", include_in_schema=False)
