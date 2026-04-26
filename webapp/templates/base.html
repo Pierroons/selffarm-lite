@@ -9,45 +9,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
-<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/static/css/app.css">
 <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-<script>
-tailwind.config = {
-  darkMode: 'class',
-  theme: {
-    extend: {
-      colors: {
-        'soil-50': '#f5f3ec',
-        'soil-100': '#e8e2d2',
-        'soil-200': '#cdc2a3',
-        'soil-700': '#5a4f3a',
-        'soil-800': '#3a3225',
-        'soil-900': '#1f1b14',
-        'forest-300': '#86efac',
-        'forest-400': '#4ade80',
-        'forest-500': '#16a34a',
-        'forest-600': '#15803d',
-        'forest-700': '#166534',
-        'forest-800': '#14532d',
-        'forest-900': '#0a3a1f',
-        'bg-base': '#0a0f0d',
-        'bg-card': '#11181f',
-        'bg-elev': '#1a232c',
-        'border-subtle': '#1e2d33',
-        'border-default': '#2a3a40',
-        'text-primary': '#e8eef0',
-        'text-secondary': '#9bb0b8',
-        'text-muted': '#6a8088',
-        'amber-warm': '#e0a458',
-      },
-      fontFamily: {
-        'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        'serif': ['Fraunces', 'Georgia', 'serif'],
-      }
-    }
-  }
-}
-</script>
 <style>
 :root {
   --bg-base: #0a0f0d;
@@ -203,6 +166,15 @@ table tbody tr:hover { background: rgba(22, 101, 52, 0.06); }
 }
 @media (min-width: 769px) {
   .mobile-drawer { display: none !important; }
+}
+
+/* Tables responsive — wrap toute table dans un scroll-x natif */
+.card table { display: table; }
+@media (max-width: 640px) {
+  .card { padding: 12px; }
+  table th, table td { padding: 7px 8px; font-size: 12px; }
+  h1 { font-size: 22px !important; }
+  .desktop-nav { gap: 0 !important; }
 }
 
 /* Subtle separators */

@@ -42,3 +42,5 @@ modules/self_banking/fixtures/private/
 # OS
 .DS_Store
 Thumbs.db
+# Tailwind binary platform-specific (gros + arch-spécifique, regénérable)
+scripts/tailwindcss
