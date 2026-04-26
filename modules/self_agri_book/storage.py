@@ -59,9 +59,28 @@ CREATE TABLE IF NOT EXISTS _schema_migrations (
 # Schéma initial = version 0 (créée par SCHEMA_SQL ci-dessus). Toute évolution
 # de schéma suivante DOIT être ajoutée ici en fin de liste, jamais modifiée.
 MIGRATIONS: list[tuple[int, str, str]] = [
-    # Exemples futurs :
-    # (1, "add_column_xxx", "ALTER TABLE ecritures_comptables ADD COLUMN ..."),
-    # (2, "create_table_clients", "CREATE TABLE clients (...)"),
+    (1, "create_compteurs_factures", """
+        CREATE TABLE IF NOT EXISTS compteurs_factures (
+            annee INTEGER NOT NULL,
+            prefix TEXT NOT NULL DEFAULT 'F',
+            dernier_numero INTEGER NOT NULL DEFAULT 0,
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            PRIMARY KEY (annee, prefix)
+        );
+        -- Initialise les compteurs depuis l'historique self_invoice existant
+        -- (factures déjà émises en démo aléatoire) pour éviter les doublons
+        INSERT OR REPLACE INTO compteurs_factures (annee, prefix, dernier_numero)
+        SELECT
+            CAST(SUBSTR(numero_piece, 3, 4) AS INTEGER) AS annee,
+            'F' AS prefix,
+            MAX(CAST(SUBSTR(numero_piece, 8) AS INTEGER)) AS dernier_numero
+        FROM ecritures_comptables
+        WHERE source_module = 'self_invoice'
+          AND numero_piece LIKE 'F-%'
+          AND LENGTH(numero_piece) >= 8
+        GROUP BY annee
+        HAVING annee IS NOT NULL AND annee >= 2020 AND annee <= 2100;
+    """),
 ]
 
 
@@ -109,6 +128,60 @@ def init_db() -> None:
         c.executescript(SCHEMA_SQL)
     _apply_migrations()
     log.info("Compta DB initialisée : %s", _db_path())
+
+
+def next_numero_facture(annee: int, prefix: str = "F") -> str:
+    """Retourne le prochain numéro de facture séquentiel pour (annee, prefix).
+
+    Atomique : SELECT + UPDATE en transaction SQLite (row-level lock).
+    Ex: next_numero_facture(2026) → "F-2026-0001", puis "F-2026-0002", etc.
+
+    Conformité CGI art. 289-II : numérotation séquentielle continue, sans saut.
+    Le compteur ne décrémente jamais. Pour annuler une facture → émettre un avoir
+    avec préfixe distinct (ex: AV-2026-0001).
+    """
+    init_db()
+    with _conn() as c:
+        c.execute("BEGIN IMMEDIATE")
+        try:
+            row = c.execute(
+                "SELECT dernier_numero FROM compteurs_factures WHERE annee=? AND prefix=?",
+                (annee, prefix),
+            ).fetchone()
+            current = row["dernier_numero"] if row else 0
+            new_num = current + 1
+            if row:
+                c.execute(
+                    "UPDATE compteurs_factures SET dernier_numero=?, updated_at=datetime('now') "
+                    "WHERE annee=? AND prefix=?",
+                    (new_num, annee, prefix),
+                )
+            else:
+                c.execute(
+                    "INSERT INTO compteurs_factures (annee, prefix, dernier_numero) VALUES (?, ?, ?)",
+                    (annee, prefix, new_num),
+                )
+            c.execute("COMMIT")
+        except Exception:
+            c.execute("ROLLBACK")
+            raise
+    # Format 4 chiffres mini, extensible auto si > 9999/an
+    width = max(4, len(str(new_num)))
+    return f"{prefix}-{annee}-{new_num:0{width}d}"
+
+
+def peek_numero_facture(annee: int, prefix: str = "F") -> str:
+    """Retourne le prochain numéro SANS l'incrémenter (preview pour le form)."""
+    init_db()
+    with _conn() as c:
+        row = c.execute(
+            "SELECT dernier_numero FROM compteurs_factures WHERE annee=? AND prefix=?",
+            (annee, prefix),
+        ).fetchone()
+    current = row["dernier_numero"] if row else 0
+    new_num = current + 1
+    width = max(4, len(str(new_num)))
+    return f"{prefix}-{annee}-{new_num:0{width}d}"
 
 
 def find_ecriture_by_source(source_module: str, source_id: str) -> dict | None:

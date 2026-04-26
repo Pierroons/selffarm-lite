@@ -372,6 +372,106 @@ def test_reset_demo_purge_all(isolated_db):
     assert storage.stats_globales()["nb_ecritures"] == 0
 
 
+# ---------------- Compteur factures séquentiel ----------------
+
+def test_next_numero_facture_starts_at_0001(isolated_db):
+    n = storage.next_numero_facture(2026)
+    assert n == "F-2026-0001"
+
+
+def test_next_numero_facture_increments(isolated_db):
+    n1 = storage.next_numero_facture(2026)
+    n2 = storage.next_numero_facture(2026)
+    n3 = storage.next_numero_facture(2026)
+    assert n1 == "F-2026-0001"
+    assert n2 == "F-2026-0002"
+    assert n3 == "F-2026-0003"
+
+
+def test_next_numero_facture_per_year(isolated_db):
+    storage.next_numero_facture(2026)
+    storage.next_numero_facture(2026)
+    storage.next_numero_facture(2027)
+    storage.next_numero_facture(2026)
+    # Compteurs séparés par année
+    last_2026 = storage.peek_numero_facture(2026)
+    last_2027 = storage.peek_numero_facture(2027)
+    assert last_2026 == "F-2026-0004"
+    assert last_2027 == "F-2027-0002"
+
+
+def test_next_numero_facture_per_prefix(isolated_db):
+    f1 = storage.next_numero_facture(2026, "F")
+    av1 = storage.next_numero_facture(2026, "AV")
+    f2 = storage.next_numero_facture(2026, "F")
+    av2 = storage.next_numero_facture(2026, "AV")
+    assert f1 == "F-2026-0001"
+    assert f2 == "F-2026-0002"
+    assert av1 == "AV-2026-0001"
+    assert av2 == "AV-2026-0002"
+
+
+def test_peek_numero_facture_does_not_increment(isolated_db):
+    p1 = storage.peek_numero_facture(2026)
+    p2 = storage.peek_numero_facture(2026)
+    p3 = storage.peek_numero_facture(2026)
+    assert p1 == p2 == p3 == "F-2026-0001"
+    # Et après un vrai next, peek renvoie le suivant
+    storage.next_numero_facture(2026)
+    assert storage.peek_numero_facture(2026) == "F-2026-0002"
+
+
+def test_compteur_extends_to_5_digits_after_9999(isolated_db):
+    """Le format passe automatiquement à 5 chiffres au-delà de 9999/an."""
+    storage.init_db()  # garantit que la table compteurs_factures existe
+    with storage._conn() as c:
+        c.execute(
+            "INSERT INTO compteurs_factures (annee, prefix, dernier_numero) VALUES (?, ?, ?)",
+            (2026, "F", 9999),
+        )
+    n = storage.next_numero_facture(2026)
+    assert n == "F-2026-10000"
+
+
+def test_compteur_initialisation_depuis_historique(tmp_path, monkeypatch):
+    """La migration 1 doit pré-remplir le compteur depuis les écritures existantes."""
+    db_file = tmp_path / "compta_with_history.db"
+    monkeypatch.setenv("SELFFARM_COMPTA_DB", str(db_file))
+    # Crée des écritures self_invoice avec des numéros aléatoires (style démo)
+    storage.save_ecriture(
+        date_operation=date(2026, 4, 26),
+        journal="VEN",
+        numero_piece="F-2026-3742",  # ancien numéro random
+        libelle="vente démo",
+        compte_debit="411",
+        compte_credit="701",
+        montant_ttc=Decimal("100"),
+        source_module="self_invoice",
+        source_id="F-2026-3742",
+    )
+    storage.save_ecriture(
+        date_operation=date(2026, 4, 26),
+        journal="VEN",
+        numero_piece="F-2026-8421",
+        libelle="autre vente démo",
+        compte_debit="411",
+        compte_credit="701",
+        montant_ttc=Decimal("200"),
+        source_module="self_invoice",
+        source_id="F-2026-8421",
+    )
+    # init_db re-appelée → la migration 1 a déjà tourné via la fixture, mais
+    # on simule un init "vierge" en supprimant la table compteurs et en
+    # ré-appliquant la migration manuellement
+    with storage._conn() as c:
+        c.execute("DROP TABLE IF EXISTS compteurs_factures")
+        c.execute("DELETE FROM _schema_migrations WHERE version = 1")
+    storage.init_db()
+    # Le compteur doit reprendre au max + 1 = 8422
+    next_n = storage.next_numero_facture(2026)
+    assert next_n == "F-2026-8422"
+
+
 # ---------------- Migrations versionnées ----------------
 
 def test_migration_table_created(isolated_db):
