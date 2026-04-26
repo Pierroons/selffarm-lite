@@ -53,7 +53,7 @@
     {% for groupe, lignes in data.actif.items() %}
     <div style="border-top: 1px solid var(--border-subtle);">
       <div style="background: var(--bg-elev); padding: 6px 14px; font-size: 10.5px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">{{ groupe }}</div>
-      <table>
+      <div style="overflow-x:auto;"><table>
         <tbody>
           {% for l in lignes %}
           <tr>
@@ -63,7 +63,7 @@
           </tr>
           {% endfor %}
         </tbody>
-      </table>
+      </table></div>
     </div>
     {% endfor %}
     <div style="background: rgba(22,101,52,0.22); border-top: 2px solid rgba(22,101,52,0.45); padding: 12px 14px;">
@@ -83,7 +83,7 @@
     {% for groupe, lignes in data.passif.items() %}
     <div style="border-top: 1px solid var(--border-subtle);">
       <div style="background: var(--bg-elev); padding: 6px 14px; font-size: 10.5px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">{{ groupe }}</div>
-      <table>
+      <div style="overflow-x:auto;"><table>
         <tbody>
           {% for l in lignes %}
           <tr>
@@ -93,7 +93,7 @@
           </tr>
           {% endfor %}
         </tbody>
-      </table>
+      </table></div>
     </div>
     {% endfor %}
     <div style="background: rgba(192,132,252,0.18); border-top: 2px solid rgba(192,132,252,0.40); padding: 12px 14px;">
