@@ -1,0 +1,82 @@
+# Git / VCS
+.git
+.gitignore
+.gitattributes
+
+# Python build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-log.txt
+pip-delete-this-directory.txt
+wheels/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.venv/
+venv/
+env/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+*~
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# CI
+.github/
+
+# Documentation lourde non-runtime
+docs/
+*.md
+!README.md
+!LICENSE
+
+# Données locales / cache (dev poste Pierroons)
+data/
+~/.selffarm/
+*.sqlite
+*.sqlite3
+*.db
+
+# Fixtures personnelles (PII)
+examples/hypotheses-pierroons*.yaml
+examples/*-perso.yaml
+
+# Logs
+*.log
+logs/
+
+# Secrets
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key
+
+# Tests dev
+tests/__snapshots__/
+.coverage*
+
+# Scripts de déploiement local
+scripts/deploy-*.sh
+scripts/dev-*.sh
