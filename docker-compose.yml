@@ -1,0 +1,70 @@
+# SelfFarm-Lite — déploiement Docker prêt-à-l'emploi
+#
+# Usage rapide (Linux / macOS / Windows avec Docker Desktop) :
+#
+#   1. Installer Docker (cf. INSTALL-DOCKER.md)
+#   2. Télécharger ce fichier dans un dossier vide :
+#        curl -O https://raw.githubusercontent.com/Pierroons/selffarm-lite/main/docker-compose.yml
+#   3. Démarrer :
+#        docker compose up -d
+#   4. Ouvrir : http://localhost:8001
+#
+# Mises à jour :
+#   docker compose pull && docker compose up -d
+#   (ou laisse Watchtower tourner — voir profil "auto-update" plus bas)
+#
+# Données persistées dans le volume nommé "selffarm-data".
+# Pour sauvegarder :
+#   docker run --rm -v selffarm-data:/data -v $(pwd):/backup busybox tar czvf /backup/selffarm-backup-$(date +%F).tar.gz -C / data
+#
+# AGPL-3.0-or-later — my-self.fr
+
+services:
+
+  selffarm:
+    image: ghcr.io/pierroons/selffarm-lite:latest
+    container_name: selffarm-lite
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      SELFFARM_HOST: "0.0.0.0"
+      SELFFARM_PORT: "8001"
+      SELFFARM_ENV: "prod"
+      SELFFARM_LOG_LEVEL: "INFO"
+      SELFFARM_COMPTA_DB: "/app/data/compta.db"
+      SELFFARM_AIDES_CACHE: "/app/data/aides"
+      TZ: "Europe/Paris"
+    volumes:
+      - selffarm-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8001/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      # Watchtower pull automatiquement les nouvelles images (tag latest)
+      com.centurylinklabs.watchtower.enable: "true"
+
+  # Profil optionnel : mise à jour automatique
+  # Activation :  docker compose --profile auto-update up -d
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: selffarm-watchtower
+    restart: unless-stopped
+    profiles:
+      - auto-update
+    environment:
+      TZ: "Europe/Paris"
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_POLL_INTERVAL: "21600"  # 6 h
+      WATCHTOWER_NOTIFICATIONS_LEVEL: "info"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --label-enable --cleanup --interval 21600
+
+volumes:
+  selffarm-data:
+    name: selffarm-data
