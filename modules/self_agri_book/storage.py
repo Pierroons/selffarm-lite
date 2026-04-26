@@ -47,7 +47,44 @@ CREATE INDEX IF NOT EXISTS idx_ecritures_date ON ecritures_comptables(date_opera
 CREATE INDEX IF NOT EXISTS idx_ecritures_source ON ecritures_comptables(source_module, source_id);
 CREATE INDEX IF NOT EXISTS idx_ecritures_compte_debit ON ecritures_comptables(compte_debit);
 CREATE INDEX IF NOT EXISTS idx_ecritures_compte_credit ON ecritures_comptables(compte_credit);
+
+CREATE TABLE IF NOT EXISTS _schema_migrations (
+    version INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 """
+
+# Migrations versionnées — chaque entrée = (version, nom_descriptif, sql_a_executer)
+# Schéma initial = version 0 (créée par SCHEMA_SQL ci-dessus). Toute évolution
+# de schéma suivante DOIT être ajoutée ici en fin de liste, jamais modifiée.
+MIGRATIONS: list[tuple[int, str, str]] = [
+    # Exemples futurs :
+    # (1, "add_column_xxx", "ALTER TABLE ecritures_comptables ADD COLUMN ..."),
+    # (2, "create_table_clients", "CREATE TABLE clients (...)"),
+]
+
+
+def _apply_migrations() -> None:
+    """Applique les migrations manquantes. Idempotent.
+
+    Stratégie : version 0 = schéma initial (déjà créé via SCHEMA_SQL).
+    Versions ≥ 1 sont des évolutions à appliquer dans l'ordre, une seule fois.
+    """
+    with _conn() as c:
+        applied = {
+            int(r["version"])
+            for r in c.execute("SELECT version FROM _schema_migrations").fetchall()
+        }
+        for version, name, sql in MIGRATIONS:
+            if version in applied:
+                continue
+            log.info("Application migration #%d : %s", version, name)
+            c.executescript(sql)
+            c.execute(
+                "INSERT INTO _schema_migrations (version, name) VALUES (?, ?)",
+                (version, name),
+            )
 
 
 def _db_path() -> Path:
@@ -67,9 +104,10 @@ def _conn():
 
 
 def init_db() -> None:
-    """Crée la DB + schéma si absents. Idempotent."""
+    """Crée la DB + schéma si absents puis applique les migrations. Idempotent."""
     with _conn() as c:
         c.executescript(SCHEMA_SQL)
+    _apply_migrations()
     log.info("Compta DB initialisée : %s", _db_path())
 
 
