@@ -2,201 +2,198 @@
 {% block title %}Compta — SelfAgriBook · SelfFarm-Lite{% endblock %}
 {% block content %}
 
-<div class="mb-4">
-  <h1 class="text-2xl font-bold text-slate-100">📊 SelfAgriBook — Hub compta</h1>
-  <p class="text-sm text-slate-400 mt-1">
-    Journal des écritures comptables alimenté en temps réel par tous les modules MySelf
-    (factures, achats, banque, immos). Zéro double saisie, dédup automatique par <code class="text-green-400 text-xs">(source_module, source_id)</code>.
+<!-- HEADER -->
+<div style="margin-bottom: 20px;">
+  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+    <span style="font-size: 11px; color: var(--text-muted); letter-spacing: 0.6px; text-transform: uppercase; font-weight: 600;">Module · live</span>
+    <span style="display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);"></span>
+  </div>
+  <h1 style="font-size: 28px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; margin-bottom: 6px;">
+    SelfAgriBook <span style="color: var(--forest-500); font-style: italic; font-weight: 500;">— Hub compta</span>
+  </h1>
+  <p style="font-size: 13.5px; color: var(--text-secondary); max-width: 820px; line-height: 1.55;">
+    Journal des écritures alimenté en temps réel par tous les modules MySelf (factures, achats, banque, immos). Zéro double saisie, dédup par <code style="background: rgba(22,101,52,0.10); color: #86efac; padding: 1px 5px; border-radius: 3px; font-size: 11px;">(source_module, source_id)</code>.
   </p>
 </div>
 
-<!-- Bandeau démo publique partagée -->
-<div class="mb-4 p-3 rounded border bg-amber-900/20 border-amber-800 text-amber-200 text-xs">
-  <strong>⚠ Démo publique partagée</strong> — la base SQLite est commune à tous les visiteurs.
-  Si quelqu'un d'autre teste en même temps, vos écritures se mélangent et un reset purge pour tout le monde.
-  En installation réelle MySelf, la DB est locale (<code class="text-amber-300">~/.selffarm/compta.db</code>)
-  et isolée par utilisateur·ice.
+<!-- BANDEAU DÉMO PUBLIQUE -->
+{% if env != 'perso' %}
+<div style="margin-bottom: 18px; padding: 10px 14px; border-radius: 8px; background: rgba(224, 164, 88, 0.07); border: 1px solid rgba(224, 164, 88, 0.25); color: #f4c47a; font-size: 12.5px; line-height: 1.5;">
+  <strong style="color: #f4c47a;">Démo publique partagée</strong> — base SQLite commune. Si quelqu'un d'autre teste en même temps, vos écritures se mélangent. En install MySelf réelle, la DB est locale (<code style="background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 3px; font-size: 11px;">~/.selffarm/compta.db</code>) et isolée par utilisateur·rice.
 </div>
+{% endif %}
 
-<!-- Navigation documents compta -->
-<div class="mb-4 flex flex-wrap gap-2 text-sm items-center">
-  <a href="/compta" class="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white rounded font-semibold transition">
-    📊 Journal (ici)
-  </a>
-  <a href="/compta/resultat" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded font-semibold transition">
-    📈 Compte de résultat
-  </a>
-  <a href="/compta/bilan" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded font-semibold transition">
-    📉 Bilan comptable
-  </a>
-  <a href="/compta/export-fec" download
-     class="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white rounded font-semibold transition"
-     title="Fichier des Écritures Comptables — format DGFIP obligatoire (art. L47 A-I LPF)">
-    📦 Export FEC (DGFIP)
+<!-- DOCUMENT TABS -->
+<div style="margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding-bottom: 14px; border-bottom: 1px solid var(--border-subtle);">
+  <a href="/compta" class="btn">Journal</a>
+  <a href="/compta/resultat" class="btn btn-ghost">Compte de résultat</a>
+  <a href="/compta/bilan" class="btn btn-ghost">Bilan</a>
+  <a href="/compta/export-fec" download class="btn btn-ghost" title="Fichier des Écritures Comptables — format DGFIP obligatoire (art. L47 A-I LPF)">
+    Export FEC <span style="opacity: 0.6; font-size: 10px; margin-left: 4px;">DGFIP</span>
   </a>
 </div>
 
-<!-- Barre d'actions interactives -->
-<div class="card mb-4 !p-3">
-  <div class="flex flex-wrap gap-2 items-center text-sm">
-    <span class="text-slate-400 font-semibold">🧪 Démo interactive :</span>
+<!-- ACTIONS BAR -->
+<div class="card" style="padding: 14px; margin-bottom: 18px;">
+  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
+    <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Démo interactive</span>
+    <span style="flex: 1; height: 1px; background: var(--border-subtle); min-width: 40px;"></span>
+  </div>
+  <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
     <button
       hx-post="/compta/generer-vente"
       hx-target="#flash-message"
       hx-swap="innerHTML"
       hx-on::after-request="setTimeout(() => window.location.reload(), 1500)"
-      class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded font-semibold text-xs transition cursor-pointer">
-      💰 Ajouter une vente rapide (411/701)
+      class="btn btn-ghost"
+      style="font-size: 12.5px;">
+      <span style="color: #93c5fd; margin-right: 4px;">●</span> Vente rapide <span style="opacity: 0.55; font-size: 10px;">411 / 701</span>
     </button>
     <button
       hx-post="/compta/generer-achat"
       hx-target="#flash-message"
       hx-swap="innerHTML"
       hx-on::after-request="setTimeout(() => window.location.reload(), 1500)"
-      class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded font-semibold text-xs transition cursor-pointer">
-      🧺 Ajouter un achat (6011/401)
+      class="btn btn-ghost"
+      style="font-size: 12.5px;">
+      <span style="color: #f4c47a; margin-right: 4px;">●</span> Achat <span style="opacity: 0.55; font-size: 10px;">6011 / 401</span>
     </button>
     <button
       hx-post="/compta/importer-releve"
       hx-target="#flash-message"
       hx-swap="innerHTML"
       hx-on::after-request="setTimeout(() => window.location.reload(), 2500)"
-      class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded font-semibold text-xs transition cursor-pointer"
-      title="Simule self_banking : importe un relevé, réconcilie les factures 411, enregistre prélèvements + frais bancaires">
-      🏦 Importer relevé bancaire (self_banking)
+      class="btn btn-ghost"
+      style="font-size: 12.5px;"
+      title="Simule self_banking — lettrage auto factures + prélèvements + frais bancaires">
+      <span style="color: #c084fc; margin-right: 4px;">●</span> Import bancaire <span style="opacity: 0.55; font-size: 10px;">self_banking</span>
     </button>
     <a href="/compta/facture-du-journal" target="_blank"
-       class="inline-block px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white rounded font-semibold text-xs transition"
-       title="Consolide les dernières ventes 411/701 du journal en UNE facture PDF/A-3 Factur-X">
-      🧾 Facture Factur-X du journal
+       class="btn"
+       style="font-size: 12.5px;"
+       title="Consolide les ventes 411/701 en UNE facture PDF/A-3 Factur-X">
+      Facture Factur-X du journal
     </a>
     <button
       hx-post="/compta/rejouer-derniere-vente"
       hx-target="#flash-message"
       hx-swap="innerHTML"
       hx-on::after-request="setTimeout(() => window.location.reload(), 1800)"
-      class="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded font-semibold text-xs transition cursor-pointer"
-      title="Tente de re-créer l'écriture pour la dernière facture — démontre la dédup">
-      ♻️ Re-tenter dernière facture
+      class="btn btn-ghost"
+      style="font-size: 12.5px;"
+      title="Re-déclenche l'écriture pour la dernière facture — démontre la dédup">
+      Re-tenter dédup
     </button>
+    <span style="flex: 1;"></span>
     <button
       onclick="if (confirm('Purger TOUTES les écritures comptables ? (reset démo)')) { fetch('/compta/reset-demo', {method:'POST', headers:{'HX-Request':'true'}}).then(r => r.text()).then(html => { document.getElementById('flash-message').innerHTML = html; setTimeout(() => window.location.reload(), 1500); }); }"
-      class="px-3 py-1.5 bg-rose-700 hover:bg-rose-600 text-white rounded font-semibold text-xs transition cursor-pointer ml-auto">
-      🧹 Reset démo
+      class="btn btn-ghost"
+      style="font-size: 12.5px; border-color: rgba(127,29,29,0.4); color: #fca5a5;">
+      Reset démo
     </button>
     <button
       onclick="window.location.reload()"
-      class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded font-semibold text-xs transition cursor-pointer"
-      title="Recharge la page pour voir le journal mis à jour">
-      🔄 Recharger
+      class="btn btn-ghost"
+      style="font-size: 12.5px;"
+      title="Recharge la page">
+      ↻ Recharger
     </button>
   </div>
-  <div id="flash-message" class="mt-3"></div>
-  <div class="mt-3 text-[11px] text-slate-500 border-t border-slate-700 pt-2 space-y-1">
-    <div>
-      <strong class="text-slate-400">Vente rapide</strong>
-      (<span class="text-sky-400">411/701</span>) : saisie directe compta, pas de PDF —
-      idéal vente directe marché/AMAP.
+  <div id="flash-message" style="margin-top: 10px;"></div>
+  <details style="margin-top: 12px;">
+    <summary style="cursor: pointer; font-size: 11.5px; color: var(--text-muted); user-select: none; padding: 4px 0;">Comprendre les 4 flux d'auto-écriture</summary>
+    <div style="margin-top: 8px; padding: 10px 12px; background: rgba(0,0,0,0.18); border-radius: 6px; font-size: 11.5px; color: var(--text-secondary); line-height: 1.6;">
+      <div style="margin-bottom: 6px;"><strong style="color: #93c5fd;">Vente rapide</strong> → <code style="font-size: 10.5px;">411 / 701</code> · saisie directe, idéal vente directe marché / AMAP.</div>
+      <div style="margin-bottom: 6px;"><strong style="color: #f4c47a;">Achat</strong> → <code style="font-size: 10.5px;">6011-6062 / 401</code> · charge d'exploitation : compost, carburant, certif, location…</div>
+      <div style="margin-bottom: 6px;"><strong style="color: #c084fc;">Import bancaire</strong> → <code style="font-size: 10.5px;">512 / ...</code> · lettrage auto factures 411 + prélèvements (MSA, EDF, assurance) + frais bancaires.</div>
+      <div style="margin-bottom: 6px;"><strong style="color: #86efac;">Facture du journal</strong> → la <em>source de vérité est le hub compta</em>. Lignes = écritures réelles.</div>
+      <div style="font-style: italic; color: var(--text-muted); padding-top: 6px; border-top: 1px solid var(--border-subtle); margin-top: 6px;">
+        Les flux alimentent le <strong>même hub</strong>. Chaque module déclare sa source ; la dédup <code>source_module + source_id</code> garantit l'idempotence.
+      </div>
     </div>
-    <div>
-      <strong class="text-slate-400">Achat</strong>
-      (<span class="text-amber-400">6011-6062/401</span>) : charge d'exploitation — compost, carburant, certification, location…
-    </div>
-    <div>
-      <strong class="text-slate-400">Import relevé bancaire</strong>
-      (<span class="text-purple-400">self_banking → 512/...</span>) : 3e flux automatique —
-      <strong>lettrage auto</strong> des factures 411 (virements reçus) + prélèvements récurrents (MSA, EDF, assurance) + frais bancaires.
-    </div>
-    <div>
-      <strong class="text-slate-400">Facture Factur-X du journal</strong>
-      (<span class="text-green-400">consolide les ventes 411/701 du journal</span>) :
-      ⚡ la <em>source de vérité est le hub compta</em>. Lignes = écritures réelles,
-      pas aléatoires. Document légal PDF/A-3 + XML EN16931.
-    </div>
-    <div class="pt-1 italic">
-      Les 3 flux alimentent le <strong>même hub</strong> — chaque module déclare sa source
-      (<code>self_compta_manuel</code>, <code>self_achats</code>, <code>self_invoice</code>),
-      la dédup par <code>source_module + source_id</code> garantit l'idempotence.
-    </div>
-  </div>
+  </details>
 </div>
 
-<!-- Stats globales -->
-<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-  <div class="card !p-4">
-    <div class="text-xs text-slate-500 uppercase tracking-wider">Écritures</div>
-    <div class="text-2xl font-bold text-green-400 mt-1">{{ stats.nb_ecritures }}</div>
+<!-- STATS -->
+<section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 22px;">
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 13px 15px;">
+    <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Écritures</div>
+    <div style="font-size: 22px; font-weight: 700; color: var(--forest-400); font-family: 'Fraunces', serif; margin-top: 2px;">{{ stats.nb_ecritures }}</div>
   </div>
-  <div class="card !p-4">
-    <div class="text-xs text-slate-500 uppercase tracking-wider">Volume total</div>
-    <div class="text-2xl font-bold text-slate-100 mt-1">{{ "{:,.0f}".format(stats.total_volume).replace(",", " ") }} €</div>
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 13px 15px;">
+    <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Volume TTC</div>
+    <div style="font-size: 22px; font-weight: 700; color: var(--text-primary); font-family: 'Fraunces', serif; margin-top: 2px;">{{ "{:,.0f}".format(stats.total_volume).replace(",", " ") }} €</div>
   </div>
-  <div class="card !p-4">
-    <div class="text-xs text-slate-500 uppercase tracking-wider">Modules sources</div>
-    <div class="text-sm text-slate-300 mt-1">
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 13px 15px;">
+    <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Sources</div>
+    {% if stats.par_source %}
+      <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.55;">
       {% for src, n in stats.par_source.items() %}
-      <div><code class="text-xs text-green-400">{{ src }}</code> : {{ n }}</div>
+        <div><code style="color: #86efac; font-size: 10.5px;">{{ src }}</code> <span style="color: var(--text-muted);">·</span> {{ n }}</div>
       {% endfor %}
+      </div>
+    {% else %}
+      <div style="font-size: 11.5px; color: var(--text-muted);">—</div>
+    {% endif %}
+  </div>
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 13px 15px;">
+    <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Statut</div>
+    <div style="margin-top: 4px;">
+      <span class="badge badge-stable">● V1 hub live</span>
     </div>
   </div>
-  <div class="card !p-4">
-    <div class="text-xs text-slate-500 uppercase tracking-wider">Statut</div>
-    <div class="mt-1">
-      <span class="inline-block bg-green-900/30 text-green-400 border border-green-700 rounded px-2 py-0.5 text-xs">
-        V1 hub live
-      </span>
-    </div>
-  </div>
-</div>
+</section>
 
-<div class="grid md:grid-cols-[1fr_320px] gap-6">
+<!-- LAYOUT PRINCIPAL -->
+<div style="display: grid; grid-template-columns: 1fr; gap: 18px;" class="md:!grid-cols-[1fr_300px]">
 
-  <!-- Journal -->
-  <div class="card !p-0 overflow-hidden">
-    <div class="bg-slate-800 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
-      <h2 class="font-bold text-slate-200">Journal des écritures</h2>
-      <span class="text-xs text-slate-500">100 dernières — ordre antéchrono</span>
+  <!-- JOURNAL -->
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="background: var(--bg-elev); padding: 11px 16px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+      <h2 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0;">Journal des écritures</h2>
+      <span style="font-size: 11px; color: var(--text-muted);">100 dernières · antéchrono</span>
     </div>
     {% if not ecritures %}
-    <div class="p-8 text-center text-slate-400">
-      <div class="text-5xl mb-3">📭</div>
-      <div>Aucune écriture pour l'instant.</div>
-      <a href="/invoice" class="inline-block mt-3 text-sm text-green-400 hover:text-green-300 underline">
-        → Générer une facture pour tester l'auto-écriture
-      </a>
+    <div style="padding: 50px 20px; text-align: center; color: var(--text-secondary);">
+      <div style="font-size: 38px; margin-bottom: 10px; opacity: 0.6;">📭</div>
+      <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 4px;">Aucune écriture pour l'instant.</div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">Lance une vente, un achat, ou importe un relevé bancaire ci-dessus.</div>
+      <a href="/invoice" style="display: inline-block; font-size: 12.5px; color: var(--forest-500); text-decoration: none; padding: 6px 14px; border: 1px solid var(--forest-700); border-radius: 5px;">→ Générer une facture pour tester</a>
     </div>
     {% else %}
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead class="bg-slate-800/60 text-slate-400 text-xs uppercase tracking-wider">
+    <div style="overflow-x: auto;">
+      <table style="width: 100%;">
+        <thead>
           <tr>
-            <th class="px-3 py-2 text-left">Date</th>
-            <th class="px-3 py-2 text-left">Pièce</th>
-            <th class="px-3 py-2 text-left">Libellé</th>
-            <th class="px-3 py-2 text-left">Débit</th>
-            <th class="px-3 py-2 text-left">Crédit</th>
-            <th class="px-3 py-2 text-right">TTC</th>
-            <th class="px-3 py-2 text-center">Source</th>
+            <th>Date</th>
+            <th>Pièce</th>
+            <th>Libellé</th>
+            <th>Débit</th>
+            <th>Crédit</th>
+            <th style="text-align: right;">TTC</th>
+            <th style="text-align: center;">Source</th>
           </tr>
         </thead>
         <tbody>
           {% for e in ecritures %}
-          <tr class="border-t border-slate-800 hover:bg-slate-800/40 transition">
-            <td class="px-3 py-2 text-slate-400 text-xs whitespace-nowrap">{{ e.date_operation }}</td>
-            <td class="px-3 py-2"><code class="text-xs text-green-400">{{ e.numero_piece }}</code></td>
-            <td class="px-3 py-2 text-slate-200 text-xs max-w-[260px] truncate" title="{{ e.libelle }}">{{ e.libelle }}</td>
-            <td class="px-3 py-2 text-slate-300 text-xs"><code>{{ e.compte_debit }}</code> <span class="text-slate-500">{{ e.compte_debit_label.split(' — ')[1] if ' — ' in e.compte_debit_label else '' }}</span></td>
-            <td class="px-3 py-2 text-slate-300 text-xs"><code>{{ e.compte_credit }}</code> <span class="text-slate-500">{{ e.compte_credit_label.split(' — ')[1] if ' — ' in e.compte_credit_label else '' }}</span></td>
-            <td class="px-3 py-2 text-right text-slate-100 font-mono text-xs">{{ e.montant_ttc }} €</td>
-            <td class="px-3 py-2 text-center text-xs">
+          <tr>
+            <td style="white-space: nowrap; font-size: 11.5px; color: var(--text-muted);">{{ e.date_operation }}</td>
+            <td><code style="color: #86efac; font-size: 11px;">{{ e.numero_piece }}</code></td>
+            <td style="font-size: 12px; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ e.libelle }}">{{ e.libelle }}</td>
+            <td style="font-size: 11.5px;"><code style="color: var(--text-primary);">{{ e.compte_debit }}</code> <span style="color: var(--text-muted); font-size: 11px;">{{ e.compte_debit_label.split(' — ')[1] if ' — ' in e.compte_debit_label else '' }}</span></td>
+            <td style="font-size: 11.5px;"><code style="color: var(--text-primary);">{{ e.compte_credit }}</code> <span style="color: var(--text-muted); font-size: 11px;">{{ e.compte_credit_label.split(' — ')[1] if ' — ' in e.compte_credit_label else '' }}</span></td>
+            <td style="text-align: right; font-family: 'JetBrains Mono', monospace; color: var(--text-primary); font-size: 12px; font-weight: 600;">{{ e.montant_ttc }} €</td>
+            <td style="text-align: center;">
               {% if e.source_module == 'self_invoice' %}
-                <span class="inline-block bg-sky-900/40 text-sky-300 border border-sky-800 rounded px-1.5 py-0.5" title="{{ e.metadata.get('regime', '') }} — profil {{ e.metadata.get('facturx_profile', '') }}">
-                  self_invoice
-                </span>
+                <span class="badge badge-blue" title="{{ e.metadata.get('regime', '') }} · {{ e.metadata.get('facturx_profile', '') }}">self_invoice</span>
+              {% elif e.source_module == 'self_achats' %}
+                <span class="badge badge-amber">self_achats</span>
+              {% elif e.source_module == 'self_banking' %}
+                <span class="badge" style="background: rgba(192, 132, 252, 0.13); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.30);">self_banking</span>
               {% elif e.source_module %}
-                <span class="inline-block bg-slate-700/40 text-slate-300 border border-slate-600 rounded px-1.5 py-0.5">{{ e.source_module }}</span>
+                <span class="badge" style="background: rgba(106, 128, 136, 0.15); color: var(--text-secondary); border: 1px solid var(--border-default);">{{ e.source_module }}</span>
               {% else %}
-                <span class="text-slate-500">manuel</span>
+                <span style="color: var(--text-muted); font-size: 11px;">manuel</span>
               {% endif %}
             </td>
           </tr>
@@ -207,49 +204,50 @@
     {% endif %}
   </div>
 
-  <!-- Balance + info -->
-  <aside class="space-y-4">
-    <div class="card !p-0 overflow-hidden">
-      <div class="bg-slate-800 px-4 py-2 border-b border-slate-700">
-        <h2 class="font-bold text-slate-200">Balance par compte</h2>
+  <!-- SIDEBAR -->
+  <aside style="display: flex; flex-direction: column; gap: 14px;">
+
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <div style="background: var(--bg-elev); padding: 10px 14px; border-bottom: 1px solid var(--border-subtle);">
+        <h2 style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin: 0;">Balance par compte</h2>
       </div>
       {% if balance %}
-      <table class="w-full text-xs">
-        <thead class="bg-slate-800/40 text-slate-500 text-[10px] uppercase tracking-wider">
+      <table style="font-size: 11.5px;">
+        <thead>
           <tr>
-            <th class="px-2 py-1 text-left">Compte</th>
-            <th class="px-2 py-1 text-right">Débit</th>
-            <th class="px-2 py-1 text-right">Crédit</th>
-            <th class="px-2 py-1 text-right">Solde</th>
+            <th style="font-size: 10px;">Compte</th>
+            <th style="font-size: 10px; text-align: right;">Débit</th>
+            <th style="font-size: 10px; text-align: right;">Crédit</th>
+            <th style="font-size: 10px; text-align: right;">Solde</th>
           </tr>
         </thead>
         <tbody>
           {% for b in balance %}
-          <tr class="border-t border-slate-800">
-            <td class="px-2 py-1 text-slate-300"><code class="text-green-400">{{ b.compte }}</code></td>
-            <td class="px-2 py-1 text-right text-slate-400 font-mono">{{ "{:.0f}".format(b.total_debit or 0) }}</td>
-            <td class="px-2 py-1 text-right text-slate-400 font-mono">{{ "{:.0f}".format(b.total_credit or 0) }}</td>
-            <td class="px-2 py-1 text-right font-mono {{ 'text-green-400' if b.solde > 0 else ('text-red-400' if b.solde < 0 else 'text-slate-500') }}">{{ "{:+.0f}".format(b.solde) }}</td>
+          <tr>
+            <td><code style="color: #86efac; font-size: 11px;">{{ b.compte }}</code></td>
+            <td style="text-align: right; font-family: monospace; color: var(--text-muted);">{{ "{:.0f}".format(b.total_debit or 0) }}</td>
+            <td style="text-align: right; font-family: monospace; color: var(--text-muted);">{{ "{:.0f}".format(b.total_credit or 0) }}</td>
+            <td style="text-align: right; font-family: monospace; font-weight: 600; color: {{ '#4ade80' if b.solde > 0 else ('#fca5a5' if b.solde < 0 else 'var(--text-muted)') }};">{{ "{:+.0f}".format(b.solde) }}</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
       {% else %}
-      <div class="p-4 text-center text-xs text-slate-500">Pas encore de balance.</div>
+      <div style="padding: 18px; text-align: center; font-size: 12px; color: var(--text-muted);">Pas encore de balance.</div>
       {% endif %}
     </div>
 
-    <div class="card !p-4 text-xs text-slate-400 space-y-2">
-      <h3 class="text-slate-300 font-semibold">Architecture hub</h3>
-      <p>Une seule table <code class="text-green-400">ecritures_comptables</code>. Chaque module MySelf y pousse ses auto-écritures :</p>
-      <ul class="list-disc list-inside space-y-0.5 ml-1">
-        <li><code class="text-sky-400">self_invoice</code> → 411/701</li>
-        <li><code class="text-amber-400">self_achats</code> → 6011/401 (V2)</li>
-        <li><code class="text-purple-400">self_banking</code> → 512/411 (V2)</li>
-        <li><code class="text-rose-400">self_immos</code> → 2154/404 (V3)</li>
-        <li><code class="text-emerald-400">self_aides</code> → 512/74 (V3)</li>
+    <div class="card" style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.6;">
+      <h3 style="font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">Architecture hub</h3>
+      <p style="margin-bottom: 8px;">Une seule table <code style="color: #86efac; font-size: 10.5px;">ecritures_comptables</code>. Chaque module y pousse ses auto-écritures :</p>
+      <ul style="list-style: none; padding-left: 0; font-size: 11.5px; line-height: 1.7;">
+        <li><span style="color: #93c5fd;">●</span> <code style="font-size: 10.5px;">self_invoice</code> → 411 / 701</li>
+        <li><span style="color: #f4c47a;">●</span> <code style="font-size: 10.5px;">self_achats</code> → 6011 / 401</li>
+        <li><span style="color: #c084fc;">●</span> <code style="font-size: 10.5px;">self_banking</code> → 512 / 411</li>
+        <li><span style="color: #fca5a5;">●</span> <code style="font-size: 10.5px;">self_immos</code> → 2154 / 404 <span style="color: var(--text-muted); font-size: 10.5px;">V3</span></li>
+        <li><span style="color: #86efac;">●</span> <code style="font-size: 10.5px;">self_aides</code> → 512 / 74 <span style="color: var(--text-muted); font-size: 10.5px;">V3</span></li>
       </ul>
-      <p class="pt-1 border-t border-slate-700">Stockage SQLite local <code class="text-[10px]">~/.selffarm/compta.db</code>. Aucun cloud, aucun SaaS.</p>
+      <p style="padding-top: 8px; border-top: 1px solid var(--border-subtle); margin-top: 10px; font-size: 11px; color: var(--text-muted);">SQLite local <code style="font-size: 10.5px;">~/.selffarm/compta.db</code> — zéro cloud, zéro SaaS.</p>
     </div>
   </aside>
 

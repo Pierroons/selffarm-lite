@@ -2,12 +2,20 @@
 {% block title %}Comparaison de scénarios DNJA{% endblock %}
 {% block content %}
 
-<div class="mb-6 flex items-center justify-between">
+<!-- HEADER -->
+<div style="margin-bottom: 22px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
   <div>
-    <h1 class="text-2xl font-bold text-slate-100">🔬 Comparaison de scénarios</h1>
-    <p class="text-sm text-slate-400">Compare deux prévisionnels côte-à-côte avec deltas automatiques.</p>
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+      <span style="font-size: 11px; color: var(--text-muted); letter-spacing: 0.6px; text-transform: uppercase; font-weight: 600;">SelfDNJA · Compare</span>
+    </div>
+    <h1 style="font-size: 26px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; margin-bottom: 4px;">
+      Comparaison <span style="color: var(--forest-500); font-style: italic; font-weight: 500;">de scénarios</span>
+    </h1>
+    <p style="font-size: 12.5px; color: var(--text-secondary); max-width: 640px; line-height: 1.5;">
+      Deux prévisionnels côte-à-côte avec deltas automatiques sur EBE, RDA, ratios, IR JA.
+    </p>
   </div>
-  <a href="/dnja" class="btn-ghost btn">← Simulateur</a>
+  <a href="/dnja" class="btn btn-ghost" style="font-size: 12.5px;">← Simulateur</a>
 </div>
 
 <form
@@ -15,38 +23,41 @@
   hx-target="#comparison"
   hx-swap="innerHTML"
   hx-trigger="change"
-  class="card mb-4 grid md:grid-cols-2 gap-4">
+  class="card"
+  style="margin-bottom: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px;">
+
   <div>
-    <label class="text-xs text-slate-400 uppercase tracking-wider">Scénario A (référence)</label>
-    <select name="a" class="w-full">
+    <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin-bottom: 5px;">
+      <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #93c5fd; margin-right: 5px;"></span>
+      Scénario A (référence)
+    </label>
+    <select name="a" style="width: 100%;">
       {% for ex in examples %}
-      <option value="{{ ex.slug }}" {% if ex.slug == default_a %}selected{% endif %}>
-        {{ ex.label }}
-      </option>
+      <option value="{{ ex.slug }}" {% if ex.slug == default_a %}selected{% endif %}>{{ ex.label }}</option>
       {% endfor %}
     </select>
   </div>
   <div>
-    <label class="text-xs text-slate-400 uppercase tracking-wider">Scénario B (comparaison)</label>
-    <select name="b" class="w-full">
+    <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin-bottom: 5px;">
+      <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #f4c47a; margin-right: 5px;"></span>
+      Scénario B (comparaison)
+    </label>
+    <select name="b" style="width: 100%;">
       {% for ex in examples %}
-      <option value="{{ ex.slug }}" {% if ex.slug == default_b %}selected{% endif %}>
-        {{ ex.label }}
-      </option>
+      <option value="{{ ex.slug }}" {% if ex.slug == default_b %}selected{% endif %}>{{ ex.label }}</option>
       {% endfor %}
     </select>
   </div>
 </form>
 
 <div id="comparison">
-  {# Chargé auto par HTMX lors du select #}
-  <div class="card text-center py-8 text-slate-400">
-    Sélectionne deux scénarios pour voir la comparaison.
+  <div class="card" style="padding: 50px 20px; text-align: center; color: var(--text-secondary);">
+    <div style="font-size: 32px; margin-bottom: 8px; opacity: 0.5;">⚖️</div>
+    <div style="font-size: 13.5px;">Sélectionne deux scénarios pour voir la comparaison.</div>
   </div>
 </div>
 
 <script>
-// Trigger initial auto-load
 document.addEventListener('DOMContentLoaded', () => {
   htmx.trigger(document.querySelector('form'), 'change');
 });

@@ -2,72 +2,75 @@
 {% block title %}Compte de résultat — SelfAgriBook{% endblock %}
 {% block content %}
 
-<div class="mb-4 flex items-start justify-between flex-wrap gap-3">
+<!-- HEADER -->
+<div style="margin-bottom: 18px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
   <div>
-    <h1 class="text-2xl font-bold text-slate-100">📈 Compte de résultat</h1>
-    <p class="text-sm text-slate-400 mt-1">
-      Produits (classe 7) vs Charges (classe 6) — calculé en direct depuis le journal du hub.
-      Résultat = Produits − Charges.
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+      <span style="font-size: 11px; color: var(--text-muted); letter-spacing: 0.6px; text-transform: uppercase; font-weight: 600;">SelfAgriBook · Document légal</span>
+    </div>
+    <h1 style="font-size: 26px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; margin-bottom: 4px;">
+      Compte de résultat <span style="color: var(--forest-500); font-style: italic; font-weight: 500;">— de l'exercice</span>
+    </h1>
+    <p style="font-size: 12.5px; color: var(--text-secondary); max-width: 720px; line-height: 1.5;">
+      Produits (classe 7) vs Charges (classe 6) — calculé en direct depuis le journal du hub. Résultat = Produits − Charges.
     </p>
   </div>
-  <div class="flex flex-wrap gap-2">
-    <a href="/compta" class="btn-sm inline-block px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-xs text-slate-300">📊 Journal</a>
-    <a href="/compta/bilan" class="btn-sm inline-block px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-xs text-slate-300">📉 Bilan</a>
+  <div style="display: flex; gap: 6px;">
+    <a href="/compta" class="btn btn-ghost" style="font-size: 12px; padding: 6px 12px;">Journal</a>
+    <a href="/compta/bilan" class="btn btn-ghost" style="font-size: 12px; padding: 6px 12px;">Bilan</a>
   </div>
 </div>
 
 {% if not data.produits and not data.charges %}
-<div class="card p-8 text-center text-slate-400">
-  <div class="text-5xl mb-3">📭</div>
-  <div>Aucune opération comptable — pas de résultat à calculer.</div>
-  <a href="/compta" class="inline-block mt-3 text-sm text-green-400 hover:text-green-300 underline">
-    → Ajouter des écritures dans le journal
-  </a>
+<div class="card" style="padding: 50px 20px; text-align: center; color: var(--text-secondary);">
+  <div style="font-size: 38px; margin-bottom: 10px; opacity: 0.5;">📭</div>
+  <div style="font-size: 14px; margin-bottom: 4px;">Aucune opération comptable — pas de résultat à calculer.</div>
+  <a href="/compta" style="display: inline-block; margin-top: 12px; font-size: 12.5px; color: var(--forest-500); text-decoration: none; padding: 6px 14px; border: 1px solid var(--forest-700); border-radius: 5px;">→ Ajouter des écritures dans le journal</a>
 </div>
 {% else %}
 
-<div class="grid md:grid-cols-2 gap-4 mb-4">
+<div style="display: grid; grid-template-columns: 1fr; gap: 14px; margin-bottom: 14px;" class="md:!grid-cols-2">
   <!-- PRODUITS -->
-  <div class="card !p-0 overflow-hidden">
-    <div class="bg-sky-900/30 border-b border-sky-700 px-4 py-2">
-      <h2 class="font-bold text-sky-300">📈 PRODUITS (classe 7)</h2>
-      <div class="text-xs text-sky-400">Ce que l'exploitation a vendu / reçu</div>
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="background: rgba(56,189,248,0.13); border-bottom: 1px solid rgba(56,189,248,0.35); padding: 10px 16px;">
+      <h2 style="font-size: 14px; font-weight: 600; color: #93c5fd; margin: 0; letter-spacing: 0.4px; text-transform: uppercase;">Produits · classe 7</h2>
+      <div style="font-size: 11px; color: #93c5fd; opacity: 0.85; margin-top: 1px;">Ce que l'exploitation a vendu / reçu</div>
     </div>
-    <table class="w-full text-sm">
+    <table>
       <tbody>
         {% for p in data.produits %}
-        <tr class="border-t border-slate-800">
-          <td class="px-3 py-2 text-slate-300"><code class="text-sky-400">{{ p.compte }}</code></td>
-          <td class="px-3 py-2 text-slate-400 text-xs">{{ p.label.split(' — ')[1] if ' — ' in p.label else '' }}</td>
-          <td class="px-3 py-2 text-right text-slate-100 font-mono">{{ "{:,.2f}".format(p.montant).replace(",", " ").replace(".", ",") }} €</td>
+        <tr>
+          <td style="padding: 8px 14px;"><code style="color: #93c5fd; font-size: 11px;">{{ p.compte }}</code></td>
+          <td style="padding: 8px 14px; font-size: 11.5px; color: var(--text-secondary);">{{ p.label.split(' — ')[1] if ' — ' in p.label else '' }}</td>
+          <td style="padding: 8px 14px; text-align: right; font-family: monospace; color: var(--text-primary); font-size: 12px;">{{ "{:,.2f}".format(p.montant).replace(",", " ").replace(".", ",") }} €</td>
         </tr>
         {% endfor %}
-        <tr class="border-t-2 border-sky-700 bg-sky-900/20">
-          <td colspan="2" class="px-3 py-2 font-bold text-sky-300">Total produits</td>
-          <td class="px-3 py-2 text-right font-bold text-sky-200 font-mono">{{ "{:,.2f}".format(data.total_produits).replace(",", " ").replace(".", ",") }} €</td>
+        <tr style="background: rgba(56,189,248,0.10); border-top: 2px solid rgba(56,189,248,0.45);">
+          <td colspan="2" style="padding: 10px 14px; font-weight: 700; color: #93c5fd; font-size: 13px;">Total produits</td>
+          <td style="padding: 10px 14px; text-align: right; font-weight: 700; color: #bfdbfe; font-family: 'Fraunces', serif; font-size: 16px;">{{ "{:,.2f}".format(data.total_produits).replace(",", " ").replace(".", ",") }} €</td>
         </tr>
       </tbody>
     </table>
   </div>
 
   <!-- CHARGES -->
-  <div class="card !p-0 overflow-hidden">
-    <div class="bg-amber-900/30 border-b border-amber-700 px-4 py-2">
-      <h2 class="font-bold text-amber-300">📉 CHARGES (classe 6)</h2>
-      <div class="text-xs text-amber-400">Ce que l'exploitation a dépensé / consommé</div>
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="background: rgba(224,164,88,0.13); border-bottom: 1px solid rgba(224,164,88,0.35); padding: 10px 16px;">
+      <h2 style="font-size: 14px; font-weight: 600; color: #f4c47a; margin: 0; letter-spacing: 0.4px; text-transform: uppercase;">Charges · classe 6</h2>
+      <div style="font-size: 11px; color: #f4c47a; opacity: 0.85; margin-top: 1px;">Ce que l'exploitation a dépensé / consommé</div>
     </div>
-    <table class="w-full text-sm">
+    <table>
       <tbody>
         {% for c in data.charges %}
-        <tr class="border-t border-slate-800">
-          <td class="px-3 py-2 text-slate-300"><code class="text-amber-400">{{ c.compte }}</code></td>
-          <td class="px-3 py-2 text-slate-400 text-xs">{{ c.label.split(' — ')[1] if ' — ' in c.label else '' }}</td>
-          <td class="px-3 py-2 text-right text-slate-100 font-mono">{{ "{:,.2f}".format(c.montant).replace(",", " ").replace(".", ",") }} €</td>
+        <tr>
+          <td style="padding: 8px 14px;"><code style="color: #f4c47a; font-size: 11px;">{{ c.compte }}</code></td>
+          <td style="padding: 8px 14px; font-size: 11.5px; color: var(--text-secondary);">{{ c.label.split(' — ')[1] if ' — ' in c.label else '' }}</td>
+          <td style="padding: 8px 14px; text-align: right; font-family: monospace; color: var(--text-primary); font-size: 12px;">{{ "{:,.2f}".format(c.montant).replace(",", " ").replace(".", ",") }} €</td>
         </tr>
         {% endfor %}
-        <tr class="border-t-2 border-amber-700 bg-amber-900/20">
-          <td colspan="2" class="px-3 py-2 font-bold text-amber-300">Total charges</td>
-          <td class="px-3 py-2 text-right font-bold text-amber-200 font-mono">{{ "{:,.2f}".format(data.total_charges).replace(",", " ").replace(".", ",") }} €</td>
+        <tr style="background: rgba(224,164,88,0.10); border-top: 2px solid rgba(224,164,88,0.45);">
+          <td colspan="2" style="padding: 10px 14px; font-weight: 700; color: #f4c47a; font-size: 13px;">Total charges</td>
+          <td style="padding: 10px 14px; text-align: right; font-weight: 700; color: #fde68a; font-family: 'Fraunces', serif; font-size: 16px;">{{ "{:,.2f}".format(data.total_charges).replace(",", " ").replace(".", ",") }} €</td>
         </tr>
       </tbody>
     </table>
@@ -75,22 +78,22 @@
 </div>
 
 <!-- RÉSULTAT NET -->
-<div class="card !p-4 {% if data.is_benefice %}!bg-green-900/20 !border-green-700{% else %}!bg-red-900/20 !border-red-700{% endif %}">
-  <div class="flex items-center justify-between">
+<div class="card" style="padding: 18px 20px; {% if data.is_benefice %}background: linear-gradient(180deg, rgba(22,101,52,0.18) 0%, rgba(22,101,52,0.10) 100%); border-color: rgba(22,101,52,0.45);{% else %}background: linear-gradient(180deg, rgba(127,29,29,0.18) 0%, rgba(127,29,29,0.10) 100%); border-color: rgba(127,29,29,0.45);{% endif %}">
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
     <div>
-      <div class="text-xs text-slate-400 uppercase tracking-wider">Résultat net de l'exercice</div>
-      <div class="text-3xl font-bold font-mono mt-1 {% if data.is_benefice %}text-green-300{% else %}text-red-300{% endif %}">
+      <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Résultat net de l'exercice</div>
+      <div style="font-size: 32px; font-weight: 700; font-family: 'Fraunces', serif; letter-spacing: -0.02em; margin-top: 4px; color: {% if data.is_benefice %}#86efac{% else %}#fca5a5{% endif %};">
         {% if data.is_benefice %}+{% endif %}{{ "{:,.2f}".format(data.resultat_net).replace(",", " ").replace(".", ",") }} €
       </div>
     </div>
-    <div class="text-right text-sm text-slate-400">
-      <div>Produits : <span class="text-sky-300 font-mono">{{ "{:,.2f}".format(data.total_produits).replace(",", " ").replace(".", ",") }} €</span></div>
-      <div>Charges : <span class="text-amber-300 font-mono">{{ "{:,.2f}".format(data.total_charges).replace(",", " ").replace(".", ",") }} €</span></div>
-      <div class="mt-1 pt-1 border-t border-slate-700 text-xs">
+    <div style="text-align: right; font-size: 12px; color: var(--text-secondary);">
+      <div style="margin-bottom: 2px;">Produits : <span style="color: #93c5fd; font-family: monospace; font-weight: 600;">{{ "{:,.2f}".format(data.total_produits).replace(",", " ").replace(".", ",") }} €</span></div>
+      <div>Charges : <span style="color: #f4c47a; font-family: monospace; font-weight: 600;">{{ "{:,.2f}".format(data.total_charges).replace(",", " ").replace(".", ",") }} €</span></div>
+      <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border-subtle); font-size: 11px;">
         {% if data.is_benefice %}
-        <span class="text-green-400">✓ BÉNÉFICE</span> — ce qui va en +capitaux propres au bilan
+        <span style="color: #86efac; font-weight: 600;">✓ BÉNÉFICE</span> — va en +capitaux propres au bilan
         {% else %}
-        <span class="text-red-400">⚠ DÉFICIT</span> — ce qui va en −capitaux propres au bilan
+        <span style="color: #fca5a5; font-weight: 600;">⚠ DÉFICIT</span> — va en −capitaux propres au bilan
         {% endif %}
       </div>
     </div>
@@ -99,11 +102,8 @@
 
 {% endif %}
 
-<div class="card !p-3 mt-4 text-[11px] text-slate-500">
-  <strong class="text-slate-400">Méthode :</strong>
-  Les montants sont calculés en direct depuis la table <code class="text-green-400">ecritures_comptables</code>
-  du hub compta. Produits = Σ (crédits − débits) sur les comptes 7xxx. Charges = Σ (débits − crédits) sur 6xxx.
-  Pas de hardcode, pas de cache — chaque requête relit la base.
+<div class="card" style="padding: 12px 14px; margin-top: 14px; font-size: 11px; color: var(--text-muted); line-height: 1.6;">
+  <strong style="color: var(--text-secondary);">Méthode :</strong> montants calculés en direct depuis <code style="color: #86efac; font-size: 10.5px;">ecritures_comptables</code>. Produits = Σ (crédits − débits) sur les comptes 7xxx. Charges = Σ (débits − crédits) sur 6xxx. Pas de hardcode, pas de cache — chaque requête relit la base.
 </div>
 
 {% endblock %}

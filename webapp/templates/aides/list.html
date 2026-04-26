@@ -2,52 +2,59 @@
 {% block title %}Catalogue des aides — SelfFarm-Lite{% endblock %}
 {% block content %}
 
-<div class="mb-4">
-  <h1 class="text-2xl font-bold text-slate-100">💶 Catalogue d'aides agricoles 2026</h1>
-  <p class="text-sm text-slate-400">
-    {{ count_total }} aides sourcées aux portails officiels (Légifrance, BOFiP, FranceAgriMer,
-    MSA, Nouvelle-Aquitaine, CD le departement). Cumul indicatif :
-    <strong class="text-green-400">{{ enveloppe_min }} – {{ enveloppe_max }} €</strong>
+<!-- HEADER -->
+<div style="margin-bottom: 22px;">
+  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+    <span style="font-size: 11px; color: var(--text-muted); letter-spacing: 0.6px; text-transform: uppercase; font-weight: 600;">Module · beta</span>
+    <span style="display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--amber-warm);"></span>
+  </div>
+  <h1 style="font-size: 28px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; margin-bottom: 6px;">
+    SelfAid <span style="color: var(--forest-500); font-style: italic; font-weight: 500;">— Aides agricoles 2026</span>
+  </h1>
+  <p style="font-size: 13.5px; color: var(--text-secondary); max-width: 820px; line-height: 1.55;">
+    <strong style="color: var(--text-primary);">{{ count_total }} aides</strong> sourcées Légifrance, BOFiP, FranceAgriMer, MSA, Région Nouvelle-Aquitaine, CD le departement. Cumul indicatif : <strong style="color: var(--forest-400);">{{ enveloppe_min }} – {{ enveloppe_max }} €</strong>.
   </p>
 </div>
 
-<!-- Bandeau V1 catalogue en cours -->
-<div class="mb-4 p-3 rounded border bg-amber-900/20 border-amber-800 text-amber-200 text-xs">
-  <strong>🏗️ self_aid V1 — module en construction active</strong><br>
-  Le catalogue actuel est <strong>orienté JA en installation</strong> (profil V1).
-  <br><br>
-  <strong>V2 (été 2026)</strong> élargira aux profils <strong>NA</strong> (nouvel agri &gt; 40 ans),
-  <strong>AGRI</strong> (exploitations en vitesse de croisière) et <strong>PME agri</strong>.
-  À venir : PCAE, FAM investissements, conversion énergie, prime HVE, aléa climatique FNSR, DPB standard, FRR+ standard…
-  <br><br>
-  <em>Distribution hybride : catalogue national hébergé sur GitHub (raw), cache local côté user
-  (<code class="text-amber-300">~/.selffarm/cache/</code>), mises à jour bimensuelles (1<sup>er</sup> + 15 du mois).</em>
+<!-- BANDEAU V1 -->
+<div style="margin-bottom: 18px; padding: 12px 14px; border-radius: 8px; background: rgba(224, 164, 88, 0.06); border: 1px solid rgba(224, 164, 88, 0.22); font-size: 12px; color: var(--text-secondary); line-height: 1.55;">
+  <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; color: #f4c47a;">
+    <span class="badge badge-beta">● V1 en construction</span>
+    <strong>Catalogue orienté JA en installation</strong>
+  </div>
+  <div>
+    <strong style="color: var(--text-primary);">V2 (été 2026)</strong> élargira aux profils <strong>NA</strong> (nouvel agri &gt; 40 ans), <strong>AGRI</strong> (exploitations en vitesse de croisière) et <strong>PME agri</strong>. À venir : PCAE, FAM investissements, conversion énergie, prime HVE, aléa FNSR, DPB standard, FRR+ standard…
+  </div>
+  <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(224,164,88,0.18); font-style: italic; color: var(--text-muted); font-size: 11px;">
+    Distribution hybride : catalogue national hébergé GitHub (raw), cache local côté user (<code style="font-size: 10.5px;">~/.selffarm/cache/</code>), MAJ bimensuelles (1<sup>er</sup> + 15 du mois).
+  </div>
 </div>
 
-<!-- Filtres HTMX -->
+<!-- FILTRES -->
 <form
   hx-get="/aides/filter"
   hx-target="#aides-list"
   hx-trigger="input delay:300ms, change"
   hx-swap="innerHTML"
-  class="card mb-4 grid md:grid-cols-4 gap-3">
+  class="card"
+  style="margin-bottom: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; padding: 14px;">
 
   <div>
-    <label class="text-xs text-slate-400 uppercase tracking-wider">Mot-clé</label>
-    <input type="search" name="mot_cle" placeholder="chanvre, bio, dnja…" class="w-full">
+    <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Mot-clé</label>
+    <input type="search" name="mot_cle" placeholder="chanvre, bio, dnja…" style="width: 100%;">
   </div>
 
   <div>
-    <label class="text-xs text-slate-400 uppercase tracking-wider">Catégorie</label>
-    <select name="categorie" class="w-full">
+    <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Catégorie</label>
+    <select name="categorie" style="width: 100%;">
       <option value="">Toutes</option>
       {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
     </select>
   </div>
 
   <div>
-    <label class="text-xs text-slate-400 uppercase tracking-wider">Statut cible</label>
-    <select name="statut" class="w-full">
+    <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Statut cible</label>
+    <select name="statut" style="width: 100%;">
       <option value="">Tous</option>
       <option value="ja-installation">JA installation</option>
       <option value="ja-pre-installation">JA pré-installation</option>
@@ -59,8 +66,8 @@
   </div>
 
   <div>
-    <label class="text-xs text-slate-400 uppercase tracking-wider">Zone</label>
-    <select name="zone" class="w-full">
+    <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Zone</label>
+    <select name="zone" style="width: 100%;">
       <option value="">Toutes</option>
       <option value="le departement">le departement</option>
       <option value="NA">Nouvelle-Aquitaine</option>

@@ -88,6 +88,11 @@ app.include_router(invoice_router)
 app.include_router(compta_router)
 
 
+@app.get("/healthz", include_in_schema=False)
+def healthz():
+    return {"status": "ok", "version": __version__, "env": ENV_NAME}
+
+
 def main_cli():
     import uvicorn
     uvicorn.run(

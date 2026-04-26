@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}SelfFarm-Lite{% endblock %}</title>
 <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
-<meta name="theme-color" content="#0f1419">
+<meta name="theme-color" content="#0a0f0d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/htmx.org@1.9.12"></script>
 <script>
@@ -14,36 +17,203 @@ tailwind.config = {
   theme: {
     extend: {
       colors: {
-        'bg-0': '#0f172a',
-        'bg-1': '#1e293b',
-        'bg-2': '#334155',
-        'accent': '#16a34a',
+        'soil-50': '#f5f3ec',
+        'soil-100': '#e8e2d2',
+        'soil-200': '#cdc2a3',
+        'soil-700': '#5a4f3a',
+        'soil-800': '#3a3225',
+        'soil-900': '#1f1b14',
+        'forest-300': '#86efac',
+        'forest-400': '#4ade80',
+        'forest-500': '#16a34a',
+        'forest-600': '#15803d',
+        'forest-700': '#166534',
+        'forest-800': '#14532d',
+        'forest-900': '#0a3a1f',
+        'bg-base': '#0a0f0d',
+        'bg-card': '#11181f',
+        'bg-elev': '#1a232c',
+        'border-subtle': '#1e2d33',
+        'border-default': '#2a3a40',
+        'text-primary': '#e8eef0',
+        'text-secondary': '#9bb0b8',
+        'text-muted': '#6a8088',
+        'amber-warm': '#e0a458',
+      },
+      fontFamily: {
+        'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        'serif': ['Fraunces', 'Georgia', 'serif'],
       }
     }
   }
 }
 </script>
 <style>
-body { background: #0f172a; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; }
-a { color: #16a34a; }
-a:hover { color: #22c55e; }
-.card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 16px; }
-.card:hover { border-color: #16a34a; }
-.btn { padding: 8px 16px; background: #16a34a; color: white; border-radius: 6px; display: inline-block; font-weight: 600; }
-.btn:hover { background: #15803d; color: white; }
-.btn-ghost { background: transparent; border: 1px solid #475569; color: #e2e8f0; }
-.btn-ghost:hover { background: #334155; color: #e2e8f0; }
-input, textarea, select { background: #0f172a; color: #e2e8f0; border: 1px solid #475569; border-radius: 4px; padding: 6px 10px; }
-input:focus, textarea:focus, select:focus { outline: none; border-color: #16a34a; }
+:root {
+  --bg-base: #0a0f0d;
+  --bg-card: #11181f;
+  --bg-elev: #1a232c;
+  --border-subtle: #1e2d33;
+  --border-default: #2a3a40;
+  --text-primary: #e8eef0;
+  --text-secondary: #9bb0b8;
+  --text-muted: #6a8088;
+  --forest-500: #16a34a;
+  --forest-600: #15803d;
+  --forest-700: #166534;
+  --amber-warm: #e0a458;
+}
+
+* { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+body {
+  background: var(--bg-base);
+  background-image:
+    radial-gradient(at 12% 8%, rgba(22, 101, 52, 0.08) 0px, transparent 50%),
+    radial-gradient(at 88% 92%, rgba(224, 164, 88, 0.04) 0px, transparent 45%);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
+  letter-spacing: -0.005em;
+}
+
+/* Headings */
+h1, h2, h3 { font-family: 'Fraunces', Georgia, serif; letter-spacing: -0.018em; }
+
+/* Links */
+a { color: var(--forest-500); transition: color 0.15s ease; }
+a:hover { color: #4ade80; }
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 18px;
+  transition: border-color 0.18s ease, transform 0.18s ease, background 0.18s ease;
+}
+.card:hover {
+  border-color: var(--forest-600);
+  background: linear-gradient(180deg, #131c24 0%, #11181f 100%);
+}
+.card-link:hover { transform: translateY(-1px); }
+.card-link {
+  display: block;
+  text-decoration: none;
+  position: relative;
+}
+.card-link .arrow {
+  position: absolute; top: 18px; right: 18px;
+  color: var(--text-muted);
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+.card-link:hover .arrow {
+  color: var(--forest-500);
+  transform: translate(2px, -2px);
+}
+
+/* Buttons */
+.btn {
+  padding: 9px 18px;
+  background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
+  color: white;
+  border-radius: 6px;
+  display: inline-block;
+  font-weight: 600;
+  font-size: 13.5px;
+  letter-spacing: -0.005em;
+  transition: filter 0.18s ease, transform 0.06s ease;
+  border: 1px solid rgba(0,0,0,0.2);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.08) inset, 0 1px 2px rgba(0,0,0,0.3);
+  text-decoration: none;
+}
+.btn:hover { filter: brightness(1.08); color: white; }
+.btn:active { transform: translateY(1px); }
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+.btn-ghost:hover { background: var(--bg-elev); color: var(--text-primary); border-color: var(--forest-700); filter: none; }
+
+/* Forms */
+input, textarea, select {
+  background: #0f1719;
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: 5px;
+  padding: 7px 11px;
+  font-family: inherit;
+  font-size: 13.5px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--forest-500);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+}
+
+/* Tables */
 table { border-collapse: collapse; width: 100%; }
-table th, table td { padding: 8px 12px; border-bottom: 1px solid #334155; text-align: left; font-size: 13px; }
-table thead th { background: #1e293b; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; }
-table tbody tr:hover { background: #1e293b; }
-.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-.badge-green { background: #14532d; color: #86efac; }
-.badge-amber { background: #78350f; color: #fbbf24; }
-.badge-red { background: #7f1d1d; color: #fca5a5; }
-.badge-blue { background: #1e3a8a; color: #93c5fd; }
+table th, table td { padding: 9px 12px; border-bottom: 1px solid var(--border-subtle); text-align: left; font-size: 13px; }
+table thead th { background: var(--bg-elev); color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-size: 10.5px; font-weight: 600; }
+table tbody tr { transition: background 0.12s ease; }
+table tbody tr:hover { background: rgba(22, 101, 52, 0.06); }
+
+/* Badges */
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.2px; }
+.badge-green { background: rgba(22, 101, 52, 0.18); color: #86efac; border: 1px solid rgba(22, 101, 52, 0.35); }
+.badge-amber { background: rgba(224, 164, 88, 0.13); color: #f4c47a; border: 1px solid rgba(224, 164, 88, 0.30); }
+.badge-red { background: rgba(127, 29, 29, 0.20); color: #fca5a5; border: 1px solid rgba(127, 29, 29, 0.35); }
+.badge-blue { background: rgba(30, 58, 138, 0.20); color: #93c5fd; border: 1px solid rgba(30, 58, 138, 0.35); }
+.badge-stable { background: rgba(22, 101, 52, 0.18); color: #86efac; }
+.badge-beta { background: rgba(224, 164, 88, 0.13); color: #f4c47a; }
+.badge-alpha { background: rgba(127, 29, 29, 0.18); color: #fca5a5; }
+
+/* Active nav */
+.nav-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 0.12s ease, background 0.12s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.nav-link:hover { color: #4ade80; background: rgba(22, 101, 52, 0.08); }
+.nav-link.active { color: #86efac; background: rgba(22, 101, 52, 0.14); }
+.nav-link.active::before {
+  content: ''; display: inline-block; width: 4px; height: 4px;
+  background: var(--forest-500); border-radius: 50%; margin-right: 2px;
+}
+
+/* htmx loading */
+.htmx-indicator { display: none; }
+.htmx-request .htmx-indicator { display: inline-block; }
+.htmx-request.htmx-indicator { display: inline-block; }
+
+/* Mobile drawer */
+@media (max-width: 768px) {
+  .desktop-nav { display: none !important; }
+  .mobile-nav-btn { display: inline-flex !important; }
+}
+@media (min-width: 769px) {
+  .mobile-drawer { display: none !important; }
+}
+
+/* Subtle separators */
+.divider-soft {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-default), transparent);
+  margin: 20px 0;
+}
+
+/* Focus states accessibility */
+*:focus-visible { outline: 2px solid var(--forest-500); outline-offset: 2px; }
 </style>
 </head>
 <body class="min-h-screen">
@@ -52,37 +222,65 @@ table tbody tr:hover { background: #1e293b; }
 <div style="background: linear-gradient(90deg, #f59e0b, #d97706); color: #1c1917; text-align: center; padding: 6px 12px; font-weight: 600; font-size: 13px; letter-spacing: 0.3px;">
   🚧 <strong>ENV DEV</strong> — branche <code style="background:rgba(0,0,0,0.15);padding:1px 6px;border-radius:3px;font-family:monospace">develop</code> · données purgeables, pas de garantie · prod stable sur <a href="https://selffarm.my-self.fr" style="color:#1c1917;text-decoration:underline;font-weight:700">selffarm.my-self.fr</a>
 </div>
+{% elif env == 'perso' %}
+<div style="background: linear-gradient(90deg, #16a34a, #15803d); color: #f0fdf4; text-align: center; padding: 6px 12px; font-weight: 600; font-size: 13px; letter-spacing: 0.3px;">
+  🌱 <strong>ENV PERSO</strong> — instance privée Pierroons · DB <code style="background:rgba(0,0,0,0.2);padding:1px 6px;border-radius:3px;font-family:monospace">~/.selffarm-perso/compta.db</code> · données réelles · 127.0.0.1 uniquement
+</div>
 {% endif %}
 
-<header class="border-b border-slate-700 bg-slate-900">
+<header style="border-bottom: 1px solid var(--border-subtle); background: rgba(10, 15, 13, 0.85); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 50;">
   <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
     <a href="/" class="flex items-center gap-3 no-underline">
-      <img src="/static/img/myself-mark.svg" alt="MySelf" width="32" height="32" style="display: block;">
+      <img src="/static/img/myself-mark.svg" alt="MySelf" width="34" height="34" style="display: block;">
       <div>
-        <div class="text-lg font-bold text-slate-100">SelfFarm-Lite</div>
-        <div class="text-xs text-slate-400">Étage applicatif MySelf — AGPL-3.0</div>
+        <div class="text-base font-semibold" style="color: var(--text-primary); letter-spacing: -0.012em;">SelfFarm<span style="color: var(--forest-500); font-weight: 400;">·Lite</span></div>
+        <div class="text-[10.5px]" style="color: var(--text-muted); letter-spacing: 0.4px; text-transform: uppercase;">Étage applicatif MySelf · AGPL-3.0</div>
       </div>
     </a>
-    <nav class="flex gap-4 text-sm">
-      <a href="/dnja" class="text-slate-300 hover:text-green-400 no-underline">📊 DNJA</a>
-      <a href="/dnja/compare" class="text-slate-300 hover:text-green-400 no-underline">🔬 Compare</a>
-      <a href="/dnja/editor" class="text-slate-300 hover:text-green-400 no-underline">✏️ Éditeur</a>
-      <a href="/aides" class="text-slate-300 hover:text-green-400 no-underline">💶 Aides</a>
-      <a href="/parcelles" class="text-slate-300 hover:text-green-400 no-underline">🗺️ Parcelles</a>
-      <a href="/invoice" class="text-slate-300 hover:text-green-400 no-underline">🧾 Invoice</a>
-      <a href="/compta" class="text-slate-300 hover:text-green-400 no-underline">📚 Compta</a>
-      <a href="/docs" class="text-slate-400 hover:text-slate-200 no-underline text-xs" title="Swagger">API</a>
+    {% set _path = request.url.path if request else '/' %}
+    <nav class="desktop-nav flex gap-1 items-center">
+      <a href="/dnja" class="nav-link {% if _path == '/dnja' or (_path.startswith('/dnja/') and '/compare' not in _path and '/editor' not in _path) %}active{% endif %}">DNJA</a>
+      <a href="/dnja/compare" class="nav-link {% if '/dnja/compare' in _path %}active{% endif %}">Compare</a>
+      <a href="/dnja/editor" class="nav-link {% if '/dnja/editor' in _path %}active{% endif %}">Éditeur</a>
+      <a href="/aides" class="nav-link {% if _path.startswith('/aides') %}active{% endif %}">Aides</a>
+      <a href="/parcelles" class="nav-link {% if _path.startswith('/parcelles') %}active{% endif %}">Parcelles</a>
+      <a href="/invoice" class="nav-link {% if _path.startswith('/invoice') %}active{% endif %}">Invoice</a>
+      <a href="/compta" class="nav-link {% if _path.startswith('/compta') %}active{% endif %}">Compta</a>
+      <span style="width: 1px; height: 16px; background: var(--border-default); margin: 0 4px;"></span>
+      <a href="/docs" class="nav-link" style="font-size: 11.5px;" title="Swagger API">API</a>
     </nav>
+    <button class="mobile-nav-btn" style="display:none; background:transparent; border:1px solid var(--border-default); color:var(--text-primary); padding:6px 10px; border-radius:5px;" onclick="document.getElementById('mobile-drawer').classList.toggle('hidden')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+  <div id="mobile-drawer" class="mobile-drawer hidden" style="background: var(--bg-card); border-top: 1px solid var(--border-subtle); padding: 8px 16px;">
+    <a href="/dnja" class="block py-2 nav-link">DNJA</a>
+    <a href="/dnja/compare" class="block py-2 nav-link">Compare</a>
+    <a href="/dnja/editor" class="block py-2 nav-link">Éditeur</a>
+    <a href="/aides" class="block py-2 nav-link">Aides</a>
+    <a href="/parcelles" class="block py-2 nav-link">Parcelles</a>
+    <a href="/invoice" class="block py-2 nav-link">Invoice</a>
+    <a href="/compta" class="block py-2 nav-link">Compta</a>
+    <a href="/docs" class="block py-2 nav-link">API</a>
   </div>
 </header>
 
-<main class="max-w-6xl mx-auto px-4 py-6">
+<main class="max-w-6xl mx-auto px-4 py-7">
 {% block content %}{% endblock %}
 </main>
 
-<footer class="border-t border-slate-800 mt-12 py-6 text-center text-xs text-slate-500">
-  SelfFarm-Lite v{{ version }} — AGPL-3.0-or-later — partie de l'écosystème
-  <a href="https://github.com/Pierroons/myself" class="text-green-500">MySelf</a>
+<footer style="border-top: 1px solid var(--border-subtle); margin-top: 60px; padding: 24px 16px; text-align: center; font-size: 11.5px; color: var(--text-muted);">
+  <div>
+    SelfFarm-Lite v{{ version }} · AGPL-3.0-or-later · partie de l'écosystème
+    <a href="https://github.com/Pierroons/myself" style="color: var(--forest-500); text-decoration: none; font-weight: 500;">MySelf</a>
+  </div>
+  <div style="margin-top: 4px; font-size: 10.5px;">
+    <a href="https://my-self.fr" style="color: var(--text-muted); text-decoration: none;">my-self.fr</a>
+    ·
+    <a href="https://github.com/Pierroons/selffarm-lite" style="color: var(--text-muted); text-decoration: none;">code source</a>
+    ·
+    <span style="color: var(--text-muted);">données locales · zéro cloud · zéro télémétrie</span>
+  </div>
 </footer>
 
 </body>
