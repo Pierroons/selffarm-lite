@@ -278,6 +278,147 @@ def _hook_compta_vente(data: dict) -> tuple[int | None, bool]:
         return None, False
 
 
+@router.get("/nouvelle", response_class=HTMLResponse)
+async def invoice_nouvelle_form(request: Request):
+    """Formulaire de saisie d'une nouvelle facture (V1)."""
+    today = date.today()
+    return templates.TemplateResponse(
+        "invoice/form.html",
+        {
+            "request": request,
+            "today": today.isoformat(),
+            "echeance_default": (today + timedelta(days=30)).isoformat(),
+            "regimes": REGIMES,
+            "next_numero": f"F-{today.year}-0001",  # à raffiner avec compteur DB plus tard
+        },
+    )
+
+
+@router.post("/creer")
+async def invoice_creer(request: Request):
+    """Crée une facture depuis le formulaire utilisateur."""
+    from weasyprint import HTML
+
+    form = await request.form()
+
+    # --- VENDEUR (V1 : hardcodé, à terme stocké en config exploitation) ---
+    vendeur = {
+        "nom": form.get("vendeur_nom", "Mon exploitation"),
+        "nom_commercial": form.get("vendeur_nom", "Mon exploitation"),
+        "forme": "Entreprise individuelle",
+        "activite": form.get("vendeur_activite", "Exploitation agricole"),
+        "adresse": form.get("vendeur_adresse", ""),
+        "cp": form.get("vendeur_cp", ""),
+        "ville": form.get("vendeur_ville", ""),
+        "siret": form.get("vendeur_siret", ""),
+        "tva": form.get("vendeur_tva", ""),
+        "ape": form.get("vendeur_ape", ""),
+    }
+
+    # --- CLIENT ---
+    client = {
+        "nom": form.get("client_nom", "Client"),
+        "adresse": form.get("client_adresse", ""),
+        "cp": form.get("client_cp", ""),
+        "ville": form.get("client_ville", ""),
+        "siret": form.get("client_siret", ""),
+        "tva": form.get("client_tva", ""),
+        "email": form.get("client_email", ""),
+    }
+
+    # --- LIGNES (jusqu'à 10) ---
+    regime_key = form.get("regime", "reel")
+    regime = REGIMES.get(regime_key, REGIMES["reel"])
+
+    lignes: list[dict] = []
+    for i in range(10):
+        nom = (form.get(f"ligne_{i}_nom", "") or "").strip()
+        if not nom:
+            continue
+        try:
+            qte = int(form.get(f"ligne_{i}_qte", "1") or "1")
+            pu_ht = Decimal(str(form.get(f"ligne_{i}_pu_ht", "0") or "0"))
+            tva_pct_raw = form.get(f"ligne_{i}_tva_pct", "20")
+            tva_pct = Decimal(str(tva_pct_raw or "20"))
+        except Exception:
+            continue
+        if regime["force_tva_pct"] is not None:
+            tva_pct = regime["force_tva_pct"]
+        total_ht = (pu_ht * qte).quantize(Decimal("0.01"))
+        lignes.append({
+            "nom": nom,
+            "detail": form.get(f"ligne_{i}_detail", "") or "",
+            "qte": qte,
+            "pu_ht": pu_ht,
+            "tva_pct": tva_pct,
+            "total_ht": total_ht,
+        })
+
+    if not lignes:
+        from fastapi.responses import HTMLResponse as _H
+        return _H("<p style='color:red;padding:20px'>Aucune ligne saisie. <a href='/invoice/nouvelle'>retour</a></p>", status_code=400)
+
+    # --- TOTAUX ---
+    total_ht = sum(l["total_ht"] for l in lignes)
+    tva_par_taux: dict[str, Decimal] = {}
+    for l in lignes:
+        taux = f'{l["tva_pct"]:.1f}'
+        tva_par_taux.setdefault(taux, Decimal("0"))
+        tva_par_taux[taux] += (l["total_ht"] * l["tva_pct"] / Decimal("100")).quantize(Decimal("0.01"))
+    total_tva = sum(tva_par_taux.values()) if regime["slug"] != "franchise" else Decimal("0")
+    total_ttc = (total_ht + total_tva).quantize(Decimal("0.01"))
+
+    # --- DATES & NUMÉRO ---
+    today = date.today()
+    try:
+        date_echeance = date.fromisoformat(form.get("date_echeance", "") or (today + timedelta(days=30)).isoformat())
+    except Exception:
+        date_echeance = today + timedelta(days=30)
+    numero = (form.get("numero", "") or f"F-{today.year}-{random.randint(1, 9999):04d}").strip()
+
+    profile = "BASIC" if regime_key == "franchise" else "EN16931"
+
+    mois_fr = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"]
+    data = {
+        "facture": {
+            "numero": numero,
+            "date_emission_fr": f"{today.day} {mois_fr[today.month - 1]} {today.year}",
+            "date_prestation_fr": today.strftime("%d/%m/%Y"),
+            "date_echeance_fr": date_echeance.strftime("%d/%m/%Y"),
+            "facturx_profile": profile,
+        },
+        "regime": regime,
+        "vendeur": vendeur,
+        "client": client,
+        "lignes": lignes,
+        "totaux": {
+            "total_ht": total_ht,
+            "tva_par_taux": tva_par_taux,
+            "total_tva": total_tva,
+            "total_ttc": total_ttc,
+        },
+    }
+
+    tmpl = templates.get_template("invoice/facture.html.j2")
+    html_str = tmpl.render(**data)
+    pdf_bytes = HTML(string=html_str).write_pdf()
+
+    ecriture_id, ecriture_created = _hook_compta_vente(data)
+
+    filename = f"{numero}_{regime_key}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'inline; filename="{filename}"',
+            "X-Selfinvoice-Profile": profile,
+            "X-Selfinvoice-Regime": regime_key,
+            "X-Selfagribook-Ecriture-Id": str(ecriture_id) if ecriture_id else "",
+            "X-Selfagribook-Ecriture-Created": "true" if ecriture_created else "false",
+        },
+    )
+
+
 @router.get("/generer-demo")
 async def invoice_generer_demo(regime: str | None = None):
     _demo_only()

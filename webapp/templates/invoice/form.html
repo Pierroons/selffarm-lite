@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Nouvelle facture — SelfInvoice{% endblock %}
+{% block content %}
+
+<!-- HEADER -->
+<div style="margin-bottom: 22px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+  <div>
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+      <span style="font-size: 11px; color: var(--text-muted); letter-spacing: 0.6px; text-transform: uppercase; font-weight: 600;">SelfInvoice · Émission facture</span>
+    </div>
+    <h1 style="font-size: 26px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; margin-bottom: 4px;">
+      Nouvelle <span style="color: var(--forest-500); font-style: italic; font-weight: 500;">facture</span>
+    </h1>
+    <p style="font-size: 12.5px; color: var(--text-secondary); max-width: 720px; line-height: 1.5;">
+      Saisie libre · génère un PDF Factur-X conforme + auto-écriture comptable (411 / 701) dans le hub.
+    </p>
+  </div>
+  <div style="display: flex; gap: 6px;">
+    <a href="/invoice" class="btn btn-ghost" style="font-size: 12px; padding: 6px 12px;">← Retour</a>
+  </div>
+</div>
+
+<form action="/invoice/creer" method="post" target="_blank" style="display: flex; flex-direction: column; gap: 14px;">
+
+  <!-- HEAD : numéro / date / régime -->
+  <div class="card" style="padding: 16px;">
+    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px;">Identité & régime</h2>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+      <div>
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">N° facture</label>
+        <input type="text" name="numero" value="{{ next_numero }}" required style="width: 100%; font-family: monospace;">
+      </div>
+      <div>
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Date d'échéance</label>
+        <input type="date" name="date_echeance" value="{{ echeance_default }}" style="width: 100%;">
+      </div>
+      <div>
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Régime fiscal</label>
+        <select name="regime" style="width: 100%;">
+          {% for k, r in regimes.items() %}
+          <option value="{{ k }}" {% if k == 'reel' %}selected{% endif %}>{{ r.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- VENDEUR -->
+  <div class="card" style="padding: 16px;">
+    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px;">Émetteur (toi)</h2>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+      <div>
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Nom / Raison sociale</label>
+        <input type="text" name="vendeur_nom" placeholder="Mon exploitation" required style="width: 100%;">
+      </div>
+      <div>
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Activité</label>
+        <input type="text" name="vendeur_activite" placeholder="Exploitation agricole bio" style="width: 100%;">
+      </div>
+    </div>
+    <div style="margin-bottom: 10px;">
+      <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Adresse</label>
+      <input type="text" name="vendeur_adresse" placeholder="N° + rue / lieu-dit" style="width: 100%;">
+    </div>
+    <div style="display: grid; grid-template-columns: 100px 1fr 1fr 1fr; gap: 10px;">
+      <div>
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">CP</label>
+        <input type="text" name="vendeur_cp" placeholder="[cp]" style="width: 100%;">
+      </div>
+      <div>
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Ville</label>
+        <input type="text" name="vendeur_ville" placeholder="[commune]" style="width: 100%;">
+      </div>
+      <div>
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">SIRET</label>
+        <input type="text" name="vendeur_siret" placeholder="000 000 000 00000" style="width: 100%; font-family: monospace;">
+      </div>
+      <div>
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">N° TVA (si applicable)</label>
+        <input type="text" name="vendeur_tva" placeholder="FR 00 000000000" style="width: 100%; font-family: monospace;">
+      </div>
+    </div>
+  </div>
+
+  <!-- CLIENT -->
+  <div class="card" style="padding: 16px;">
+    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px;">Client</h2>
+    <div style="margin-bottom: 10px;">
+      <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Nom / Raison sociale</label>
+      <input type="text" name="client_nom" required style="width: 100%;">
+    </div>
+    <div style="margin-bottom: 10px;">
+      <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Adresse</label>
+      <input type="text" name="client_adresse" style="width: 100%;">
+    </div>
+    <div style="display: grid; grid-template-columns: 100px 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+      <div>
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">CP</label>
+        <input type="text" name="client_cp" style="width: 100%;">
+      </div>
+      <div>
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Ville</label>
+        <input type="text" name="client_ville" style="width: 100%;">
+      </div>
+      <div>
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">SIRET</label>
+        <input type="text" name="client_siret" style="width: 100%; font-family: monospace;">
+      </div>
+      <div>
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">N° TVA</label>
+        <input type="text" name="client_tva" style="width: 100%; font-family: monospace;">
+      </div>
+    </div>
+    <div>
+      <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Email</label>
+      <input type="email" name="client_email" style="width: 100%;">
+    </div>
+  </div>
+
+  <!-- LIGNES -->
+  <div class="card" style="padding: 16px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+      <h2 style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Lignes produits / services</h2>
+      <span style="font-size: 11px; color: var(--text-muted);">Laisse vide les lignes inutilisées</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      {% for i in range(5) %}
+      <div style="display: grid; grid-template-columns: 2fr 1fr 80px 100px 80px; gap: 8px; align-items: end;">
+        <div>
+          {% if i == 0 %}<label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Désignation</label>{% endif %}
+          <input type="text" name="ligne_{{ i }}_nom" placeholder="Produit / service" style="width: 100%;">
+        </div>
+        <div>
+          {% if i == 0 %}<label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Détail</label>{% endif %}
+          <input type="text" name="ligne_{{ i }}_detail" placeholder="(optionnel)" style="width: 100%;">
+        </div>
+        <div>
+          {% if i == 0 %}<label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Qté</label>{% endif %}
+          <input type="number" name="ligne_{{ i }}_qte" min="1" step="1" placeholder="1" style="width: 100%; font-family: monospace; text-align: right;">
+        </div>
+        <div>
+          {% if i == 0 %}<label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">PU HT €</label>{% endif %}
+          <input type="number" name="ligne_{{ i }}_pu_ht" min="0" step="0.01" placeholder="0,00" style="width: 100%; font-family: monospace; text-align: right;">
+        </div>
+        <div>
+          {% if i == 0 %}<label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">TVA %</label>{% endif %}
+          <select name="ligne_{{ i }}_tva_pct" style="width: 100%; font-family: monospace; text-align: right;">
+            <option value="20">20</option>
+            <option value="10">10</option>
+            <option value="5.5" selected>5,5</option>
+            <option value="2.1">2,1</option>
+            <option value="0">0</option>
+          </select>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ACTIONS -->
+  <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px; background: var(--bg-elev); border-radius: 8px; flex-wrap: wrap;">
+    <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.55;">
+      Au clic <strong style="color: var(--text-primary);">Générer</strong> :<br>
+      → PDF Factur-X (PDF/A-3 + XML) ouvert dans un nouvel onglet<br>
+      → Écriture comptable <code style="font-size: 10.5px;">411 / 701</code> auto-créée dans le hub
+    </div>
+    <button type="submit" class="btn" style="font-size: 14px; padding: 10px 22px;">Générer la facture →</button>
+  </div>
+</form>
+
+{% endblock %}
