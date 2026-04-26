@@ -10,6 +10,8 @@ pour un schéma aussi plat). sqlite3 stdlib suffit.
 
 from __future__ import annotations
 
+import hashlib
+import json as _json
 import logging
 import os
 import sqlite3
@@ -80,6 +82,33 @@ MIGRATIONS: list[tuple[int, str, str]] = [
           AND LENGTH(numero_piece) >= 8
         GROUP BY annee
         HAVING annee IS NOT NULL AND annee >= 2020 AND annee <= 2100;
+    """),
+    (2, "add_hash_chain_and_lock", """
+        ALTER TABLE ecritures_comptables ADD COLUMN hash_data TEXT;
+        ALTER TABLE ecritures_comptables ADD COLUMN hash_previous TEXT;
+        ALTER TABLE ecritures_comptables ADD COLUMN hash_pdf TEXT;
+        ALTER TABLE ecritures_comptables ADD COLUMN locked INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE ecritures_comptables ADD COLUMN locked_at TEXT;
+        CREATE INDEX IF NOT EXISTS idx_ecritures_locked ON ecritures_comptables(locked);
+    """),
+    (3, "create_audit_log", """
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+            actor TEXT NOT NULL DEFAULT 'system',
+            action TEXT NOT NULL,
+            target_type TEXT,
+            target_id TEXT,
+            details_json TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_audit_target ON audit_log(target_type, target_id);
+        -- Triggers append-only : refuse UPDATE et DELETE
+        CREATE TRIGGER IF NOT EXISTS trg_audit_log_no_update
+            BEFORE UPDATE ON audit_log
+            BEGIN SELECT RAISE(ABORT, 'audit_log is append-only — UPDATE forbidden'); END;
+        CREATE TRIGGER IF NOT EXISTS trg_audit_log_no_delete
+            BEFORE DELETE ON audit_log
+            BEGIN SELECT RAISE(ABORT, 'audit_log is append-only — DELETE forbidden'); END;
     """),
 ]
 
@@ -201,6 +230,21 @@ def find_ecriture_by_source(source_module: str, source_id: str) -> dict | None:
     return dict(row) if row else None
 
 
+def _compute_hash_data(payload: dict) -> str:
+    """Hash SHA256 d'un payload canonical JSON (clés triées, encodage déterministe)."""
+    canonical = _json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _last_hash_chain() -> str:
+    """Récupère le hash_data de la dernière écriture insérée (chaîne)."""
+    with _conn() as c:
+        row = c.execute(
+            "SELECT hash_data FROM ecritures_comptables ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+    return row["hash_data"] if row and row["hash_data"] else ""
+
+
 def save_ecriture(
     *,
     date_operation: date,
@@ -215,13 +259,21 @@ def save_ecriture(
     source_module: str | None = None,
     source_id: str | None = None,
     metadata_json: str | None = None,
+    hash_pdf: str | None = None,
+    locked: bool = False,
     allow_duplicate: bool = False,
 ) -> tuple[int, bool]:
-    """Insère une écriture.
+    """Insère une écriture avec chaînage cryptographique + verrouillage optionnel.
 
     Par défaut, si (source_module, source_id) existe déjà, l'écriture existante
     est renvoyée telle quelle (idempotence). Passer `allow_duplicate=True` force
     une nouvelle insertion même si doublon.
+
+    Conformité PAF (CGI art. 289-VII) :
+    - hash_data = SHA256 canonical JSON (clés triées) du contenu écriture
+    - hash_previous = hash_data de la PRÉCÉDENTE écriture → chaîne immuable
+    - locked = 1 → l'écriture est verrouillée, modifications futures interdites
+    - audit_log = trace de l'action (hook write_audit)
 
     Retourne (ecriture_id, created_bool) :
         - created_bool = True → nouvelle écriture insérée
@@ -237,6 +289,27 @@ def save_ecriture(
                 source_module, source_id, existing["id"],
             )
             return existing["id"], False
+
+    # Calcul du hash chaîne — payload canonical = données fonctionnelles, pas l'id
+    hash_previous = _last_hash_chain()
+    payload = {
+        "date_operation": date_operation.isoformat(),
+        "journal": journal,
+        "numero_piece": numero_piece,
+        "libelle": libelle,
+        "compte_debit": compte_debit,
+        "compte_credit": compte_credit,
+        "montant_ht": str(montant_ht) if montant_ht is not None else None,
+        "montant_tva": str(montant_tva) if montant_tva is not None else None,
+        "montant_ttc": str(montant_ttc),
+        "source_module": source_module,
+        "source_id": source_id,
+        "metadata_json": metadata_json,
+        "hash_previous": hash_previous,
+    }
+    hash_data = _compute_hash_data(payload)
+    locked_at = datetime.now().isoformat() if locked else None
+
     with _conn() as c:
         cur = c.execute(
             """
@@ -244,8 +317,9 @@ def save_ecriture(
                 (date_operation, journal, numero_piece, libelle,
                  compte_debit, compte_credit,
                  montant_ht, montant_tva, montant_ttc,
-                 source_module, source_id, metadata_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 source_module, source_id, metadata_json,
+                 hash_data, hash_previous, hash_pdf, locked, locked_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 date_operation.isoformat(),
@@ -260,14 +334,174 @@ def save_ecriture(
                 source_module,
                 source_id,
                 metadata_json,
+                hash_data,
+                hash_previous,
+                hash_pdf,
+                1 if locked else 0,
+                locked_at,
             ),
         )
         ecriture_id = cur.lastrowid
+
+    write_audit(
+        action="ecriture.create",
+        target_type="ecriture",
+        target_id=str(ecriture_id),
+        details={
+            "numero_piece": numero_piece,
+            "compte_debit": compte_debit,
+            "compte_credit": compte_credit,
+            "montant_ttc": str(montant_ttc),
+            "source_module": source_module,
+            "locked": locked,
+            "hash_data": hash_data,
+        },
+    )
     log.info(
-        "Écriture #%d saisie : %s %s %s → %s / %s",
-        ecriture_id, numero_piece, compte_debit, montant_ttc, compte_credit, libelle[:40],
+        "Écriture #%d saisie : %s %s %s → %s / %s [hash %s]",
+        ecriture_id, numero_piece, compte_debit, montant_ttc, compte_credit,
+        libelle[:40], hash_data[:12],
     )
     return ecriture_id, True
+
+
+def lock_ecriture(ecriture_id: int) -> bool:
+    """Verrouille une écriture (locked=1). Retourne True si modifié, False sinon.
+
+    Une écriture verrouillée est immutable :
+    - lock_ecriture sur une écriture déjà locked → no-op (False)
+    - Toute tentative de modif/suppression doit être rejetée par les routes
+    - Pour annuler : émettre un avoir (compte 709), ne PAS unlock
+    """
+    init_db()
+    with _conn() as c:
+        row = c.execute(
+            "SELECT locked FROM ecritures_comptables WHERE id=?", (ecriture_id,)
+        ).fetchone()
+        if not row:
+            raise ValueError(f"Écriture #{ecriture_id} introuvable")
+        if row["locked"]:
+            return False
+        c.execute(
+            "UPDATE ecritures_comptables SET locked=1, locked_at=datetime('now') WHERE id=?",
+            (ecriture_id,),
+        )
+    write_audit(
+        action="ecriture.lock",
+        target_type="ecriture",
+        target_id=str(ecriture_id),
+        details={"locked_at": datetime.now().isoformat()},
+    )
+    return True
+
+
+def write_audit(
+    *,
+    action: str,
+    target_type: str | None = None,
+    target_id: str | None = None,
+    actor: str = "system",
+    details: dict | None = None,
+) -> int:
+    """Enregistre une entrée dans l'audit log (append-only, triggers SQLite).
+
+    Tentative de UPDATE/DELETE sur audit_log → erreur SQLite (trigger ABORT).
+    Permet de prouver à un contrôleur DGFIP qu'aucune action n'a été effacée.
+    """
+    init_db()
+    details_json = _json.dumps(details, sort_keys=True, default=str) if details else None
+    with _conn() as c:
+        cur = c.execute(
+            "INSERT INTO audit_log (actor, action, target_type, target_id, details_json) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (actor, action, target_type, target_id, details_json),
+        )
+        return cur.lastrowid
+
+
+def verify_chain() -> dict:
+    """Vérifie l'intégrité de la chaîne cryptographique des écritures.
+
+    Recalcule chaque hash_data et vérifie le lien hash_previous → hash_data
+    de la précédente. Retourne :
+    {
+        valid: bool,
+        nb_ecritures: int,
+        nb_locked: int,
+        broken_at: int | None,  (id de la première écriture cassée)
+        reason: str | None,
+    }
+    """
+    init_db()
+    with _conn() as c:
+        rows = c.execute(
+            "SELECT * FROM ecritures_comptables ORDER BY id ASC"
+        ).fetchall()
+    if not rows:
+        return {"valid": True, "nb_ecritures": 0, "nb_locked": 0, "broken_at": None, "reason": None}
+
+    nb_locked = 0
+    expected_previous = ""
+    for r in rows:
+        if r["locked"]:
+            nb_locked += 1
+        # Recalcule le hash attendu
+        payload = {
+            "date_operation": r["date_operation"],
+            "journal": r["journal"],
+            "numero_piece": r["numero_piece"],
+            "libelle": r["libelle"],
+            "compte_debit": r["compte_debit"],
+            "compte_credit": r["compte_credit"],
+            "montant_ht": r["montant_ht"],
+            "montant_tva": r["montant_tva"],
+            "montant_ttc": r["montant_ttc"],
+            "source_module": r["source_module"],
+            "source_id": r["source_id"],
+            "metadata_json": r["metadata_json"],
+            "hash_previous": r["hash_previous"] or "",
+        }
+        expected_hash = _compute_hash_data(payload)
+
+        if r["hash_data"] is None:
+            # Écriture pré-migration #2 : skip vérif chaîne, OK rétrocompat
+            expected_previous = r["hash_data"] or ""
+            continue
+        if r["hash_data"] != expected_hash:
+            return {
+                "valid": False,
+                "nb_ecritures": len(rows),
+                "nb_locked": nb_locked,
+                "broken_at": r["id"],
+                "reason": f"hash_data ne correspond pas — écriture #{r['id']} a été modifiée",
+            }
+        if r["hash_previous"] != expected_previous:
+            return {
+                "valid": False,
+                "nb_ecritures": len(rows),
+                "nb_locked": nb_locked,
+                "broken_at": r["id"],
+                "reason": f"chaîne brisée — écriture #{r['id']} pointe vers un hash_previous incorrect",
+            }
+        expected_previous = r["hash_data"]
+
+    return {
+        "valid": True,
+        "nb_ecritures": len(rows),
+        "nb_locked": nb_locked,
+        "broken_at": None,
+        "reason": None,
+    }
+
+
+def list_audit_log(limit: int = 100) -> list[dict]:
+    """Retourne les dernières entrées de l'audit log (desc)."""
+    init_db()
+    with _conn() as c:
+        rows = c.execute(
+            "SELECT * FROM audit_log ORDER BY id DESC LIMIT ?", (limit,),
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 def list_ecritures(

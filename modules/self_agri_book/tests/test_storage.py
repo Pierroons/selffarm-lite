@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import sqlite3
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
@@ -516,6 +517,235 @@ def test_apply_migrations_runs_in_order(isolated_db, monkeypatch):
     names = [r["name"] for r in rows]
     assert versions == [101, 102]
     assert names == ["first", "second"]
+
+
+# ---------------- Hash chain + verrouillage (PAF CGI 289-VII) ----------------
+
+def test_save_ecriture_calcule_hash_data(isolated_db):
+    eid, _ = storage.save_ecriture(
+        date_operation=date(2026, 4, 26),
+        journal="VEN",
+        numero_piece="F-1",
+        libelle="hash test",
+        compte_debit="411",
+        compte_credit="701",
+        montant_ttc=Decimal("100"),
+        source_module="self_invoice",
+        source_id="F-1",
+    )
+    with storage._conn() as c:
+        row = c.execute(
+            "SELECT hash_data, hash_previous FROM ecritures_comptables WHERE id=?",
+            (eid,),
+        ).fetchone()
+    assert row["hash_data"] is not None
+    assert len(row["hash_data"]) == 64  # SHA256 hex
+    assert row["hash_previous"] == ""   # première écriture
+
+
+def test_chain_links_consecutive_ecritures(isolated_db):
+    eid1, _ = storage.save_ecriture(
+        date_operation=date(2026, 4, 26),
+        journal="VEN",
+        numero_piece="F-1",
+        libelle="v1",
+        compte_debit="411",
+        compte_credit="701",
+        montant_ttc=Decimal("100"),
+        source_module="self_invoice",
+        source_id="F-1",
+    )
+    eid2, _ = storage.save_ecriture(
+        date_operation=date(2026, 4, 26),
+        journal="VEN",
+        numero_piece="F-2",
+        libelle="v2",
+        compte_debit="411",
+        compte_credit="701",
+        montant_ttc=Decimal("200"),
+        source_module="self_invoice",
+        source_id="F-2",
+    )
+    with storage._conn() as c:
+        r1 = c.execute("SELECT hash_data FROM ecritures_comptables WHERE id=?", (eid1,)).fetchone()
+        r2 = c.execute("SELECT hash_previous FROM ecritures_comptables WHERE id=?", (eid2,)).fetchone()
+    assert r2["hash_previous"] == r1["hash_data"]
+
+
+def test_verify_chain_returns_valid_for_clean_data(isolated_db):
+    for i in range(3):
+        storage.save_ecriture(
+            date_operation=date(2026, 4, 26),
+            journal="VEN",
+            numero_piece=f"F-{i}",
+            libelle=f"v{i}",
+            compte_debit="411",
+            compte_credit="701",
+            montant_ttc=Decimal(f"{(i + 1) * 100}"),
+            source_module="self_invoice",
+            source_id=f"F-{i}",
+        )
+    res = storage.verify_chain()
+    assert res["valid"] is True
+    assert res["nb_ecritures"] == 3
+    assert res["broken_at"] is None
+
+
+def test_verify_chain_detects_tampering(isolated_db):
+    """Modifier directement une écriture en SQL doit casser la chaîne."""
+    eid, _ = storage.save_ecriture(
+        date_operation=date(2026, 4, 26),
+        journal="VEN",
+        numero_piece="F-1",
+        libelle="originale",
+        compte_debit="411",
+        compte_credit="701",
+        montant_ttc=Decimal("100"),
+        source_module="self_invoice",
+        source_id="F-1",
+    )
+    storage.save_ecriture(
+        date_operation=date(2026, 4, 26),
+        journal="VEN",
+        numero_piece="F-2",
+        libelle="suivante",
+        compte_debit="411",
+        compte_credit="701",
+        montant_ttc=Decimal("200"),
+        source_module="self_invoice",
+        source_id="F-2",
+    )
+    # Falsification : modifie le montant directement en SQL (sans passer par save_ecriture)
+    with storage._conn() as c:
+        c.execute(
+            "UPDATE ecritures_comptables SET montant_ttc='999999' WHERE id=?",
+            (eid,),
+        )
+    res = storage.verify_chain()
+    assert res["valid"] is False
+    assert res["broken_at"] == eid
+
+
+def test_locked_ecriture_at_creation(isolated_db):
+    eid, _ = storage.save_ecriture(
+        date_operation=date(2026, 4, 26),
+        journal="VEN",
+        numero_piece="F-LOCK",
+        libelle="locked at creation",
+        compte_debit="411",
+        compte_credit="701",
+        montant_ttc=Decimal("100"),
+        source_module="self_invoice",
+        source_id="F-LOCK",
+        locked=True,
+    )
+    with storage._conn() as c:
+        row = c.execute(
+            "SELECT locked, locked_at FROM ecritures_comptables WHERE id=?", (eid,),
+        ).fetchone()
+    assert row["locked"] == 1
+    assert row["locked_at"] is not None
+
+
+def test_lock_ecriture_post_creation(isolated_db):
+    eid, _ = storage.save_ecriture(
+        date_operation=date(2026, 4, 26),
+        journal="VEN",
+        numero_piece="F-LOCK2",
+        libelle="à verrouiller",
+        compte_debit="411",
+        compte_credit="701",
+        montant_ttc=Decimal("50"),
+        source_module="self_invoice",
+        source_id="F-LOCK2",
+    )
+    # Pas locked au départ
+    with storage._conn() as c:
+        assert c.execute("SELECT locked FROM ecritures_comptables WHERE id=?", (eid,)).fetchone()["locked"] == 0
+    # On verrouille
+    assert storage.lock_ecriture(eid) is True
+    with storage._conn() as c:
+        assert c.execute("SELECT locked FROM ecritures_comptables WHERE id=?", (eid,)).fetchone()["locked"] == 1
+    # 2e appel = no-op
+    assert storage.lock_ecriture(eid) is False
+
+
+def test_lock_ecriture_raises_if_unknown(isolated_db):
+    storage.init_db()
+    with pytest.raises(ValueError, match="introuvable"):
+        storage.lock_ecriture(999999)
+
+
+def test_hash_pdf_stored(isolated_db):
+    eid, _ = storage.save_ecriture(
+        date_operation=date(2026, 4, 26),
+        journal="VEN",
+        numero_piece="F-PDF",
+        libelle="avec hash PDF",
+        compte_debit="411",
+        compte_credit="701",
+        montant_ttc=Decimal("100"),
+        source_module="self_invoice",
+        source_id="F-PDF",
+        hash_pdf="abc123" * 10 + "abcd",  # 64 chars fake hash
+    )
+    with storage._conn() as c:
+        row = c.execute(
+            "SELECT hash_pdf FROM ecritures_comptables WHERE id=?", (eid,)
+        ).fetchone()
+    assert row["hash_pdf"] == "abc123" * 10 + "abcd"
+
+
+# ---------------- Audit log append-only ----------------
+
+def test_audit_log_created_on_ecriture(isolated_db):
+    storage.save_ecriture(
+        date_operation=date(2026, 4, 26),
+        journal="VEN",
+        numero_piece="F-1",
+        libelle="audited",
+        compte_debit="411",
+        compte_credit="701",
+        montant_ttc=Decimal("100"),
+        source_module="self_invoice",
+        source_id="F-1",
+    )
+    log_entries = storage.list_audit_log()
+    assert len(log_entries) >= 1
+    actions = [e["action"] for e in log_entries]
+    assert "ecriture.create" in actions
+
+
+def test_audit_log_append_only_no_update(isolated_db):
+    """Trigger SQLite doit refuser tout UPDATE sur audit_log."""
+    storage.write_audit(action="test.action", target_type="x", target_id="1")
+    with storage._conn() as c, pytest.raises(sqlite3.IntegrityError, match="append-only"):
+        c.execute("UPDATE audit_log SET action='hack' WHERE id=1")
+
+
+def test_audit_log_append_only_no_delete(isolated_db):
+    """Trigger SQLite doit refuser tout DELETE sur audit_log."""
+    storage.write_audit(action="test.action", target_type="x", target_id="1")
+    with storage._conn() as c, pytest.raises(sqlite3.IntegrityError, match="append-only"):
+        c.execute("DELETE FROM audit_log")
+
+
+def test_lock_action_audited(isolated_db):
+    eid, _ = storage.save_ecriture(
+        date_operation=date(2026, 4, 26),
+        journal="VEN",
+        numero_piece="F-AUDIT",
+        libelle="lock audit",
+        compte_debit="411",
+        compte_credit="701",
+        montant_ttc=Decimal("10"),
+        source_module="self_invoice",
+        source_id="F-AUDIT",
+    )
+    storage.lock_ecriture(eid)
+    log_entries = storage.list_audit_log()
+    actions = [e["action"] for e in log_entries]
+    assert "ecriture.lock" in actions
 
 
 # ---------------- Métadonnées JSON ----------------

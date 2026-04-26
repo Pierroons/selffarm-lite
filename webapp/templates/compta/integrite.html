@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Intégrité — SelfAgriBook{% endblock %}
+{% block content %}
+
+<!-- HEADER -->
+<div style="margin-bottom: 22px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+  <div>
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+      <span style="font-size: 11px; color: var(--text-muted); letter-spacing: 0.6px; text-transform: uppercase; font-weight: 600;">SelfAgriBook · Conformité PAF · CGI art. 289-VII</span>
+    </div>
+    <h1 style="font-size: 26px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; margin-bottom: 4px;">
+      Intégrité <span style="color: var(--forest-500); font-style: italic; font-weight: 500;">de la chaîne comptable</span>
+    </h1>
+    <p style="font-size: 12.5px; color: var(--text-secondary); max-width: 720px; line-height: 1.5;">
+      Vérification cryptographique de la chaîne d'écritures + audit log + état des verrous.
+      <strong style="color: var(--text-primary);">Tout contrôle DGFIP commence ici.</strong>
+    </p>
+  </div>
+  <div style="display: flex; gap: 6px;">
+    <a href="/compta" class="btn btn-ghost" style="font-size: 12px; padding: 6px 12px;">Journal</a>
+  </div>
+</div>
+
+<!-- VERDICT GLOBAL -->
+<div class="card" style="padding: 18px 22px; margin-bottom: 16px;
+  {% if chain.valid %}
+    background: linear-gradient(180deg, rgba(22,101,52,0.18) 0%, rgba(22,101,52,0.08) 100%);
+    border-color: rgba(22,101,52,0.45);
+  {% else %}
+    background: linear-gradient(180deg, rgba(127,29,29,0.18) 0%, rgba(127,29,29,0.08) 100%);
+    border-color: rgba(127,29,29,0.45);
+  {% endif %}">
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+    <div>
+      <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Verdict global</div>
+      {% if chain.valid %}
+      <div style="font-size: 28px; font-weight: 700; color: #86efac; font-family: 'Fraunces', serif; letter-spacing: -0.012em;">
+        ✓ Chaîne intègre
+      </div>
+      <div style="font-size: 12.5px; color: #86efac; opacity: 0.85; margin-top: 2px;">
+        Aucune altération détectée sur les {{ chain.nb_ecritures }} écritures.
+      </div>
+      {% else %}
+      <div style="font-size: 28px; font-weight: 700; color: #fca5a5; font-family: 'Fraunces', serif; letter-spacing: -0.012em;">
+        ✗ Chaîne brisée
+      </div>
+      <div style="font-size: 12.5px; color: #fca5a5; opacity: 0.95; margin-top: 2px;">
+        {{ chain.reason }}<br>
+        <strong>Première écriture fautive : #{{ chain.broken_at }}</strong>
+      </div>
+      {% endif %}
+    </div>
+    <div style="text-align: right; font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+      <div>Écritures totales : <strong style="color: var(--text-primary);">{{ chain.nb_ecritures }}</strong></div>
+      <div>Verrouillées : <strong style="color: var(--text-primary);">{{ chain.nb_locked }}</strong></div>
+    </div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 18px;">
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 13px 15px;">
+    <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Total écritures</div>
+    <div style="font-size: 22px; font-weight: 700; color: var(--text-primary); font-family: 'Fraunces', serif;">{{ stats.nb_total }}</div>
+  </div>
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 13px 15px;">
+    <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Verrouillées</div>
+    <div style="font-size: 22px; font-weight: 700; color: #86efac; font-family: 'Fraunces', serif;">{{ stats.nb_locked }} <span style="font-size: 12px; color: var(--text-secondary); font-family: Inter, sans-serif; font-weight: 500;">/ {{ stats.nb_total }}</span></div>
+  </div>
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 13px 15px;">
+    <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Avec hash chaîne</div>
+    <div style="font-size: 22px; font-weight: 700; color: var(--forest-400); font-family: 'Fraunces', serif;">{{ stats.nb_with_hash }} <span style="font-size: 12px; color: var(--text-secondary); font-family: Inter, sans-serif; font-weight: 500;">/ {{ stats.nb_total }}</span></div>
+  </div>
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 13px 15px;">
+    <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Avec hash PDF</div>
+    <div style="font-size: 22px; font-weight: 700; color: var(--forest-400); font-family: 'Fraunces', serif;">{{ stats.nb_with_pdf_hash }} <span style="font-size: 12px; color: var(--text-secondary); font-family: Inter, sans-serif; font-weight: 500;">/ {{ stats.nb_total }}</span></div>
+  </div>
+</div>
+
+<!-- AUDIT LOG -->
+<div class="card" style="padding: 0; overflow: hidden; margin-bottom: 14px;">
+  <div style="background: var(--bg-elev); padding: 11px 16px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0;">Journal d'audit · append-only</h2>
+    <span style="font-size: 11px; color: var(--text-muted);">{{ audit_entries|length }} dernières actions</span>
+  </div>
+  {% if audit_entries %}
+  <div style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Horodatage</th>
+          <th>Acteur</th>
+          <th>Action</th>
+          <th>Cible</th>
+          <th>Détails</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in audit_entries %}
+        <tr>
+          <td style="white-space: nowrap; font-family: monospace; font-size: 11px; color: var(--text-muted);">{{ e.timestamp }}</td>
+          <td style="font-size: 11.5px;"><code style="color: var(--text-secondary); font-size: 10.5px;">{{ e.actor }}</code></td>
+          <td style="font-size: 11.5px;">
+            {% if e.action == 'ecriture.create' %}<span class="badge badge-stable">+ création</span>
+            {% elif e.action == 'ecriture.lock' %}<span class="badge badge-blue">🔒 verrou</span>
+            {% else %}<span class="badge" style="background: rgba(106, 128, 136, 0.15); color: var(--text-secondary); border: 1px solid var(--border-default);">{{ e.action }}</span>
+            {% endif %}
+          </td>
+          <td style="font-size: 11.5px;">
+            {% if e.target_type %}<code style="color: #86efac; font-size: 10.5px;">{{ e.target_type }}#{{ e.target_id }}</code>{% else %}—{% endif %}
+          </td>
+          <td style="font-size: 11px; color: var(--text-muted); max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title='{{ e.details|tojson if e.details else "" }}'>
+            {% if e.details.numero_piece %}piece={{ e.details.numero_piece }} · {% endif %}
+            {% if e.details.compte_debit %}{{ e.details.compte_debit }}/{{ e.details.compte_credit }} · {% endif %}
+            {% if e.details.montant_ttc %}{{ e.details.montant_ttc }} € · {% endif %}
+            {% if e.details.locked %}🔒 {% endif %}
+            {% if e.details.hash_data %}<code style="font-size: 9.5px;">h:{{ e.details.hash_data[:10] }}</code>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="padding: 30px 16px; text-align: center; color: var(--text-muted); font-size: 12.5px;">Audit log vide — aucune action enregistrée.</div>
+  {% endif %}
+</div>
+
+<!-- DETAILS TECHNIQUES -->
+<div class="card" style="padding: 14px 16px; font-size: 11.5px; color: var(--text-secondary); line-height: 1.65;">
+  <h3 style="font-size: 12.5px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">Comment ça marche</h3>
+  <div style="line-height: 1.7;">
+    <strong style="color: var(--text-primary);">Chaîne cryptographique</strong> · chaque écriture stocke <code style="font-size: 10.5px;">hash_data</code> = SHA256 du payload canonical JSON, et <code style="font-size: 10.5px;">hash_previous</code> = hash de la précédente. Modifier 1 écriture passée → casse toute la suite, détecté en O(n).<br>
+    <strong style="color: var(--text-primary);">Verrouillage</strong> · une facture émise via SelfInvoice est <code style="font-size: 10.5px;">locked=1</code> immédiatement. Pour annuler : avoir (compte 709), pas de modification.<br>
+    <strong style="color: var(--text-primary);">Hash PDF</strong> · le SHA256 du PDF Factur-X émis est stocké → preuve qu'aucune version postérieure ne peut prétendre être la facture originale.<br>
+    <strong style="color: var(--text-primary);">Audit log append-only</strong> · triggers SQLite refusent UPDATE et DELETE sur cette table → aucune action passée ne peut être effacée.
+  </div>
+  <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-subtle); font-size: 10.5px; color: var(--text-muted);">
+    Référence : CGI art. 289-VII (authenticité origine + intégrité contenu + lisibilité), BOI-CF-COM-10-10-30, BOI-TVA-DECLA-30-20-30. Méthode utilisée : <strong>Piste d'Audit Fiable (PAF)</strong> — alternative open source aux signatures eIDAS qualifiées.
+  </div>
+</div>
+
+{% endblock %}

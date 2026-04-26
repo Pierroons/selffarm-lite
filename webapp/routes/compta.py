@@ -473,6 +473,50 @@ async def compta_bilan(request: Request):
     )
 
 
+@router.get("/integrite", response_class=HTMLResponse)
+async def compta_integrite(request: Request):
+    """Page de vérification d'intégrité PAF — chaîne de hash + audit log + verrous.
+
+    Conformité CGI art. 289-VII : un contrôleur DGFIP peut auditer ici
+    l'intégrité complète du hub compta en 30 secondes.
+    """
+    if not STORAGE_OK:
+        raise HTTPException(503, "storage KO")
+    from self_agri_book.storage import verify_chain, list_audit_log, list_ecritures
+    chain = verify_chain()
+    audit_entries = list_audit_log(limit=50)
+    # Pour chaque entrée audit, parse details_json si présent
+    for e in audit_entries:
+        if e.get("details_json"):
+            try:
+                e["details"] = json.loads(e["details_json"])
+            except Exception:
+                e["details"] = {}
+        else:
+            e["details"] = {}
+    # Stats verrouillage
+    all_ecritures = list_ecritures(limit=1000)
+    nb_total = len(all_ecritures)
+    nb_locked = sum(1 for e in all_ecritures if e.get("locked"))
+    nb_with_hash = sum(1 for e in all_ecritures if e.get("hash_data"))
+    nb_with_pdf_hash = sum(1 for e in all_ecritures if e.get("hash_pdf"))
+    return templates.TemplateResponse(
+        "compta/integrite.html",
+        {
+            "request": request,
+            "version": __version__,
+            "chain": chain,
+            "audit_entries": audit_entries,
+            "stats": {
+                "nb_total": nb_total,
+                "nb_locked": nb_locked,
+                "nb_with_hash": nb_with_hash,
+                "nb_with_pdf_hash": nb_with_pdf_hash,
+            },
+        },
+    )
+
+
 @router.get("/export-fec")
 async def compta_export_fec(siren: str = "000000000"):
     """Export FEC DGFIP conforme (art. L47 A-I LPF + BOI-CF-IOR-60-40-10).
