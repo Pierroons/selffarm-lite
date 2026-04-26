@@ -4,15 +4,25 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import random
 import uuid
 from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, Response
 from fastapi.templating import Jinja2Templates
+
+
+def _demo_only():
+    if os.environ.get("SELFFARM_ENV", "prod") != "demo":
+        raise HTTPException(
+            status_code=404,
+            detail="Génération de facture aléatoire désactivée hors démo publique. "
+                   "Utilise le formulaire de saisie facture (V1 sprint).",
+        )
 
 from webapp import __version__
 
@@ -270,6 +280,7 @@ def _hook_compta_vente(data: dict) -> tuple[int | None, bool]:
 
 @router.get("/generer-demo")
 async def invoice_generer_demo(regime: str | None = None):
+    _demo_only()
     """Génère une facture Factur-X fictive + PDF + auto-écriture compta.
 
     ?regime=franchise|micro-ba|reel (sinon aléatoire)

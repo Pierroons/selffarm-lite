@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import random
 from datetime import date, timedelta
 from decimal import Decimal
@@ -13,6 +14,21 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Resp
 from fastapi.templating import Jinja2Templates
 
 from webapp import __version__
+
+
+def _demo_only():
+    """Lève 404 si l'instance n'est pas en mode démo publique.
+
+    Contrôle d'accès aux endpoints de génération de fixtures :
+    - SELFFARM_ENV=demo → autorisé (instance publique selffarm.my-self.fr)
+    - SELFFARM_ENV=dev / prod / perso → 404 (vraies données utilisateur)
+    """
+    if os.environ.get("SELFFARM_ENV", "prod") != "demo":
+        raise HTTPException(
+            status_code=404,
+            detail="Endpoint démo désactivé en environnement de production. "
+                   "Utilise les formulaires de saisie manuelle (V1 sprint).",
+        )
 
 try:
     from self_agri_book.storage import (
@@ -215,6 +231,7 @@ FRAIS_BANQUE_FIXTURES = [
 
 @router.post("/generer-vente")
 async def compta_generer_vente(request: Request):
+    _demo_only()
     """Génère une vente rapide (411/701) — saisie manuelle compta, sans PDF.
 
     Cas d'usage : vente directe au marché, AMAP, livraison cash, etc.
@@ -287,6 +304,7 @@ async def compta_generer_vente(request: Request):
 
 @router.post("/generer-achat")
 async def compta_generer_achat(request: Request):
+    _demo_only()
     """Génère un achat fictif (6011/401 par défaut). Ne crée PAS de facture associée.
 
     Démonstration : une écriture d'achat est distincte d'une facture de vente.
@@ -333,6 +351,7 @@ async def compta_generer_achat(request: Request):
 
 @router.post("/rejouer-derniere-vente")
 async def compta_rejouer_derniere_vente(request: Request):
+    _demo_only()
     """Démo dédup : retente la dernière facture générée.
 
     Si l'écriture existe déjà (même source_id), le hub retourne l'id existant
@@ -648,6 +667,7 @@ async def compta_facture_du_journal(limit: int = 8):
 
 @router.post("/importer-releve")
 async def compta_importer_releve(request: Request):
+    _demo_only()
     """Simule l'import d'un relevé bancaire (self_banking).
 
     Démonstration du 3e flux du hub compta :
@@ -754,6 +774,7 @@ async def compta_importer_releve(request: Request):
 
 @router.post("/reset-demo")
 async def compta_reset_demo(request: Request):
+    _demo_only()
     """Purge toutes les écritures — reset démo (utile si trop de monde clique)."""
     if not STORAGE_OK:
         return JSONResponse({"error": "storage KO"}, status_code=503)
