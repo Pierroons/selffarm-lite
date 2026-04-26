@@ -196,9 +196,32 @@ def _generer_facture_data(regime_key: str | None = None) -> dict:
 
 @router.get("", response_class=HTMLResponse)
 async def invoice_index(request: Request):
+    # Récupère les factures émises depuis le hub compta (source_module='self_invoice')
+    factures: list[dict] = []
+    try:
+        from self_agri_book.storage import list_ecritures
+        rows = list_ecritures(source_module="self_invoice", limit=50)
+        for r in rows:
+            meta = {}
+            if r.get("metadata_json"):
+                try:
+                    meta = json.loads(r["metadata_json"])
+                except Exception:
+                    meta = {}
+            factures.append({
+                "numero": r["numero_piece"],
+                "client": meta.get("client", "—"),
+                "date": r["date_operation"],
+                "montant_ttc": r["montant_ttc"],
+                "regime": meta.get("regime", ""),
+                "facturx_profile": meta.get("facturx_profile", ""),
+            })
+    except Exception:
+        factures = []
+
     return templates.TemplateResponse(
         "invoice/index.html",
-        {"request": request, "version": __version__},
+        {"request": request, "version": __version__, "factures": factures},
     )
 
 

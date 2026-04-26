@@ -2,19 +2,25 @@
 {% block title %}Éditeur YAML — SelfFarm-Lite{% endblock %}
 {% block content %}
 
-<div class="mb-6 flex items-center justify-between">
-  <div>
-    <h1 class="text-2xl font-bold text-slate-100">✏️ Éditeur YAML hypothèses</h1>
-    <p class="text-sm text-slate-400">Modifie un scénario existant + recalcul inline + sauvegarde.</p>
+<!-- HEADER -->
+<div style="margin-bottom: 22px;">
+  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+    <span style="font-size: 11px; color: var(--text-muted); letter-spacing: 0.6px; text-transform: uppercase; font-weight: 600;">SelfDNJA · Éditeur</span>
   </div>
+  <h1 style="font-size: 26px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; margin-bottom: 4px;">
+    Éditeur <span style="color: var(--forest-500); font-style: italic; font-weight: 500;">d'hypothèses YAML</span>
+  </h1>
+  <p style="font-size: 12.5px; color: var(--text-secondary); max-width: 720px; line-height: 1.5;">
+    Modifie un scénario existant · recalcul inline · sauvegarde sous nouveau nom.
+  </p>
 </div>
 
-<div class="grid md:grid-cols-[400px_1fr] gap-4">
+<div style="display: grid; grid-template-columns: 1fr; gap: 16px;" class="md:!grid-cols-[380px_1fr]">
 
-  <!-- Sidebar : sélection + chargement -->
-  <aside class="card">
-    <h2 class="font-bold text-slate-200 mb-3">Charger un scénario</h2>
-    <select id="load-select" class="w-full mb-2">
+  <!-- SIDEBAR -->
+  <aside class="card" style="padding: 18px; height: fit-content;">
+    <h2 style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 10px;">Charger un scénario</h2>
+    <select id="load-select" style="width: 100%; margin-bottom: 8px;">
       {% for ex in examples %}
       <option value="{{ ex.slug }}">{{ ex.label }}</option>
       {% endfor %}
@@ -24,27 +30,26 @@
       hx-include="#load-select"
       hx-target="#editor-form"
       hx-swap="innerHTML"
-      class="btn w-full">
-      📂 Charger dans l'éditeur
+      class="btn"
+      style="width: 100%; font-size: 12.5px;">
+      ↓ Charger dans l'éditeur
     </button>
 
-    <div class="mt-4 pt-4 border-t border-slate-700 text-xs text-slate-500">
-      Modifie les valeurs dans le formulaire de droite puis clique
-      <strong>Calculer</strong> pour voir l'impact en direct. Pour sauver un
-      nouveau scénario, utilise <strong>Enregistrer sous…</strong>.
+    <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-subtle); font-size: 11.5px; color: var(--text-muted); line-height: 1.55;">
+      Modifie les valeurs dans le formulaire de droite puis clique <strong style="color: var(--text-secondary);">Calculer</strong> pour voir l'impact en direct. Pour sauver un nouveau scénario, utilise <strong style="color: var(--text-secondary);">Enregistrer sous…</strong>.
     </div>
   </aside>
 
-  <!-- Form d'édition -->
+  <!-- EDITOR FORM -->
   <div id="editor-form">
-    <div class="card text-center py-12 text-slate-400">
-      <div class="text-5xl mb-3">👈</div>
-      <div>Charge un scénario pour commencer.</div>
+    <div class="card" style="padding: 60px 30px; text-align: center; color: var(--text-secondary);">
+      <div style="font-size: 32px; margin-bottom: 10px; opacity: 0.5;">←</div>
+      <div style="font-size: 13.5px;">Charge un scénario pour commencer.</div>
     </div>
   </div>
 
 </div>
 
-<div id="editor-result" class="mt-6"></div>
+<div id="editor-result" style="margin-top: 22px;"></div>
 
 {% endblock %}

@@ -1,146 +1,126 @@
 {# Fragment HTMX : résultat d'un calcul DNJA, injecté dans #result #}
 
-<div class="card mb-4">
-  <div class="flex items-center justify-between mb-4">
-    <h2 class="text-xl font-bold text-slate-100">{{ result.hypotheses.candidat }}</h2>
-    <a href="/dnja/pdf?example={{ example }}" class="btn">📄 Télécharger PDF</a>
+<div class="card" style="margin-bottom: 14px;">
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+    <h2 style="font-size: 20px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.012em;">{{ result.hypotheses.candidat }}</h2>
+    <a href="/dnja/pdf?example={{ example }}" class="btn" style="font-size: 12.5px;">↓ Télécharger PDF</a>
   </div>
 
   {% if result.ebe_uth_atteint %}
-  <div class="p-3 mb-4 rounded bg-green-900/30 border border-green-700 text-green-300">
-    ✅ <strong>EBE/UTH année {{ result.lignes[-1].annee }} :
-       {{ "{:,.0f}".format(result.ebe_uth_annee_cible|float).replace(",", " ") }} €</strong>
-    — seuil {{ "{:,.0f}".format(result.ebe_uth_seuil|float).replace(",", " ") }} € atteint
+  <div style="padding: 11px 14px; margin-bottom: 14px; border-radius: 7px; background: rgba(22,101,52,0.13); border: 1px solid rgba(22,101,52,0.40); color: #86efac; font-size: 13px;">
+    ✓ <strong>EBE/UTH année {{ result.lignes[-1].annee }} : {{ "{:,.0f}".format(result.ebe_uth_annee_cible|float).replace(",", " ") }} €</strong> — seuil {{ "{:,.0f}".format(result.ebe_uth_seuil|float).replace(",", " ") }} € atteint
   </div>
   {% else %}
-  <div class="p-3 mb-4 rounded bg-red-900/30 border border-red-700 text-red-300">
-    ⚠️ EBE/UTH insuffisant année {{ result.lignes[-1].annee }} :
-    {{ "{:,.0f}".format(result.ebe_uth_annee_cible|float).replace(",", " ") }} €
-    (seuil {{ "{:,.0f}".format(result.ebe_uth_seuil|float).replace(",", " ") }} €)
+  <div style="padding: 11px 14px; margin-bottom: 14px; border-radius: 7px; background: rgba(127,29,29,0.13); border: 1px solid rgba(127,29,29,0.40); color: #fca5a5; font-size: 13px;">
+    ⚠ <strong>EBE/UTH insuffisant</strong> année {{ result.lignes[-1].annee }} : {{ "{:,.0f}".format(result.ebe_uth_annee_cible|float).replace(",", " ") }} € (seuil {{ "{:,.0f}".format(result.ebe_uth_seuil|float).replace(",", " ") }} €)
   </div>
   {% endif %}
 
+  <div style="overflow-x: auto;">
   <table>
     <thead>
       <tr>
         <th>Poste</th>
-        {% for l in result.lignes %}<th class="text-right">N+{{ l.annee }}</th>{% endfor %}
+        {% for l in result.lignes %}<th style="text-align: right;">N+{{ l.annee }}</th>{% endfor %}
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td class="text-slate-400">CA (produits d'exploitation)</td>
-        {% for l in result.lignes %}
-        <td class="text-right text-slate-200">{{ "{:,.0f}".format(l.produits_exploitation|float).replace(",", " ") }} €</td>
-        {% endfor %}
+        <td style="color: var(--text-secondary);">CA (produits d'exploitation)</td>
+        {% for l in result.lignes %}<td style="text-align: right; font-family: monospace; color: var(--text-primary); font-size: 12px;">{{ "{:,.0f}".format(l.produits_exploitation|float).replace(",", " ") }} €</td>{% endfor %}
       </tr>
       <tr>
-        <td class="text-slate-400">− Charges exploitation</td>
-        {% for l in result.lignes %}
-        <td class="text-right text-slate-300">{{ "{:,.0f}".format(l.charges_exploitation|float).replace(",", " ") }} €</td>
-        {% endfor %}
+        <td style="color: var(--text-secondary);">− Charges exploitation</td>
+        {% for l in result.lignes %}<td style="text-align: right; font-family: monospace; color: var(--text-secondary); font-size: 12px;">{{ "{:,.0f}".format(l.charges_exploitation|float).replace(",", " ") }} €</td>{% endfor %}
       </tr>
       <tr>
-        <td class="text-slate-400">+ Aides revenu</td>
-        {% for l in result.lignes %}
-        <td class="text-right text-slate-300">{{ "{:,.0f}".format(l.aides_revenu|float).replace(",", " ") }} €</td>
-        {% endfor %}
+        <td style="color: var(--text-secondary);">+ Aides revenu</td>
+        {% for l in result.lignes %}<td style="text-align: right; font-family: monospace; color: var(--text-secondary); font-size: 12px;">{{ "{:,.0f}".format(l.aides_revenu|float).replace(",", " ") }} €</td>{% endfor %}
       </tr>
-      <tr class="border-t-2 border-slate-600">
-        <td class="font-bold text-slate-100">= EBE</td>
-        {% for l in result.lignes %}
-        <td class="text-right font-bold text-green-400">{{ "{:,.0f}".format(l.ebe|float).replace(",", " ") }} €</td>
-        {% endfor %}
+      <tr style="border-top: 2px solid var(--border-default);">
+        <td style="font-weight: 700; color: var(--text-primary);">= EBE</td>
+        {% for l in result.lignes %}<td style="text-align: right; font-family: monospace; font-weight: 700; color: #86efac; font-size: 13px;">{{ "{:,.0f}".format(l.ebe|float).replace(",", " ") }} €</td>{% endfor %}
       </tr>
       <tr>
-        <td class="text-slate-400">− Amortissements</td>
-        {% for l in result.lignes %}
-        <td class="text-right text-slate-400">{{ "{:,.0f}".format(l.amortissements|float).replace(",", " ") }} €</td>
-        {% endfor %}
+        <td style="color: var(--text-muted);">− Amortissements</td>
+        {% for l in result.lignes %}<td style="text-align: right; font-family: monospace; color: var(--text-muted); font-size: 12px;">{{ "{:,.0f}".format(l.amortissements|float).replace(",", " ") }} €</td>{% endfor %}
       </tr>
       <tr>
-        <td class="text-slate-400">− Cotisations MSA</td>
-        {% for l in result.lignes %}
-        <td class="text-right text-slate-400">{{ "{:,.0f}".format(l.charges_sociales|float).replace(",", " ") }} €</td>
-        {% endfor %}
+        <td style="color: var(--text-muted);">− Cotisations MSA</td>
+        {% for l in result.lignes %}<td style="text-align: right; font-family: monospace; color: var(--text-muted); font-size: 12px;">{{ "{:,.0f}".format(l.charges_sociales|float).replace(",", " ") }} €</td>{% endfor %}
       </tr>
-      <tr class="border-t border-slate-600">
-        <td class="text-slate-200 font-semibold">= Résultat avant IR</td>
-        {% for l in result.lignes %}
-        <td class="text-right text-slate-200 font-semibold">{{ "{:,.0f}".format(l.resultat|float).replace(",", " ") }} €</td>
-        {% endfor %}
+      <tr style="border-top: 1px solid var(--border-default);">
+        <td style="color: var(--text-primary); font-weight: 600;">= Résultat avant IR</td>
+        {% for l in result.lignes %}<td style="text-align: right; font-family: monospace; color: var(--text-primary); font-weight: 600; font-size: 12px;">{{ "{:,.0f}".format(l.resultat|float).replace(",", " ") }} €</td>{% endfor %}
       </tr>
       <tr>
-        <td class="text-slate-400">− IR JA (art. 73 B)</td>
-        {% for l in result.lignes %}
-        <td class="text-right text-slate-400">{{ "{:,.0f}".format(l.ir_estime|float).replace(",", " ") }} €</td>
-        {% endfor %}
+        <td style="color: var(--text-muted);">− IR JA <span style="font-size: 10.5px; opacity: 0.7;">art. 73 B</span></td>
+        {% for l in result.lignes %}<td style="text-align: right; font-family: monospace; color: var(--text-muted); font-size: 12px;">{{ "{:,.0f}".format(l.ir_estime|float).replace(",", " ") }} €</td>{% endfor %}
       </tr>
-      <tr class="border-t border-slate-600">
-        <td class="text-slate-100 font-bold">= Résultat net</td>
-        {% for l in result.lignes %}
-        <td class="text-right text-slate-100 font-bold">{{ "{:,.0f}".format(l.resultat_net_apres_ir|float).replace(",", " ") }} €</td>
-        {% endfor %}
+      <tr style="border-top: 1px solid var(--border-default);">
+        <td style="color: var(--text-primary); font-weight: 700;">= Résultat net</td>
+        {% for l in result.lignes %}<td style="text-align: right; font-family: monospace; color: var(--text-primary); font-weight: 700; font-size: 13px;">{{ "{:,.0f}".format(l.resultat_net_apres_ir|float).replace(",", " ") }} €</td>{% endfor %}
       </tr>
       <tr>
-        <td class="text-slate-400 text-sm">Revenu dispo mensuel</td>
-        {% for l in result.lignes %}
-        <td class="text-right text-green-300 text-sm">{{ "{:,.0f}".format(l.revenu_disponible_mensuel|float).replace(",", " ") }} €/mois</td>
-        {% endfor %}
+        <td style="color: var(--text-secondary); font-size: 12px;">Revenu dispo mensuel</td>
+        {% for l in result.lignes %}<td style="text-align: right; font-family: monospace; color: #86efac; font-size: 12px;">{{ "{:,.0f}".format(l.revenu_disponible_mensuel|float).replace(",", " ") }} €/mois</td>{% endfor %}
       </tr>
     </tbody>
   </table>
+  </div>
 </div>
 
 {% if result.ratios_n4 %}
-<div class="card mb-4">
-  <h3 class="font-bold text-slate-100 mb-3">📈 Ratios clés N+{{ result.lignes[-1].annee }}</h3>
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-    <div class="bg-slate-900 rounded p-3 border border-slate-700">
-      <div class="text-xs text-slate-500 uppercase">Marge EBE</div>
-      <div class="text-xl font-bold text-green-400">{{ result.ratios_n4.taux_marge_ebe_pct }} %</div>
-      <div class="text-xs text-slate-500">Cible ≥ 30 %</div>
+<div class="card" style="margin-bottom: 14px;">
+  <h3 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px;">Ratios clés N+{{ result.lignes[-1].annee }}</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+    <div style="background: var(--bg-elev); border-radius: 7px; padding: 12px 14px; border: 1px solid var(--border-subtle);">
+      <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Marge EBE</div>
+      <div style="font-size: 22px; font-weight: 700; color: #86efac; font-family: 'Fraunces', serif;">{{ result.ratios_n4.taux_marge_ebe_pct }} %</div>
+      <div style="font-size: 10.5px; color: var(--text-muted);">Cible ≥ 30 %</div>
     </div>
-    <div class="bg-slate-900 rounded p-3 border border-slate-700">
-      <div class="text-xs text-slate-500 uppercase">CA / UTH</div>
-      <div class="text-xl font-bold text-slate-100">{{ "{:,.0f}".format(result.ratios_n4.ca_par_uth|float).replace(",", " ") }} €</div>
-      <div class="text-xs text-slate-500">Seuil viabilité 22 k€</div>
+    <div style="background: var(--bg-elev); border-radius: 7px; padding: 12px 14px; border: 1px solid var(--border-subtle);">
+      <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">CA / UTH</div>
+      <div style="font-size: 22px; font-weight: 700; color: var(--text-primary); font-family: 'Fraunces', serif;">{{ "{:,.0f}".format(result.ratios_n4.ca_par_uth|float).replace(",", " ") }} €</div>
+      <div style="font-size: 10.5px; color: var(--text-muted);">Seuil viabilité 22 k€</div>
     </div>
-    <div class="bg-slate-900 rounded p-3 border border-slate-700">
-      <div class="text-xs text-slate-500 uppercase">Poids aides</div>
-      <div class="text-xl font-bold text-amber-400">{{ result.ratios_n4.poids_aides_pct }} %</div>
-      <div class="text-xs text-slate-500">Dépendance aides PAC</div>
+    <div style="background: var(--bg-elev); border-radius: 7px; padding: 12px 14px; border: 1px solid var(--border-subtle);">
+      <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Poids aides</div>
+      <div style="font-size: 22px; font-weight: 700; color: var(--amber-warm); font-family: 'Fraunces', serif;">{{ result.ratios_n4.poids_aides_pct }} %</div>
+      <div style="font-size: 10.5px; color: var(--text-muted);">Dépendance PAC</div>
     </div>
-    <div class="bg-slate-900 rounded p-3 border border-slate-700">
-      <div class="text-xs text-slate-500 uppercase">Prélèv. / EBE</div>
-      <div class="text-xl font-bold text-slate-100">{{ result.ratios_n4.prelevements_sur_ebe_pct }} %</div>
-      <div class="text-xs text-slate-500">Idéal &lt; 80 %</div>
+    <div style="background: var(--bg-elev); border-radius: 7px; padding: 12px 14px; border: 1px solid var(--border-subtle);">
+      <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Prélèv. / EBE</div>
+      <div style="font-size: 22px; font-weight: 700; color: var(--text-primary); font-family: 'Fraunces', serif;">{{ result.ratios_n4.prelevements_sur_ebe_pct }} %</div>
+      <div style="font-size: 10.5px; color: var(--text-muted);">Idéal &lt; 80 %</div>
     </div>
   </div>
 </div>
 {% endif %}
 
 {% if result.scenarios_stress %}
-<div class="card mb-4">
-  <h3 class="font-bold text-slate-100 mb-3">🌪️ Scénarios stress N+{{ result.lignes[-1].annee }}</h3>
+<div class="card" style="margin-bottom: 14px; padding: 0; overflow: hidden;">
+  <div style="background: var(--bg-elev); padding: 11px 16px; border-bottom: 1px solid var(--border-subtle);">
+    <h3 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0;">Scénarios stress N+{{ result.lignes[-1].annee }}</h3>
+  </div>
   <table>
     <thead>
       <tr>
-        <th>Scénario</th><th>EBE N+4</th><th>EBE/UTH</th><th>Seuil DNJA</th>
+        <th>Scénario</th><th style="text-align: right;">EBE N+4</th><th style="text-align: right;">EBE/UTH</th><th style="text-align: center;">Seuil DNJA</th>
       </tr>
     </thead>
     <tbody>
       {% for s in result.scenarios_stress %}
       <tr>
         <td>
-          <div class="font-semibold text-slate-100">{{ s.nom }}</div>
-          <div class="text-xs text-slate-500">{{ s.description }}</div>
+          <div style="font-weight: 600; color: var(--text-primary); font-size: 12.5px;">{{ s.nom }}</div>
+          <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">{{ s.description }}</div>
         </td>
-        <td>{{ "{:,.0f}".format(s.ebe_n4|float).replace(",", " ") }} €</td>
-        <td>{{ "{:,.0f}".format(s.ebe_uth_n4|float).replace(",", " ") }} €</td>
-        <td>
+        <td style="text-align: right; font-family: monospace; font-size: 12px;">{{ "{:,.0f}".format(s.ebe_n4|float).replace(",", " ") }} €</td>
+        <td style="text-align: right; font-family: monospace; font-size: 12px;">{{ "{:,.0f}".format(s.ebe_uth_n4|float).replace(",", " ") }} €</td>
+        <td style="text-align: center;">
           {% if s.seuil_dnja_tenu %}
-            <span class="badge badge-green">✓ tenu</span>
+            <span class="badge badge-stable">✓ tenu</span>
           {% else %}
             <span class="badge badge-red">✗ sous seuil</span>
           {% endif %}
@@ -153,30 +133,26 @@
 {% endif %}
 
 {% if result.bilan_n4 %}
-<div class="card mb-4">
-  <h3 class="font-bold text-slate-100 mb-3">📘 Bilan N+{{ result.lignes[-1].annee }}</h3>
-  <div class="grid grid-cols-2 gap-6">
+<div class="card" style="margin-bottom: 14px;">
+  <h3 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 14px;">Bilan N+{{ result.lignes[-1].annee }}</h3>
+  <div style="display: grid; grid-template-columns: 1fr; gap: 18px;" class="md:!grid-cols-2">
     <div>
-      <h4 class="text-xs text-slate-500 uppercase tracking-wider mb-2">Actif</h4>
-      <div class="space-y-1 text-sm">
-        <div class="flex justify-between"><span>Immobilisations nettes</span><span>{{ "{:,.0f}".format(result.bilan_n4.immobilisations_nettes|float).replace(",", " ") }} €</span></div>
-        <div class="flex justify-between"><span>Stocks</span><span>{{ "{:,.0f}".format(result.bilan_n4.stocks|float).replace(",", " ") }} €</span></div>
-        <div class="flex justify-between"><span>Créances</span><span>{{ "{:,.0f}".format(result.bilan_n4.creances|float).replace(",", " ") }} €</span></div>
-        <div class="flex justify-between"><span>Trésorerie</span><span>{{ "{:,.0f}".format(result.bilan_n4.tresorerie|float).replace(",", " ") }} €</span></div>
-        <div class="flex justify-between border-t border-slate-600 pt-2 font-bold text-slate-100">
-          <span>TOTAL</span><span>{{ "{:,.0f}".format(result.bilan_n4.total_actif|float).replace(",", " ") }} €</span>
-        </div>
+      <h4 style="font-size: 11px; color: #86efac; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; margin-bottom: 8px;">Actif</h4>
+      <div style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.9;">
+        <div style="display: flex; justify-content: space-between;"><span>Immobilisations nettes</span><span style="font-family: monospace;">{{ "{:,.0f}".format(result.bilan_n4.immobilisations_nettes|float).replace(",", " ") }} €</span></div>
+        <div style="display: flex; justify-content: space-between;"><span>Stocks</span><span style="font-family: monospace;">{{ "{:,.0f}".format(result.bilan_n4.stocks|float).replace(",", " ") }} €</span></div>
+        <div style="display: flex; justify-content: space-between;"><span>Créances</span><span style="font-family: monospace;">{{ "{:,.0f}".format(result.bilan_n4.creances|float).replace(",", " ") }} €</span></div>
+        <div style="display: flex; justify-content: space-between;"><span>Trésorerie</span><span style="font-family: monospace;">{{ "{:,.0f}".format(result.bilan_n4.tresorerie|float).replace(",", " ") }} €</span></div>
+        <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-default); padding-top: 6px; margin-top: 6px; font-weight: 700; color: var(--text-primary);"><span>TOTAL</span><span style="font-family: monospace;">{{ "{:,.0f}".format(result.bilan_n4.total_actif|float).replace(",", " ") }} €</span></div>
       </div>
     </div>
     <div>
-      <h4 class="text-xs text-slate-500 uppercase tracking-wider mb-2">Passif</h4>
-      <div class="space-y-1 text-sm">
-        <div class="flex justify-between"><span>Capital exploitant</span><span>{{ "{:,.0f}".format(result.bilan_n4.capital_exploitant|float).replace(",", " ") }} €</span></div>
-        <div class="flex justify-between"><span>Subventions étalées</span><span>{{ "{:,.0f}".format(result.bilan_n4.subventions_etalees|float).replace(",", " ") }} €</span></div>
-        <div class="flex justify-between"><span>Dettes</span><span>{{ "{:,.0f}".format(result.bilan_n4.dettes|float).replace(",", " ") }} €</span></div>
-        <div class="flex justify-between border-t border-slate-600 pt-2 font-bold text-slate-100">
-          <span>TOTAL</span><span>{{ "{:,.0f}".format(result.bilan_n4.total_passif|float).replace(",", " ") }} €</span>
-        </div>
+      <h4 style="font-size: 11px; color: #c4b5fd; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; margin-bottom: 8px;">Passif</h4>
+      <div style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.9;">
+        <div style="display: flex; justify-content: space-between;"><span>Capital exploitant</span><span style="font-family: monospace;">{{ "{:,.0f}".format(result.bilan_n4.capital_exploitant|float).replace(",", " ") }} €</span></div>
+        <div style="display: flex; justify-content: space-between;"><span>Subventions étalées</span><span style="font-family: monospace;">{{ "{:,.0f}".format(result.bilan_n4.subventions_etalees|float).replace(",", " ") }} €</span></div>
+        <div style="display: flex; justify-content: space-between;"><span>Dettes</span><span style="font-family: monospace;">{{ "{:,.0f}".format(result.bilan_n4.dettes|float).replace(",", " ") }} €</span></div>
+        <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-default); padding-top: 6px; margin-top: 6px; font-weight: 700; color: var(--text-primary);"><span>TOTAL</span><span style="font-family: monospace;">{{ "{:,.0f}".format(result.bilan_n4.total_passif|float).replace(",", " ") }} €</span></div>
       </div>
     </div>
   </div>

@@ -2,72 +2,73 @@
 {% block title %}{{ aide.nom }} — Aides{% endblock %}
 {% block content %}
 
-<a href="/aides" class="text-sm text-slate-400 hover:text-green-500 mb-4 inline-block no-underline">← retour au catalogue</a>
+<a href="/aides" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-secondary); text-decoration: none; margin-bottom: 16px; transition: color 0.12s ease;" onmouseover="this.style.color='var(--forest-400)'" onmouseout="this.style.color='var(--text-secondary)'">
+  ← retour au catalogue
+</a>
 
-<div class="card mb-4">
-  <div class="flex items-start justify-between gap-4 mb-4">
+<div class="card" style="margin-bottom: 14px;">
+  <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap;">
     <div>
-      <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">{{ aide.categorie }}</div>
-      <h1 class="text-2xl font-bold text-slate-100">{{ aide.nom }}</h1>
+      <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">{{ aide.categorie }}</div>
+      <h1 style="font-size: 24px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.018em; line-height: 1.2;">{{ aide.nom }}</h1>
     </div>
-    <div class="text-right">
-      <div class="text-3xl font-bold text-green-400">
+    <div style="text-align: right;">
+      <div style="font-size: 30px; font-weight: 700; color: var(--forest-400); font-family: 'Fraunces', serif; letter-spacing: -0.018em; line-height: 1;">
         {% if aide.montant.valeur_min == aide.montant.valeur_max %}
-          {{ "{:,.0f}".format(aide.montant.valeur_min|float).replace(",", " ") }} {{ aide.montant.unite }}
+          {{ "{:,.0f}".format(aide.montant.valeur_min|float).replace(",", " ") }} <span style="font-size: 16px; color: var(--text-secondary); font-family: Inter, sans-serif; font-weight: 500;">{{ aide.montant.unite }}</span>
         {% else %}
-          {{ "{:,.0f}".format(aide.montant.valeur_min|float).replace(",", " ") }} –
-          {{ "{:,.0f}".format(aide.montant.valeur_max|float).replace(",", " ") }} {{ aide.montant.unite }}
+          {{ "{:,.0f}".format(aide.montant.valeur_min|float).replace(",", " ") }}–{{ "{:,.0f}".format(aide.montant.valeur_max|float).replace(",", " ") }} <span style="font-size: 16px; color: var(--text-secondary); font-family: Inter, sans-serif; font-weight: 500;">{{ aide.montant.unite }}</span>
         {% endif %}
       </div>
-      <div class="text-xs text-slate-500">{{ aide.montant.type }}</div>
+      <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">{{ aide.montant.type }}</div>
     </div>
   </div>
 
   {% if aide.notes %}
-  <div class="p-3 bg-amber-900/20 border border-amber-700/50 rounded mb-4">
-    <div class="text-xs text-amber-400 uppercase mb-1">Note</div>
-    <div class="text-sm text-amber-200">{{ aide.notes }}</div>
+  <div style="padding: 11px 14px; background: rgba(224,164,88,0.08); border: 1px solid rgba(224,164,88,0.30); border-radius: 7px;">
+    <div style="font-size: 10.5px; color: #f4c47a; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px;">Note</div>
+    <div style="font-size: 13px; color: #fde68a; line-height: 1.5;">{{ aide.notes }}</div>
   </div>
   {% endif %}
 </div>
 
-<div class="grid md:grid-cols-2 gap-4 mb-4">
+<div style="display: grid; grid-template-columns: 1fr; gap: 14px; margin-bottom: 14px;" class="md:!grid-cols-2">
   <div class="card">
-    <h3 class="font-bold text-slate-100 mb-3">🧾 Conditions</h3>
+    <h3 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px;">Conditions</h3>
     {% if aide.conditions.age_max %}
-    <div class="text-sm mb-2"><span class="text-slate-500">Âge max :</span> {{ aide.conditions.age_max }} ans</div>
+    <div style="font-size: 13px; margin-bottom: 6px;"><span style="color: var(--text-muted);">Âge max :</span> <strong style="color: var(--text-primary);">{{ aide.conditions.age_max }} ans</strong></div>
     {% endif %}
     {% if aide.conditions.zone %}
-    <div class="text-sm mb-2"><span class="text-slate-500">Zones :</span> {{ aide.conditions.zone|join(", ") }}</div>
+    <div style="font-size: 13px; margin-bottom: 6px;"><span style="color: var(--text-muted);">Zones :</span> <strong style="color: var(--text-primary);">{{ aide.conditions.zone|join(", ") }}</strong></div>
     {% endif %}
     {% if aide.conditions.formation %}
-    <div class="text-sm mb-2"><span class="text-slate-500">Formation :</span> {{ aide.conditions.formation|join(", ") }}</div>
+    <div style="font-size: 13px; margin-bottom: 6px;"><span style="color: var(--text-muted);">Formation :</span> <strong style="color: var(--text-primary);">{{ aide.conditions.formation|join(", ") }}</strong></div>
     {% endif %}
     {% if aide.conditions.autres %}
-    <ul class="text-sm text-slate-300 space-y-1 mt-3 list-disc list-inside">
-    {% for c in aide.conditions.autres %}<li>{{ c }}</li>{% endfor %}
+    <ul style="list-style: none; padding-left: 0; font-size: 12.5px; color: var(--text-secondary); line-height: 1.7; margin-top: 10px;">
+    {% for c in aide.conditions.autres %}<li><span style="color: var(--forest-500); margin-right: 4px;">·</span>{{ c }}</li>{% endfor %}
     </ul>
     {% endif %}
   </div>
 
   <div class="card">
-    <h3 class="font-bold text-slate-100 mb-3">🔗 Cumul</h3>
+    <h3 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px;">Cumul</h3>
 
     {% if aide.cumul_possible_avec %}
-    <div class="mb-3">
-      <div class="text-xs text-green-500 uppercase mb-1">✓ Cumulable avec</div>
-      <div class="flex flex-wrap gap-1">
+    <div style="margin-bottom: 12px;">
+      <div style="font-size: 10.5px; color: #86efac; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 6px;">✓ Cumulable avec</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px;">
         {% for id in aide.cumul_possible_avec %}
-        <a href="/aides/{{ id }}" class="badge badge-green no-underline">{{ id }}</a>
+        <a href="/aides/{{ id }}" class="badge badge-stable" style="text-decoration: none;">{{ id }}</a>
         {% endfor %}
       </div>
     </div>
     {% endif %}
 
     {% if aide.exclut %}
-    <div class="mb-3">
-      <div class="text-xs text-red-500 uppercase mb-1">✗ Incompatible avec</div>
-      <div class="flex flex-wrap gap-1">
+    <div style="margin-bottom: 12px;">
+      <div style="font-size: 10.5px; color: #fca5a5; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 6px;">✗ Incompatible avec</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px;">
         {% for id in aide.exclut %}
         <span class="badge badge-red">{{ id }}</span>
         {% endfor %}
@@ -77,8 +78,8 @@
 
     {% if aide.statut_cible %}
     <div>
-      <div class="text-xs text-slate-500 uppercase mb-1">Public cible</div>
-      <div class="flex flex-wrap gap-1">
+      <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 6px;">Public cible</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px;">
         {% for s in aide.statut_cible %}
         <span class="badge badge-blue">{{ s }}</span>
         {% endfor %}
@@ -89,22 +90,22 @@
 </div>
 
 <div class="card">
-  <h3 class="font-bold text-slate-100 mb-3">📚 Source officielle</h3>
-  <div class="space-y-2 text-sm">
-    <div>
-      <span class="text-slate-500">Autorité :</span>
-      <strong class="text-slate-200">{{ aide.source.autorite }}</strong>
+  <h3 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px;">Source officielle</h3>
+  <div style="font-size: 13px; line-height: 1.7;">
+    <div style="margin-bottom: 4px;">
+      <span style="color: var(--text-muted);">Autorité :</span>
+      <strong style="color: var(--text-primary);">{{ aide.source.autorite }}</strong>
+    </div>
+    <div style="margin-bottom: 4px;">
+      <span style="color: var(--text-muted);">URL :</span>
+      <a href="{{ aide.source.url }}" target="_blank" rel="noopener" style="word-break: break-all; font-size: 12.5px;">{{ aide.source.url }} ↗</a>
     </div>
     <div>
-      <span class="text-slate-500">URL :</span>
-      <a href="{{ aide.source.url }}" target="_blank" class="break-all">{{ aide.source.url }}</a>
-    </div>
-    <div>
-      <span class="text-slate-500">Dernière vérification :</span>
-      <strong class="text-slate-200">{{ aide.source.date_maj_vu }}</strong>
+      <span style="color: var(--text-muted);">Dernière vérification :</span>
+      <strong style="color: var(--text-primary);">{{ aide.source.date_maj_vu }}</strong>
     </div>
     {% if aide.source.extrait_citation %}
-    <div class="mt-3 p-3 bg-slate-900 border-l-2 border-slate-600 rounded italic text-slate-300">
+    <div style="margin-top: 14px; padding: 12px 16px; background: rgba(0,0,0,0.20); border-left: 3px solid var(--forest-700); border-radius: 4px; font-style: italic; color: var(--text-secondary); font-size: 13px; line-height: 1.55;">
       « {{ aide.source.extrait_citation }} »
     </div>
     {% endif %}

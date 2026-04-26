@@ -2,101 +2,104 @@
 {% block title %}Bilan comptable — SelfAgriBook{% endblock %}
 {% block content %}
 
-<div class="mb-4 flex items-start justify-between flex-wrap gap-3">
+<!-- HEADER -->
+<div style="margin-bottom: 18px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
   <div>
-    <h1 class="text-2xl font-bold text-slate-100">📉 Bilan comptable simplifié</h1>
-    <p class="text-sm text-slate-400 mt-1">
-      Photo patrimoniale — Actif (ce qu'on a) ↔ Passif (comment c'est financé).
-      Calculé en direct depuis le journal. Incluant le résultat net de l'exercice en capitaux propres.
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+      <span style="font-size: 11px; color: var(--text-muted); letter-spacing: 0.6px; text-transform: uppercase; font-weight: 600;">SelfAgriBook · Document légal</span>
+    </div>
+    <h1 style="font-size: 26px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; margin-bottom: 4px;">
+      Bilan comptable <span style="color: var(--forest-500); font-style: italic; font-weight: 500;">— simplifié</span>
+    </h1>
+    <p style="font-size: 12.5px; color: var(--text-secondary); max-width: 720px; line-height: 1.5;">
+      Photo patrimoniale — Actif (ce qu'on a) ↔ Passif (comment c'est financé). Calculé en direct depuis le journal · résultat net inclus en capitaux propres.
     </p>
   </div>
-  <div class="flex flex-wrap gap-2">
-    <a href="/compta" class="btn-sm inline-block px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-xs text-slate-300">📊 Journal</a>
-    <a href="/compta/resultat" class="btn-sm inline-block px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-xs text-slate-300">📈 Compte de résultat</a>
+  <div style="display: flex; gap: 6px;">
+    <a href="/compta" class="btn btn-ghost" style="font-size: 12px; padding: 6px 12px;">Journal</a>
+    <a href="/compta/resultat" class="btn btn-ghost" style="font-size: 12px; padding: 6px 12px;">Compte de résultat</a>
   </div>
 </div>
 
 {% if not data.actif and not data.passif %}
-<div class="card p-8 text-center text-slate-400">
-  <div class="text-5xl mb-3">📭</div>
-  <div>Aucune écriture dans le hub compta — bilan vide.</div>
-  <a href="/compta" class="inline-block mt-3 text-sm text-green-400 hover:text-green-300 underline">
-    → Ajouter des écritures au journal
-  </a>
+<div class="card" style="padding: 50px 20px; text-align: center; color: var(--text-secondary);">
+  <div style="font-size: 38px; margin-bottom: 10px; opacity: 0.5;">📭</div>
+  <div style="font-size: 14px; margin-bottom: 4px;">Aucune écriture dans le hub compta — bilan vide.</div>
+  <a href="/compta" style="display: inline-block; margin-top: 12px; font-size: 12.5px; color: var(--forest-500); text-decoration: none; padding: 6px 14px; border: 1px solid var(--forest-700); border-radius: 5px;">→ Ajouter des écritures au journal</a>
 </div>
 {% else %}
 
-<!-- Indicateur équilibre -->
-<div class="card !p-3 mb-4 {% if data.equilibre %}!bg-green-900/20 !border-green-700{% else %}!bg-amber-900/20 !border-amber-700{% endif %}">
-  <div class="flex items-center justify-between text-sm">
+<!-- INDICATEUR ÉQUILIBRE -->
+<div class="card" style="padding: 12px 14px; margin-bottom: 14px; {% if data.equilibre %}background: rgba(22,101,52,0.08); border-color: rgba(22,101,52,0.35);{% else %}background: rgba(224,164,88,0.08); border-color: rgba(224,164,88,0.35);{% endif %}">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 13px;">
     {% if data.equilibre %}
-    <span class="text-green-300">✓ <strong>Bilan équilibré</strong> — Actif = Passif (principe comptable fondamental respecté)</span>
+    <span style="color: #86efac;"><strong>✓ Bilan équilibré</strong> — Actif = Passif (principe comptable fondamental respecté)</span>
     {% else %}
-    <span class="text-amber-300">⚠ <strong>Déséquilibre détecté</strong> — Actif ≠ Passif (écart : {{ "{:+,.2f}".format(data.ecart).replace(",", " ").replace(".", ",") }} €)</span>
+    <span style="color: #f4c47a;"><strong>⚠ Déséquilibre</strong> — Actif ≠ Passif (écart : {{ "{:+,.2f}".format(data.ecart).replace(",", " ").replace(".", ",") }} €)</span>
     {% endif %}
-    <span class="text-slate-400 text-xs">
-      Résultat net injecté en capitaux propres : <span class="font-mono {% if data.resultat_net >= 0 %}text-green-300{% else %}text-red-300{% endif %}">{% if data.resultat_net >= 0 %}+{% endif %}{{ "{:,.2f}".format(data.resultat_net).replace(",", " ").replace(".", ",") }} €</span>
+    <span style="font-size: 11.5px; color: var(--text-muted);">
+      Résultat net en capitaux propres : <span style="font-family: monospace; font-weight: 600; color: {% if data.resultat_net >= 0 %}#86efac{% else %}#fca5a5{% endif %};">{% if data.resultat_net >= 0 %}+{% endif %}{{ "{:,.2f}".format(data.resultat_net).replace(",", " ").replace(".", ",") }} €</span>
     </span>
   </div>
 </div>
 
-<div class="grid md:grid-cols-2 gap-4">
+<div style="display: grid; grid-template-columns: 1fr; gap: 14px;" class="md:!grid-cols-2">
   <!-- ACTIF -->
-  <div class="card !p-0 overflow-hidden">
-    <div class="bg-green-900/30 border-b border-green-700 px-4 py-2">
-      <h2 class="font-bold text-green-300">💰 ACTIF</h2>
-      <div class="text-xs text-green-400">Ce que l'exploitation possède ou lui est dû</div>
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="background: rgba(22,101,52,0.18); border-bottom: 1px solid rgba(22,101,52,0.35); padding: 10px 16px;">
+      <h2 style="font-size: 14px; font-weight: 600; color: #86efac; margin: 0; letter-spacing: 0.4px; text-transform: uppercase;">Actif</h2>
+      <div style="font-size: 11px; color: #86efac; opacity: 0.8; margin-top: 1px;">Ce que l'exploitation possède ou lui est dû</div>
     </div>
     {% for groupe, lignes in data.actif.items() %}
-    <div class="border-t border-slate-800">
-      <div class="bg-slate-800/40 px-3 py-1.5 text-xs font-semibold text-slate-300 uppercase tracking-wider">{{ groupe }}</div>
-      <table class="w-full text-sm">
+    <div style="border-top: 1px solid var(--border-subtle);">
+      <div style="background: var(--bg-elev); padding: 6px 14px; font-size: 10.5px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">{{ groupe }}</div>
+      <table>
         <tbody>
           {% for l in lignes %}
-          <tr class="border-t border-slate-800">
-            <td class="px-3 py-1.5 text-slate-300"><code class="text-green-400 text-xs">{{ l.compte }}</code></td>
-            <td class="px-3 py-1.5 text-slate-400 text-xs truncate max-w-[200px]">{{ l.label.split(' — ')[1] if ' — ' in l.label else '' }}</td>
-            <td class="px-3 py-1.5 text-right text-slate-100 font-mono text-xs">{{ "{:,.2f}".format(l.montant).replace(",", " ").replace(".", ",") }} €</td>
+          <tr>
+            <td style="padding: 6px 14px;"><code style="color: #86efac; font-size: 11px;">{{ l.compte }}</code></td>
+            <td style="padding: 6px 14px; font-size: 11.5px; color: var(--text-secondary); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ l.label.split(' — ')[1] if ' — ' in l.label else '' }}</td>
+            <td style="padding: 6px 14px; text-align: right; font-family: monospace; color: var(--text-primary); font-size: 11.5px;">{{ "{:,.2f}".format(l.montant).replace(",", " ").replace(".", ",") }} €</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
     {% endfor %}
-    <div class="bg-green-900/40 border-t-2 border-green-700 px-3 py-3">
-      <div class="flex justify-between items-center">
-        <span class="font-bold text-green-300">TOTAL ACTIF</span>
-        <span class="text-xl font-bold text-green-200 font-mono">{{ "{:,.2f}".format(data.total_actif).replace(",", " ").replace(".", ",") }} €</span>
+    <div style="background: rgba(22,101,52,0.22); border-top: 2px solid rgba(22,101,52,0.45); padding: 12px 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-weight: 700; color: #86efac; font-size: 13px;">TOTAL ACTIF</span>
+        <span style="font-size: 18px; font-weight: 700; color: #d1fae5; font-family: 'Fraunces', serif;">{{ "{:,.2f}".format(data.total_actif).replace(",", " ").replace(".", ",") }} €</span>
       </div>
     </div>
   </div>
 
   <!-- PASSIF -->
-  <div class="card !p-0 overflow-hidden">
-    <div class="bg-purple-900/30 border-b border-purple-700 px-4 py-2">
-      <h2 class="font-bold text-purple-300">💳 PASSIF</h2>
-      <div class="text-xs text-purple-400">Comment l'actif est financé (apports + dettes)</div>
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="background: rgba(192,132,252,0.13); border-bottom: 1px solid rgba(192,132,252,0.30); padding: 10px 16px;">
+      <h2 style="font-size: 14px; font-weight: 600; color: #c4b5fd; margin: 0; letter-spacing: 0.4px; text-transform: uppercase;">Passif</h2>
+      <div style="font-size: 11px; color: #c4b5fd; opacity: 0.85; margin-top: 1px;">Comment l'actif est financé (apports + dettes)</div>
     </div>
     {% for groupe, lignes in data.passif.items() %}
-    <div class="border-t border-slate-800">
-      <div class="bg-slate-800/40 px-3 py-1.5 text-xs font-semibold text-slate-300 uppercase tracking-wider">{{ groupe }}</div>
-      <table class="w-full text-sm">
+    <div style="border-top: 1px solid var(--border-subtle);">
+      <div style="background: var(--bg-elev); padding: 6px 14px; font-size: 10.5px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">{{ groupe }}</div>
+      <table>
         <tbody>
           {% for l in lignes %}
-          <tr class="border-t border-slate-800">
-            <td class="px-3 py-1.5 text-slate-300"><code class="text-purple-400 text-xs">{{ l.compte }}</code></td>
-            <td class="px-3 py-1.5 text-slate-400 text-xs truncate max-w-[200px]">{{ l.label.split(' — ')[1] if ' — ' in l.label else '' }}</td>
-            <td class="px-3 py-1.5 text-right font-mono text-xs {% if l.montant < 0 %}text-red-300{% else %}text-slate-100{% endif %}">{{ "{:+,.2f}".format(l.montant).replace(",", " ").replace(".", ",") if l.montant < 0 else "{:,.2f}".format(l.montant).replace(",", " ").replace(".", ",") }} €</td>
+          <tr>
+            <td style="padding: 6px 14px;"><code style="color: #c4b5fd; font-size: 11px;">{{ l.compte }}</code></td>
+            <td style="padding: 6px 14px; font-size: 11.5px; color: var(--text-secondary); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ l.label.split(' — ')[1] if ' — ' in l.label else '' }}</td>
+            <td style="padding: 6px 14px; text-align: right; font-family: monospace; font-size: 11.5px; color: {% if l.montant < 0 %}#fca5a5{% else %}var(--text-primary){% endif %};">{{ "{:+,.2f}".format(l.montant).replace(",", " ").replace(".", ",") if l.montant < 0 else "{:,.2f}".format(l.montant).replace(",", " ").replace(".", ",") }} €</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
     {% endfor %}
-    <div class="bg-purple-900/40 border-t-2 border-purple-700 px-3 py-3">
-      <div class="flex justify-between items-center">
-        <span class="font-bold text-purple-300">TOTAL PASSIF</span>
-        <span class="text-xl font-bold text-purple-200 font-mono">{{ "{:,.2f}".format(data.total_passif).replace(",", " ").replace(".", ",") }} €</span>
+    <div style="background: rgba(192,132,252,0.18); border-top: 2px solid rgba(192,132,252,0.40); padding: 12px 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-weight: 700; color: #c4b5fd; font-size: 13px;">TOTAL PASSIF</span>
+        <span style="font-size: 18px; font-weight: 700; color: #ddd6fe; font-family: 'Fraunces', serif;">{{ "{:,.2f}".format(data.total_passif).replace(",", " ").replace(".", ",") }} €</span>
       </div>
     </div>
   </div>
@@ -104,11 +107,8 @@
 
 {% endif %}
 
-<div class="card !p-3 mt-4 text-[11px] text-slate-500">
-  <strong class="text-slate-400">Méthode :</strong>
-  Chaque compte du journal est affecté au bilan selon sa classe PCG (2 immos / 3 stocks / 4 tiers / 5 dispo / 1 capitaux).
-  Les comptes 4xx basculent actif (créances) ou passif (dettes) selon le sens du solde. Le résultat net du compte de résultat
-  est injecté en capitaux propres (compte 120). Recalcul en direct à chaque requête — aucune table de cache.
+<div class="card" style="padding: 12px 14px; margin-top: 14px; font-size: 11px; color: var(--text-muted); line-height: 1.6;">
+  <strong style="color: var(--text-secondary);">Méthode :</strong> chaque compte du journal est affecté au bilan selon sa classe PCG (2 immos / 3 stocks / 4 tiers / 5 dispo / 1 capitaux). Les comptes 4xx basculent actif (créances) ou passif (dettes) selon le sens du solde. Le résultat net du compte de résultat est injecté en capitaux propres (compte 120). Recalcul en direct à chaque requête — aucune table de cache.
 </div>
 
 {% endblock %}

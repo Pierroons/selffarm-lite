@@ -1,9 +1,9 @@
 {# Formulaire d'édition rapide des paramètres clés d'une hypothèse #}
 
-<div class="card mb-4">
-  <div class="flex items-center justify-between mb-3">
-    <h3 class="font-bold text-slate-100">🏷️ Identité</h3>
-    <span class="text-xs text-slate-500">source : {{ source_slug }}</span>
+<div class="card" style="padding: 18px;">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+    <h3 style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Identité</h3>
+    <span style="font-size: 11px; color: var(--text-muted);">source : <code style="color: #86efac; font-size: 10.5px;">{{ source_slug }}</code></span>
   </div>
 
   <form id="edit-form"
@@ -14,75 +14,78 @@
 
     <input type="hidden" name="source_slug" value="{{ source_slug }}">
 
-    <div class="grid md:grid-cols-2 gap-3 mb-4">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px;">
       <div>
-        <label class="text-xs text-slate-400 uppercase tracking-wider">Candidat</label>
-        <input type="text" name="candidat" value="{{ h.candidat }}" class="w-full">
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Candidat</label>
+        <input type="text" name="candidat" value="{{ h.candidat }}" style="width: 100%;">
       </div>
       <div>
-        <label class="text-xs text-slate-400 uppercase tracking-wider">Commune / Département</label>
-        <input type="text" value="{{ h.commune }} ({{ h.departement }})" disabled class="w-full opacity-60">
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Commune / Département</label>
+        <input type="text" value="{{ h.commune }} ({{ h.departement }})" disabled style="width: 100%; opacity: 0.55;">
       </div>
       <div>
-        <label class="text-xs text-slate-400 uppercase tracking-wider">UTH</label>
-        <input type="number" name="uth" value="{{ h.uth }}" step="0.1" min="0.1" max="5" class="w-full">
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">UTH</label>
+        <input type="number" name="uth" value="{{ h.uth }}" step="0.1" min="0.1" max="5" style="width: 100%;">
       </div>
       <div>
-        <label class="text-xs text-slate-400 uppercase tracking-wider">Prélèvements mensuels (€)</label>
-        <input type="number" name="prelevements_mensuels" value="{{ h.prelevements_mensuels }}" step="100" min="0" class="w-full">
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Prélèvements mensuels (€)</label>
+        <input type="number" name="prelevements_mensuels" value="{{ h.prelevements_mensuels }}" step="100" min="0" style="width: 100%;">
       </div>
     </div>
 
-    <h3 class="font-bold text-slate-100 mb-2 mt-5">🌾 Activités</h3>
-    <p class="text-xs text-slate-500 mb-3">
+    <h3 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; margin-top: 6px;">Activités</h3>
+    <p style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 12px;">
       Modifie la quantité annuelle et le prix de vente pour tester l'impact sur l'EBE N+4.
     </p>
     {% for act in h.activites %}
-    <div class="border border-slate-700 rounded p-3 mb-2">
-      <div class="text-sm font-semibold text-slate-200 mb-2">{{ act.nom }}</div>
-      <div class="grid md:grid-cols-3 gap-2 text-xs">
+    <div style="border: 1px solid var(--border-subtle); border-radius: 7px; padding: 12px; margin-bottom: 8px; background: var(--bg-elev);">
+      <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 10px;">
+        <span style="color: var(--forest-500); margin-right: 4px;">●</span>{{ act.nom }}
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
         <div>
-          <label class="text-slate-500">Surface (ha)</label>
-          <input type="number" name="act_{{ loop.index0 }}_surface_ha" value="{{ act.surface_ha }}" step="0.01" class="w-full">
+          <label style="display: block; font-size: 10.5px; color: var(--text-muted); margin-bottom: 3px;">Surface (ha)</label>
+          <input type="number" name="act_{{ loop.index0 }}_surface_ha" value="{{ act.surface_ha }}" step="0.01" style="width: 100%;">
         </div>
         <div>
-          <label class="text-slate-500">Quantité annuelle (plein régime)</label>
-          <input type="number" name="act_{{ loop.index0 }}_quantite" value="{{ act.quantite_annuelle or 0 }}" step="0.1" class="w-full">
+          <label style="display: block; font-size: 10.5px; color: var(--text-muted); margin-bottom: 3px;">Quantité annuelle</label>
+          <input type="number" name="act_{{ loop.index0 }}_quantite" value="{{ act.quantite_annuelle or 0 }}" step="0.1" style="width: 100%;">
         </div>
         <div>
-          <label class="text-slate-500">Prix HT / unité ({{ act.unite_vente }})</label>
-          <input type="number" name="act_{{ loop.index0 }}_prix" value="{{ act.prix_vente_ht }}" step="0.01" class="w-full">
+          <label style="display: block; font-size: 10.5px; color: var(--text-muted); margin-bottom: 3px;">Prix HT / {{ act.unite_vente }}</label>
+          <input type="number" name="act_{{ loop.index0 }}_prix" value="{{ act.prix_vente_ht }}" step="0.01" style="width: 100%;">
         </div>
       </div>
     </div>
     {% endfor %}
 
-    <h3 class="font-bold text-slate-100 mb-2 mt-5">💳 Cotisations MSA</h3>
-    <div class="grid md:grid-cols-2 gap-3">
+    <h3 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 10px; margin-top: 18px;">Cotisations MSA</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
       <div>
-        <label class="text-xs text-slate-500">Base annuelle (€)</label>
-        <input type="number" name="msa_base" value="{{ h.cotisations_msa.cotisation_base_annuelle }}" step="100" class="w-full">
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Base annuelle (€)</label>
+        <input type="number" name="msa_base" value="{{ h.cotisations_msa.cotisation_base_annuelle }}" step="100" style="width: 100%;">
       </div>
       <div>
-        <label class="text-xs text-slate-500">Exonération JA active</label>
-        <select name="msa_exo" class="w-full">
+        <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Exonération JA active</label>
+        <select name="msa_exo" style="width: 100%;">
           <option value="true" {% if h.cotisations_msa.exoneration_ja_active %}selected{% endif %}>Oui (dégressif 65/55/35/25/15 %)</option>
           <option value="false" {% if not h.cotisations_msa.exoneration_ja_active %}selected{% endif %}>Non</option>
         </select>
       </div>
     </div>
 
-    <div class="mt-6 flex gap-2 justify-end">
-      <button type="submit" class="btn">🧮 Calculer</button>
+    <div style="margin-top: 22px; display: flex; gap: 8px; justify-content: flex-end;">
       <button type="button"
               hx-post="/dnja/editor/save"
               hx-include="#edit-form"
               hx-prompt="Nom du nouveau scénario (sans espaces, ex: mon-scenario-test)"
               hx-target="#editor-result"
               hx-swap="innerHTML"
-              class="btn-ghost btn">
-        💾 Enregistrer sous…
+              class="btn btn-ghost"
+              style="font-size: 12.5px;">
+        Enregistrer sous…
       </button>
+      <button type="submit" class="btn" style="font-size: 12.5px;">Calculer →</button>
     </div>
 
   </form>

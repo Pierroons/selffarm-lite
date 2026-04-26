@@ -1,54 +1,56 @@
 {# Fragment HTMX comparaison 2 scénarios #}
 
-<div class="grid md:grid-cols-2 gap-4 mb-4">
+<div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 14px;" class="md:!grid-cols-2">
 
-  <div class="card">
-    <div class="text-xs text-slate-500 uppercase tracking-wider">Scénario A</div>
-    <div class="font-bold text-slate-100">{{ a.label }}</div>
-    <div class="mt-2 text-sm text-slate-400">{{ a.result.hypotheses.candidat }}</div>
+  <div class="card" style="border-left: 3px solid #93c5fd;">
+    <div style="font-size: 10.5px; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Scénario A · référence</div>
+    <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-top: 4px;">{{ a.label }}</div>
+    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">{{ a.result.hypotheses.candidat }}</div>
     {% if a.result.ebe_uth_atteint %}
-    <div class="mt-2 badge badge-green">✓ DNJA atteint — {{ "{:,.0f}".format(a.result.ebe_uth_annee_cible|float).replace(",", " ") }} €</div>
+    <div style="margin-top: 8px;"><span class="badge badge-stable">✓ DNJA atteint — {{ "{:,.0f}".format(a.result.ebe_uth_annee_cible|float).replace(",", " ") }} €</span></div>
     {% else %}
-    <div class="mt-2 badge badge-red">✗ Sous seuil</div>
+    <div style="margin-top: 8px;"><span class="badge badge-red">✗ Sous seuil</span></div>
     {% endif %}
   </div>
 
-  <div class="card">
-    <div class="text-xs text-slate-500 uppercase tracking-wider">Scénario B</div>
-    <div class="font-bold text-slate-100">{{ b.label }}</div>
-    <div class="mt-2 text-sm text-slate-400">{{ b.result.hypotheses.candidat }}</div>
+  <div class="card" style="border-left: 3px solid #f4c47a;">
+    <div style="font-size: 10.5px; color: #f4c47a; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Scénario B · comparaison</div>
+    <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-top: 4px;">{{ b.label }}</div>
+    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">{{ b.result.hypotheses.candidat }}</div>
     {% if b.result.ebe_uth_atteint %}
-    <div class="mt-2 badge badge-green">✓ DNJA atteint — {{ "{:,.0f}".format(b.result.ebe_uth_annee_cible|float).replace(",", " ") }} €</div>
+    <div style="margin-top: 8px;"><span class="badge badge-stable">✓ DNJA atteint — {{ "{:,.0f}".format(b.result.ebe_uth_annee_cible|float).replace(",", " ") }} €</span></div>
     {% else %}
-    <div class="mt-2 badge badge-red">✗ Sous seuil</div>
+    <div style="margin-top: 8px;"><span class="badge badge-red">✗ Sous seuil</span></div>
     {% endif %}
   </div>
 
 </div>
 
-<div class="card mb-4">
-  <h3 class="font-bold text-slate-100 mb-3">Compte de résultat N+4 — comparaison</h3>
+<div class="card" style="padding: 0; overflow: hidden; margin-bottom: 14px;">
+  <div style="background: var(--bg-elev); padding: 11px 16px; border-bottom: 1px solid var(--border-subtle);">
+    <h3 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0;">Compte de résultat N+4 — comparaison</h3>
+  </div>
   <table>
     <thead>
       <tr>
         <th>Poste</th>
-        <th class="text-right">Scénario A</th>
-        <th class="text-right">Scénario B</th>
-        <th class="text-right">Δ (B − A)</th>
+        <th style="text-align: right;">Scénario A</th>
+        <th style="text-align: right;">Scénario B</th>
+        <th style="text-align: right;">Δ (B − A)</th>
       </tr>
     </thead>
     <tbody>
     {% for row in comparison %}
-      <tr {% if row.highlight %}class="border-t-2 border-slate-600 font-bold"{% endif %}>
-        <td class="{% if row.highlight %}text-slate-100{% else %}text-slate-400{% endif %}">{{ row.label }}</td>
-        <td class="text-right">{{ "{:,.0f}".format(row.a|float).replace(",", " ") }} €</td>
-        <td class="text-right">{{ "{:,.0f}".format(row.b|float).replace(",", " ") }} €</td>
-        <td class="text-right
-          {% if row.delta > 0 and row.positive_good %}text-green-400
-          {% elif row.delta > 0 and not row.positive_good %}text-red-400
-          {% elif row.delta < 0 and row.positive_good %}text-red-400
-          {% elif row.delta < 0 and not row.positive_good %}text-green-400
-          {% else %}text-slate-400{% endif %}">
+      <tr {% if row.highlight %}style="border-top: 2px solid var(--border-default); font-weight: 600;"{% endif %}>
+        <td style="{% if row.highlight %}color: var(--text-primary);{% else %}color: var(--text-secondary);{% endif %}">{{ row.label }}</td>
+        <td style="text-align: right; font-family: monospace; font-size: 12px;">{{ "{:,.0f}".format(row.a|float).replace(",", " ") }} €</td>
+        <td style="text-align: right; font-family: monospace; font-size: 12px;">{{ "{:,.0f}".format(row.b|float).replace(",", " ") }} €</td>
+        <td style="text-align: right; font-family: monospace; font-size: 12px; font-weight: 600; color:
+          {%- if row.delta > 0 and row.positive_good %} #86efac
+          {%- elif row.delta > 0 and not row.positive_good %} #fca5a5
+          {%- elif row.delta < 0 and row.positive_good %} #fca5a5
+          {%- elif row.delta < 0 and not row.positive_good %} #86efac
+          {%- else %} var(--text-muted){% endif %};">
           {% if row.delta > 0 %}+{% endif %}{{ "{:,.0f}".format(row.delta|float).replace(",", " ") }} €
         </td>
       </tr>
@@ -58,21 +60,21 @@
 </div>
 
 <div class="card">
-  <h3 class="font-bold text-slate-100 mb-3">🎯 Synthèse comparative</h3>
-  <div class="grid md:grid-cols-2 gap-4 text-sm">
+  <h3 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px;">Synthèse comparative</h3>
+  <div style="display: grid; grid-template-columns: 1fr; gap: 16px;" class="md:!grid-cols-2">
     <div>
-      <div class="text-xs text-slate-500 uppercase tracking-wider mb-2">Si on choisit B sur A</div>
-      <ul class="space-y-1 text-slate-300">
+      <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 8px;">Si on choisit B sur A</div>
+      <ul style="list-style: none; padding-left: 0; font-size: 12.5px; color: var(--text-secondary); line-height: 1.7;">
         {% for s in synthese %}
-        <li>{{ s }}</li>
+        <li style="padding: 2px 0;"><span style="color: var(--forest-500); margin-right: 4px;">→</span>{{ s }}</li>
         {% endfor %}
       </ul>
     </div>
     <div>
-      <div class="text-xs text-slate-500 uppercase tracking-wider mb-2">Actions</div>
-      <div class="flex flex-col gap-2">
-        <a href="/dnja/pdf?example={{ a.slug }}" class="btn-ghost btn text-center">📄 PDF Scénario A</a>
-        <a href="/dnja/pdf?example={{ b.slug }}" class="btn-ghost btn text-center">📄 PDF Scénario B</a>
+      <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 8px;">Actions</div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <a href="/dnja/pdf?example={{ a.slug }}" class="btn btn-ghost" style="text-align: center; font-size: 12.5px;">↓ PDF Scénario A</a>
+        <a href="/dnja/pdf?example={{ b.slug }}" class="btn btn-ghost" style="text-align: center; font-size: 12.5px;">↓ PDF Scénario B</a>
       </div>
     </div>
   </div>

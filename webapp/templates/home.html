@@ -1,83 +1,158 @@
 {% extends "base.html" %}
-{% block title %}SelfFarm-Lite — Accueil{% endblock %}
+{% block title %}SelfFarm-Lite — Tableau de bord{% endblock %}
 {% block content %}
 
-<div class="mb-8">
-  <h1 class="text-3xl font-bold mb-2 text-slate-100">Tableau de bord</h1>
-  <p class="text-slate-400">
-    Modules agricoles pour jeunes agriculteurs français — prévisionnel DNJA, catalogue
-    d'aides publiques, cartographie IGN, comptabilité réelle légère.
+<!-- HERO -->
+<section style="margin-bottom: 32px;">
+  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 12px rgba(74, 222, 128, 0.6);"></span>
+    <span style="font-size: 11px; color: var(--text-secondary); letter-spacing: 0.6px; text-transform: uppercase; font-weight: 600;">Étage applicatif · prêt à l'emploi</span>
+  </div>
+  <h1 style="font-size: 38px; font-weight: 600; margin-bottom: 10px; color: var(--text-primary); line-height: 1.05; letter-spacing: -0.025em;">
+    Outils agricoles <span style="color: var(--forest-500); font-style: italic;">souverains</span>,<br>
+    pour jeunes agriculteur·rice·s.
+  </h1>
+  <p style="font-size: 15px; color: var(--text-secondary); max-width: 640px; line-height: 1.55;">
+    Compta agri au réel, prévisionnel DNJA, factures Factur-X, parcellaire IGN, catalogue d'aides 2026 — tout en local, sans cloud, sans télémétrie. <span style="color: var(--text-muted);">AGPL-3.0-or-later · partie de l'écosystème <a href="https://my-self.fr" style="color: var(--text-secondary); text-decoration: underline; text-decoration-color: var(--border-default); text-underline-offset: 3px;">MySelf</a>.</span>
   </p>
+</section>
+
+<!-- STATS BAND -->
+<section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 36px;">
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px 16px;">
+    <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600;">Aides catalogue</div>
+    <div style="font-size: 24px; font-weight: 700; color: var(--text-primary); font-family: 'Fraunces', serif;">{{ stats.aides_count }}</div>
+    <div style="font-size: 11px; color: var(--text-muted);">{{ stats.aides_min }} – {{ stats.aides_max }} €</div>
+  </div>
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px 16px;">
+    <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600;">Écritures compta</div>
+    <div style="font-size: 24px; font-weight: 700; color: var(--text-primary); font-family: 'Fraunces', serif;">{{ stats.nb_ecritures }}</div>
+    <div style="font-size: 11px; color: var(--text-muted);">{{ stats.volume_ttc }} € TTC cumulé</div>
+  </div>
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px 16px;">
+    <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600;">Factures émises</div>
+    <div style="font-size: 24px; font-weight: 700; color: var(--text-primary); font-family: 'Fraunces', serif;">{{ stats.nb_factures }}</div>
+    <div style="font-size: 11px; color: var(--text-muted);">via SelfInvoice (Factur-X)</div>
+  </div>
+  <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 14px 16px;">
+    <div style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600;">Scénarios DNJA</div>
+    <div style="font-size: 24px; font-weight: 700; color: var(--text-primary); font-family: 'Fraunces', serif;">{{ stats.dnja_examples }}</div>
+    <div style="font-size: 11px; color: var(--text-muted);">prêts à calculer</div>
+  </div>
+</section>
+
+<!-- MODULES — section title -->
+<div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px;">
+  <h2 style="font-size: 20px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.012em;">Modules</h2>
+  <span style="font-size: 11px; color: var(--text-muted); letter-spacing: 0.3px;">5 actifs · plus à venir</span>
 </div>
 
+<!-- CARDS GRID -->
 <div class="grid md:grid-cols-2 gap-4 mb-8">
-  <a href="/dnja" class="card no-underline block transition">
-    <div class="text-4xl mb-3">📊</div>
-    <h2 class="text-xl font-bold text-slate-100 mb-2">Prévisionnel DNJA</h2>
-    <p class="text-sm text-slate-400 mb-3">
-      Moteur de calcul sur 4 ans : produits, EBE, résultat, IR JA, ratios, bilan,
-      scénarios stress, calendrier cultural. Export PDF prêt pour la CDOA.
-    </p>
-    <div class="text-xs text-slate-500">
-      {{ stats.dnja_examples }} exemple(s) prêt(s)
+
+  <a href="/compta" class="card card-link">
+    <span class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 17L17 7M17 7H8M17 7V16"/></svg></span>
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+      <div style="font-size: 28px; line-height: 1;">📚</div>
+      <span class="badge badge-stable">● live</span>
     </div>
+    <h3 style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">SelfAgriBook</h3>
+    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 8px;">
+      Hub compta central — auto-écritures depuis factures (411 / 701), achats (601 / 401), banque, immos. Plan comptable agricole officiel, journal, balance, bilan, compte de résultat, <strong>export FEC DGFIP</strong>. Zéro double saisie.
+    </p>
+    <div style="font-size: 11px; color: var(--forest-400); font-weight: 500;">Hub compta MySelf · standard PCG agricole 2026</div>
   </a>
 
-  <a href="/aides" class="card no-underline block transition">
-    <div class="text-4xl mb-3">💶</div>
-    <h2 class="text-xl font-bold text-slate-100 mb-2">Catalogue d'aides</h2>
-    <p class="text-sm text-slate-400 mb-3">
-      {{ stats.aides_count }} aides agricoles 2026 sourcées aux portails officiels
-      (Légifrance, BOFiP, FranceAgriMer, MSA, Nouvelle-Aquitaine, CD le departement…).
-      Filtrable par statut, zone, catégorie.
-    </p>
-    <div class="text-xs text-amber-500">🏗️ V1 orienté JA — V2 ouvrira aux NA/AGRI/PME (été 2026)</div>
-    <div class="text-xs text-slate-500 mt-1">
-      Enveloppe indicative cumulée : {{ stats.aides_min }} – {{ stats.aides_max }} €
+  <a href="/invoice" class="card card-link">
+    <span class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 17L17 7M17 7H8M17 7V16"/></svg></span>
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+      <div style="font-size: 28px; line-height: 1;">🧾</div>
+      <span class="badge badge-stable">● live</span>
     </div>
+    <h3 style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">SelfInvoice (Factur-X)</h3>
+    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 8px;">
+      Facturation électronique <strong>Factur-X native</strong> — PDF/A-3 + XML profils BASIC / EN16931 / EXTENDED. 3 régimes : franchise TVA, micro-BA, réel. Conforme réforme 2027.
+    </p>
+    <div style="font-size: 11px; color: var(--forest-400); font-weight: 500;">3 régimes · démo live · prêt 2027</div>
   </a>
 
-  <a href="/parcelles" class="card no-underline block transition">
-    <div class="text-4xl mb-3">🗺️</div>
-    <h2 class="text-xl font-bold text-slate-100 mb-2">Parcellaire IGN</h2>
-    <p class="text-sm text-slate-400 mb-3">
-      Visualisation des parcelles cadastrales sur orthophoto IGN (Géoplateforme).
-      Recherche par n° cadastre ou clic sur carte. Multi-commune.
+  <a href="/dnja" class="card card-link">
+    <span class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 17L17 7M17 7H8M17 7V16"/></svg></span>
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+      <div style="font-size: 28px; line-height: 1;">📊</div>
+      <span class="badge badge-stable">● live</span>
+    </div>
+    <h3 style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">SelfDNJA</h3>
+    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 8px;">
+      Moteur prévisionnel <strong>4 ans</strong> — produits, EBE, résultat, IR JA, ratios, bilan, scénarios stress, calendrier cultural. Export PDF prêt CDOA. Aligné CdC DNJA V3 Région NA (17/02/2025).
     </p>
-    <div class="text-xs text-slate-500">Prototype v0.1 fonctionnel</div>
+    <div style="font-size: 11px; color: var(--forest-400); font-weight: 500;">RDA cible ≥ 1 SMIC · {{ stats.dnja_examples }} scénarios</div>
   </a>
 
-  <a href="/invoice" class="card no-underline block transition">
-    <div class="text-4xl mb-3">🧾</div>
-    <h2 class="text-xl font-bold text-slate-100 mb-2">SelfInvoice (Factur-X)</h2>
-    <p class="text-sm text-slate-400 mb-3">
-      Facturation électronique Factur-X native (PDF/A-3 + XML profils BASIC/EN16931/EXT).
-      Multi-régime : franchise TVA, micro-BA, réel. Générateur live de factures démo.
+  <a href="/aides" class="card card-link">
+    <span class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 17L17 7M17 7H8M17 7V16"/></svg></span>
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+      <div style="font-size: 28px; line-height: 1;">💶</div>
+      <span class="badge badge-beta">● beta</span>
+    </div>
+    <h3 style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">SelfAid</h3>
+    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 8px;">
+      <strong>{{ stats.aides_count }} aides agricoles 2026</strong> sourcées Légifrance, BOFiP, FranceAgriMer, MSA, Région NA, CD le departement. Filtrable par statut / zone / catégorie.
     </p>
-    <div class="text-xs text-green-500">✅ Démo live — 3 régimes</div>
+    <div style="font-size: 11px; color: var(--amber-warm); font-weight: 500;">V1 orienté JA · V2 ouverture NA / AGRI / PME (été 2026)</div>
   </a>
 
-  <a href="/compta" class="card no-underline block transition">
-    <div class="text-4xl mb-3">📚</div>
-    <h2 class="text-xl font-bold text-slate-100 mb-2">SelfAgriBook (Compta)</h2>
-    <p class="text-sm text-slate-400 mb-3">
-      Hub compta central — écritures comptables auto depuis tous les modules
-      (factures → 411/701, achats → 6011/401). Plan comptable agricole officiel,
-      journal, balance. Zéro double saisie.
+  <a href="/parcelles" class="card card-link">
+    <span class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 17L17 7M17 7H8M17 7V16"/></svg></span>
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+      <div style="font-size: 28px; line-height: 1;">🗺️</div>
+      <span class="badge badge-alpha">● alpha</span>
+    </div>
+    <h3 style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">SelfParcelles</h3>
+    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 8px;">
+      Visualisation parcelles cadastrales sur orthophoto IGN (Géoplateforme · <code>source_ign=BDP</code>). Recherche par n° cadastre ou clic carte. <strong>Multi-commune</strong>.
     </p>
-    <div class="text-xs text-green-500">✅ Hub live — auto-écritures self_invoice</div>
+    <div style="font-size: 11px; color: #fca5a5; font-weight: 500;">Prototype v0.1 · UX en consolidation</div>
   </a>
+
+  <div class="card" style="background: linear-gradient(180deg, #131c24 0%, #0f1719 100%); border-style: dashed; opacity: 0.85;">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+      <div style="font-size: 28px; line-height: 1; opacity: 0.5;">🚜</div>
+      <span class="badge" style="background: rgba(106, 128, 136, 0.15); color: var(--text-muted); border: 1px solid var(--border-default);">à venir</span>
+    </div>
+    <h3 style="font-size: 18px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">SelfBanking · SelfArbitrage · …</h3>
+    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+      Imports relevés bancaires (parser SG PDF testé), provisions auto, lettrage manuel, saisie libre. Sprint V1 polish : <strong>8-10 mai 2026</strong>.
+    </p>
+  </div>
+
 </div>
 
-<div class="card">
-  <h3 class="font-bold text-slate-100 mb-2">🚀 Quickstart</h3>
-  <ol class="text-sm text-slate-400 space-y-1 list-decimal list-inside">
-    <li>Ouvre <a href="/dnja" class="text-green-500">/dnja</a> et clique "Calculer" sur le scénario
-        pré-rempli → tu verras apparaître l'EBE/UTH, ratios, scénarios stress en inline.</li>
-    <li>Télécharge le PDF de synthèse → prêt pour la CDOA (CHAMBRE ou PERSO selon ton choix).</li>
-    <li>Explore <a href="/aides" class="text-green-500">/aides</a> pour voir les aides cumulables.</li>
-    <li>Vérifie tes parcelles dans <a href="/parcelles" class="text-green-500">/parcelles</a>.</li>
-  </ol>
-</div>
+<div class="divider-soft"></div>
+
+<!-- QUICKSTART -->
+<section style="margin-top: 28px;">
+  <h2 style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; letter-spacing: -0.012em;">Pour bien démarrer</h2>
+  <div class="card" style="background: linear-gradient(180deg, #131c24 0%, #11181f 100%);">
+    <ol style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.75; counter-reset: step; padding-left: 0; list-style: none;">
+      <li style="counter-increment: step; padding: 4px 0 4px 32px; position: relative;">
+        <span style="position: absolute; left: 0; top: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(22, 101, 52, 0.18); color: #86efac; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; border: 1px solid rgba(22, 101, 52, 0.35);">1</span>
+        Ouvre <a href="/dnja" style="color: var(--forest-400); font-weight: 500;">DNJA</a> → "Calculer" sur le scénario pré-rempli → tu verras EBE / UTH / ratios / scénarios stress en inline.
+      </li>
+      <li style="counter-increment: step; padding: 4px 0 4px 32px; position: relative;">
+        <span style="position: absolute; left: 0; top: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(22, 101, 52, 0.18); color: #86efac; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; border: 1px solid rgba(22, 101, 52, 0.35);">2</span>
+        Télécharge le PDF de synthèse → prêt pour la <strong>CDOA</strong> (mode CHAMBRE ou PERSO).
+      </li>
+      <li style="counter-increment: step; padding: 4px 0 4px 32px; position: relative;">
+        <span style="position: absolute; left: 0; top: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(22, 101, 52, 0.18); color: #86efac; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; border: 1px solid rgba(22, 101, 52, 0.35);">3</span>
+        Génère une facture Factur-X via <a href="/invoice" style="color: var(--forest-400); font-weight: 500;">Invoice</a> → l'écriture comptable apparaît automatiquement dans <a href="/compta" style="color: var(--forest-400); font-weight: 500;">Compta</a>.
+      </li>
+      <li style="counter-increment: step; padding: 4px 0 4px 32px; position: relative;">
+        <span style="position: absolute; left: 0; top: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(22, 101, 52, 0.18); color: #86efac; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; border: 1px solid rgba(22, 101, 52, 0.35);">4</span>
+        Explore les <a href="/aides" style="color: var(--forest-400); font-weight: 500;">aides cumulables</a> et vérifie tes <a href="/parcelles" style="color: var(--forest-400); font-weight: 500;">parcelles IGN</a>.
+      </li>
+    </ol>
+  </div>
+</section>
 
 {% endblock %}
