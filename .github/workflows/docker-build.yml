@@ -97,7 +97,8 @@ jobs:
     steps:
       - name: Pull & boot image
         run: |
-          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-$(echo ${{ github.sha }} | cut -c1-7)"
+          IMAGE_NAME_LC="$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')"
+          IMAGE="${{ env.REGISTRY }}/${IMAGE_NAME_LC}:sha-$(echo ${{ github.sha }} | cut -c1-7)"
           echo "Testing $IMAGE"
           docker pull "$IMAGE"
           docker run -d --name selffarm-smoke -p 8001:8001 "$IMAGE"
