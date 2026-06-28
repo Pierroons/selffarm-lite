@@ -451,7 +451,7 @@ td.amount { color: var(--text-primary); font-feature-settings: 'tnum'; }
     <a class="exploit-pill" href="/onboarding/2?force=true" title="Modifier le profil exploitation" style="text-decoration: none;">
       <div class="avatar">{{ exploitation.initials if exploitation else 'CBC' }}</div>
       <div class="info">
-        <div class="name">{{ exploitation.nom if exploitation else '[exploitation]' }}</div>
+        <div class="name">{{ exploitation.nom if exploitation else 'Ferme du Soleil' }}</div>
         <div class="meta">
           <span class="badge-status">{{ exploitation.statut if exploitation else 'JA' }}</span>Saison {{ exploitation.saison_courante if exploitation else 2026 }}
         </div>

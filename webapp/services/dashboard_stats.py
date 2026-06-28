@@ -5,7 +5,7 @@ Lecture seule, branche directement les tables SQLite :
 - `parcelle`, `plan_culture` (via self_agri_book.cultures)
 - `ecritures_comptables` (via self_agri_book.storage)
 
-V1 stub : plafonds aides hardcodés (cohérents profil JA bio le departement).
+V1 stub : plafonds aides hardcodés (cohérents profil JA bio).
 V2 prévu : catalogue self_aid dynamique par profil JA / NA / AGRI / PME.
 """
 
@@ -26,7 +26,7 @@ MONTH_LABELS = [
     "Juil", "Août", "Sept", "Oct", "Nov", "Déc",
 ]
 
-# Plafonds aides référence JA bio le departement (mémoire project_aides_agri_pierroons.md)
+# Plafonds aides référence JA bio (mémoire project_aides_agri_pierroons.md)
 # Filtre auto-appliqué : plafond=0 → exclu du chart (règle "ligne jamais à 0")
 DEFAULT_AIDES_PLAFOND: dict[str, float] = {
     "DNJA Trésorerie": 24500,
