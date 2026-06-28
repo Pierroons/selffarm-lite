@@ -55,7 +55,7 @@
       </div>
       <div>
         <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Activité</label>
-        <input type="text" name="vendeur_activite" placeholder="Exploitation agricole bio" style="width: 100%;">
+        <input type="text" name="vendeur_activite" placeholder="Exploitation agricole" style="width: 100%;">
       </div>
     </div>
     <div style="margin-bottom: 10px;">
@@ -125,10 +125,18 @@
     </div>
     <div style="display: flex; flex-direction: column; gap: 10px;">
       {% for i in range(5) %}
-      <div style="display: grid; grid-template-columns: 2fr 1fr 80px 100px 80px; gap: 8px; align-items: end;">
+      <div style="display: grid; grid-template-columns: 1.7fr 110px 1fr 60px 70px 80px 60px; gap: 8px; align-items: end;">
         <div>
           {% if i == 0 %}<label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Désignation</label>{% endif %}
           <input type="text" name="ligne_{{ i }}_nom" placeholder="Produit / service" style="width: 100%;">
+        </div>
+        <div>
+          {% if i == 0 %}<label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Nature · <span style="color: var(--forest-400); font-size: 9px;">compta</span></label>{% endif %}
+          <select name="ligne_{{ i }}_nature" style="width: 100%;">
+            {% for n in natures_vente %}
+            <option value="{{ n.code }}" {% if n.code == 'vegetal' %}selected{% endif %} title="{{ n.libelle }} → compte PCG {{ n.compte_pcg }}">{{ n.libelle }}</option>
+            {% endfor %}
+          </select>
         </div>
         <div>
           {% if i == 0 %}<label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Détail</label>{% endif %}
@@ -139,17 +147,24 @@
           <input type="number" name="ligne_{{ i }}_qte" min="1" step="1" placeholder="1" style="width: 100%; font-family: monospace; text-align: right;">
         </div>
         <div>
+          {% if i == 0 %}<label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Unité</label>{% endif %}
+          <select name="ligne_{{ i }}_unite" style="width: 100%; font-family: monospace;">
+            {% for u in unites_agri %}
+            <option value="{{ u.code }}" {% if u.code == 'C62' %}selected{% endif %} title="{{ u.libelle }} — UN/ECE {{ u.code }}">{{ u.symbole }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
           {% if i == 0 %}<label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">PU HT €</label>{% endif %}
           <input type="number" name="ligne_{{ i }}_pu_ht" min="0" step="0.01" placeholder="0,00" style="width: 100%; font-family: monospace; text-align: right;">
         </div>
         <div>
           {% if i == 0 %}<label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">TVA %</label>{% endif %}
           <select name="ligne_{{ i }}_tva_pct" style="width: 100%; font-family: monospace; text-align: right;">
-            <option value="20">20</option>
-            <option value="10">10</option>
-            <option value="5.5" selected>5,5</option>
-            <option value="2.1">2,1</option>
-            <option value="0">0</option>
+            {% for t in taux_tva %}
+            <option value="{{ t.pct }}" {% if t.pct == '5.5' %}selected{% endif %} title="{{ t.libelle }} — {{ t.article_cgi }}">{{ t.pct | replace('.', ',') }}</option>
+            {% endfor %}
+            <option value="0">0 (exonéré)</option>
           </select>
         </div>
       </div>
