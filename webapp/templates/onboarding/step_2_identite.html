@@ -1,0 +1,78 @@
+{% extends "onboarding/_layout.html" %}
+{% set step_num = 2 %}
+{% set step_total = 7 %}
+{% block title %}Étape 2 — Identité — SelfFarm-Lite{% endblock %}
+{% block wizard_content %}
+
+<h1>Ton <span class="accent">exploitation</span>.</h1>
+<p class="lead">
+  Comment elle s'appelle, et quel statut tu as choisi pour t'installer.
+</p>
+
+<form action="/onboarding/2" method="post">
+  <div class="field">
+    <label for="nom">Nom de l'exploitation <span class="req">*</span></label>
+    <input type="text" id="nom" name="nom"
+           value="{{ form.nom | default('') }}"
+           placeholder="ex : [exploitation], Ferme des Tilleuls, GAEC du Vieux Chêne…"
+           required autofocus>
+    <div class="hint">Le nom utilisé sur tes factures et déclarations. Modifiable plus tard.</div>
+  </div>
+
+  <div class="field">
+    <label>Statut de l'exploitation <span class="req">*</span></label>
+    <div class="radio-cards">
+      <label class="radio-card">
+        <input type="radio" name="statut" value="JA" {% if form.statut == 'JA' %}checked{% endif %} required>
+        <div class="card-body">
+          <div class="title">JA</div>
+          <div class="desc">Jeune agriculteur, installation aidée &lt; 5 ans</div>
+        </div>
+      </label>
+      <label class="radio-card">
+        <input type="radio" name="statut" value="NA" {% if form.statut == 'NA' %}checked{% endif %}>
+        <div class="card-body">
+          <div class="title">NA</div>
+          <div class="desc">Nouvel agri (&gt; 40 ans à l'install)</div>
+        </div>
+      </label>
+      <label class="radio-card">
+        <input type="radio" name="statut" value="AGRI" {% if form.statut == 'AGRI' %}checked{% endif %}>
+        <div class="card-body">
+          <div class="title">AGRI</div>
+          <div class="desc">Vitesse de croisière, hors aides install</div>
+        </div>
+      </label>
+      <label class="radio-card">
+        <input type="radio" name="statut" value="PME" {% if form.statut == 'PME' %}checked{% endif %}>
+        <div class="card-body">
+          <div class="title">PME</div>
+          <div class="desc">Société agricole (GAEC, EARL, SCEA, SARL…)</div>
+        </div>
+      </label>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="siret">SIRET (optionnel)</label>
+    <input type="text" id="siret" name="siret"
+           value="{{ form.siret | default('') }}"
+           placeholder="14 chiffres — à remplir plus tard si pas encore obtenu"
+           pattern="[0-9]{14}" maxlength="14">
+    <div class="hint">Obtenu auprès du CFE / Chambre d'agriculture après l'installation. Pas bloquant pour l'instant.</div>
+  </div>
+
+  <div class="wizard-nav">
+    <a href="/onboarding/1" class="btn-ghost">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Précédent
+    </a>
+    <div class="nav-spacer"></div>
+    <button type="submit" class="btn-primary">
+      Suivant
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+  </div>
+</form>
+
+{% endblock %}

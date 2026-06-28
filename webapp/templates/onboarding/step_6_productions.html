@@ -1,0 +1,82 @@
+{% extends "onboarding/_layout.html" %}
+{% set step_num = 6 %}
+{% set step_total = 7 %}
+{% block title %}Étape 6 — Productions — SelfFarm-Lite{% endblock %}
+{% block wizard_content %}
+
+<h1>Tes <span class="accent">productions</span>.</h1>
+<p class="lead">
+  Coche ce que tu cultives ou produis. Tu pourras ajouter / retirer ensuite depuis le module Cultures.
+</p>
+
+<form action="/onboarding/6" method="post">
+
+  <div class="field">
+    <label>Productions principales <span class="req">*</span></label>
+    <div class="checkbox-grid">
+      <label class="checkbox-card">
+        <input type="checkbox" name="productions" value="maraichage" {% if 'maraichage' in (form.productions | default([])) %}checked{% endif %}>
+        <div class="card-body"><span class="icon">🥬</span><span class="label">Maraîchage</span></div>
+      </label>
+      <label class="checkbox-card">
+        <input type="checkbox" name="productions" value="chanvre" {% if 'chanvre' in (form.productions | default([])) %}checked{% endif %}>
+        <div class="card-body"><span class="icon">🌿</span><span class="label">Chanvre</span></div>
+      </label>
+      <label class="checkbox-card">
+        <input type="checkbox" name="productions" value="fruits" {% if 'fruits' in (form.productions | default([])) %}checked{% endif %}>
+        <div class="card-body"><span class="icon">🍎</span><span class="label">Fruits / Verger</span></div>
+      </label>
+      <label class="checkbox-card">
+        <input type="checkbox" name="productions" value="grandes_cultures" {% if 'grandes_cultures' in (form.productions | default([])) %}checked{% endif %}>
+        <div class="card-body"><span class="icon">🌾</span><span class="label">Grandes cultures</span></div>
+      </label>
+      <label class="checkbox-card">
+        <input type="checkbox" name="productions" value="elevage_bovin" {% if 'elevage_bovin' in (form.productions | default([])) %}checked{% endif %}>
+        <div class="card-body"><span class="icon">🐄</span><span class="label">Élevage bovin</span></div>
+      </label>
+      <label class="checkbox-card">
+        <input type="checkbox" name="productions" value="elevage_ovin_caprin" {% if 'elevage_ovin_caprin' in (form.productions | default([])) %}checked{% endif %}>
+        <div class="card-body"><span class="icon">🐑</span><span class="label">Élevage ovin / caprin</span></div>
+      </label>
+      <label class="checkbox-card">
+        <input type="checkbox" name="productions" value="elevage_volaille" {% if 'elevage_volaille' in (form.productions | default([])) %}checked{% endif %}>
+        <div class="card-body"><span class="icon">🐔</span><span class="label">Volailles / œufs</span></div>
+      </label>
+      <label class="checkbox-card">
+        <input type="checkbox" name="productions" value="apiculture" {% if 'apiculture' in (form.productions | default([])) %}checked{% endif %}>
+        <div class="card-body"><span class="icon">🐝</span><span class="label">Apiculture</span></div>
+      </label>
+      <label class="checkbox-card">
+        <input type="checkbox" name="productions" value="viticulture" {% if 'viticulture' in (form.productions | default([])) %}checked{% endif %}>
+        <div class="card-body"><span class="icon">🍇</span><span class="label">Viticulture</span></div>
+      </label>
+      <label class="checkbox-card">
+        <input type="checkbox" name="productions" value="ppam" {% if 'ppam' in (form.productions | default([])) %}checked{% endif %}>
+        <div class="card-body"><span class="icon">🌱</span><span class="label">PPAM (plantes aromatiques)</span></div>
+      </label>
+      <label class="checkbox-card">
+        <input type="checkbox" name="productions" value="transformation" {% if 'transformation' in (form.productions | default([])) %}checked{% endif %}>
+        <div class="card-body"><span class="icon">🫙</span><span class="label">Transformation</span></div>
+      </label>
+      <label class="checkbox-card">
+        <input type="checkbox" name="productions" value="autre" {% if 'autre' in (form.productions | default([])) %}checked{% endif %}>
+        <div class="card-body"><span class="icon">📦</span><span class="label">Autre</span></div>
+      </label>
+    </div>
+    <div class="hint">Choix multiple. Au moins 1 production requise pour activer le module Cultures.</div>
+  </div>
+
+  <div class="wizard-nav">
+    <a href="/onboarding/5" class="btn-ghost">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Précédent
+    </a>
+    <div class="nav-spacer"></div>
+    <button type="submit" class="btn-primary">
+      Suivant
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+  </div>
+</form>
+
+{% endblock %}

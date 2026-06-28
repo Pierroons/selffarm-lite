@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ module.label if module else 'Module' }} — bientôt{% endblock %}
+{% block breadcrumb %}Vision complète{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 620px; margin: 48px auto; text-align: center;">
+  <div style="font-size: 2.6rem; margin-bottom: 6px;">🔜</div>
+  <h2 style="margin-bottom: 12px;">{{ module.label if module else 'Module' }}</h2>
+  <span class="badge badge-amber">À venir</span>
+  <p class="muted" style="margin-top: 16px; line-height: 1.6;">
+    {{ module.desc if module and module.desc else "Ce module fait partie de la vision complète de SelfFarm-Lite. Il n'est pas encore développé — tu le vois ici parce que la vue complète est activée." }}
+  </p>
+  <p class="muted" style="margin-top: 8px; font-size: 12px;">
+    Tu peux masquer les modules à venir en repassant en vue « Mon activité » dans la barre latérale.
+  </p>
+  <p style="margin-top: 20px;"><a class="btn-ghost" href="/roadmap">Voir la roadmap</a></p>
+</div>
+{% endblock %}
