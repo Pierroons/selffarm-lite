@@ -51,3 +51,4 @@ scripts/tailwindcss
 vault.key
 *.pem
 examples/_perso/
+_perso/

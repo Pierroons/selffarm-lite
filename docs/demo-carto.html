@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>SelfFarm-Lite — Démo carto Sainte-Foy (IGN)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+html, body { margin: 0; padding: 0; height: 100%; font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; }
+.header {
+  padding: 12px 20px;
+  background: #1e293b;
+  border-bottom: 2px solid #16a34a;
+}
+.header h1 { margin: 0 0 4px 0; font-size: 16px; color: #f1f5f9; }
+.header small { color: #94a3b8; }
+.header-search {
+  margin-top: 8px;
+  display: flex; gap: 6px; align-items: center;
+  position: relative;
+}
+.header-search input {
+  flex: 1; max-width: 420px;
+  padding: 6px 10px;
+  background: #0f172a;
+  border: 1px solid #475569;
+  color: #e2e8f0;
+  border-radius: 4px;
+  font-size: 12.5px;
+  font-family: inherit;
+}
+.header-search input:focus {
+  outline: none;
+  border-color: #16a34a;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.15);
+}
+.header-search button {
+  padding: 6px 14px;
+  background: #16a34a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.header-search button:hover { background: #15803d; }
+.header-search .hint {
+  font-size: 10.5px; color: #64748b;
+  margin-left: 4px;
+}
+.suggest-box {
+  position: absolute;
+  top: 100%; left: 0;
+  width: 100%; max-width: 420px;
+  background: #1e293b;
+  border: 1px solid #475569;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 2000;
+  display: none;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+}
+.suggest-box.open { display: block; }
+.suggest-item {
+  padding: 7px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #cbd5e1;
+  border-bottom: 1px solid #334155;
+  line-height: 1.4;
+}
+.suggest-item:last-child { border-bottom: none; }
+.suggest-item:hover, .suggest-item.focus { background: #16a34a; color: white; }
+.suggest-item .label { color: #f1f5f9; font-weight: 500; }
+.suggest-item .ctx { color: #94a3b8; font-size: 10.5px; margin-top: 1px; }
+.suggest-item:hover .ctx, .suggest-item.focus .ctx { color: #d1fae5; }
+#map { height: calc(100vh - 130px); width: 100%; cursor: grab; }
+#map.mode-select { cursor: crosshair; }
+#map.mode-select:active { cursor: crosshair; }
+.leaflet-popup-content-wrapper { background: #1e293b; color: #e2e8f0; }
+.leaflet-popup-tip { background: #1e293b; }
+.leaflet-popup-content { margin: 10px 12px; font-size: 13px; }
+.leaflet-popup-content b { color: #16a34a; }
+
+.controls {
+  position: absolute; top: 144px; right: 14px; z-index: 1000;
+  background: rgba(30, 41, 59, 0.95);
+  padding: 12px; border-radius: 8px;
+  border: 1px solid #334155;
+  max-width: 260px; font-size: 12px;
+}
+.controls h3 { margin: 0 0 6px 0; color: #16a34a; font-size: 13px; }
+.controls input { width: 100%; padding: 4px 6px; background: #0f172a; border: 1px solid #475569; color: #e2e8f0; border-radius: 4px; margin-bottom: 6px; box-sizing: border-box; }
+.controls button { width: 100%; padding: 6px; background: #16a34a; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+.controls button:hover { background: #15803d; }
+.controls button.blue { background: #2563eb; }
+.controls button.blue:hover { background: #1e40af; }
+.controls button.amber { background: #f59e0b; color: #422006; font-weight: bold; }
+.controls button.amber:hover { background: #d97706; }
+.controls button.amber.active { background: #dc2626; color: white; }
+
+.mode-panel {
+  position: absolute; top: 144px; left: 14px; z-index: 1000;
+  background: rgba(30, 41, 59, 0.95);
+  padding: 10px; border-radius: 8px;
+  border: 1px solid #334155; font-size: 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.mode-panel .mode-btn {
+  padding: 6px 10px; background: #334155; color: #e2e8f0;
+  border: 1px solid #475569; border-radius: 4px; cursor: pointer;
+  font-size: 12px; white-space: nowrap;
+}
+.mode-panel .mode-btn.active { background: #16a34a; border-color: #16a34a; color: white; }
+.mode-panel .mode-btn:hover { background: #475569; }
+.mode-panel .mode-btn.active:hover { background: #15803d; }
+.mode-panel hr { border: none; border-top: 1px solid #475569; margin: 4px 0; }
+.mode-panel label { color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.status-bar {
+  position: absolute; bottom: 4px; right: 4px; z-index: 1000;
+  background: rgba(15, 23, 42, 0.9); color: #cbd5e1;
+  padding: 6px 10px; font-size: 11px; border-radius: 4px;
+  border: 1px solid #334155; max-width: 400px;
+}
+.status-bar.selecting { color: #fbbf24; border-color: #f59e0b; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🗺️ SelfFarm-Lite — Carto IGN</h1>
+  <small>Fond : IGN Géoplateforme · Cadastre : Api Carto IGN · Adresse : api-adresse.data.gouv.fr · 100 % open data gouv.fr</small>
+  <div class="header-search">
+    <input id="adresseInput"
+           type="text"
+           placeholder="🔎 Adresse, lieu-dit, commune (ex : votre adresse, lieu-dit ou commune)"
+           autocomplete="off">
+    <button onclick="centrerSurAdresse()">Centrer</button>
+    <span class="hint">↵ Entrée / ↑ ↓ pour naviguer</span>
+    <div id="suggestBox" class="suggest-box"></div>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<!-- Panneau gauche : modes + couches -->
+<div class="mode-panel">
+  <label>Mode curseur</label>
+  <button id="btnModeMove" class="mode-btn active" onclick="setMode('move')">✋ Déplacer</button>
+  <button id="btnModeSelect" class="mode-btn" onclick="setMode('select')">🎯 Sélectionner</button>
+  <hr>
+  <label>Fond de carte</label>
+  <button id="btnFondOrtho" class="mode-btn" onclick="setFond('ortho')">🛰️ Satellite</button>
+  <button id="btnFondPlan" class="mode-btn" onclick="setFond('plan')">🗺️ Plan IGN</button>
+  <button id="btnFondMix" class="mode-btn active" onclick="setFond('mix')">🛰️+📍 Sat + Cadastre</button>
+</div>
+
+<!-- Panneau droit : recherche parcelle -->
+<div class="controls">
+  <h3>🔍 Recherche parcelle</h3>
+  <input id="commune" placeholder="Code INSEE (ex: 75056)" value="">
+  <input id="section" placeholder="Section (ex: 0E)" value="0E">
+  <input id="numero" placeholder="Numéro (ex: 1871)" value="1871">
+  <button onclick="chercherParcelle()">Afficher la parcelle</button>
+  <button onclick="effacerParcelles()" class="amber" style="margin-top: 6px;">
+    🧹 Effacer la sélection
+  </button>
+  <div style="margin-top: 8px; font-size: 10px; color: #94a3b8; line-height: 1.4;">
+    Source : IGN Cadastre BDParcellaire (données publiques)
+  </div>
+</div>
+
+<div class="status-bar" id="status">
+  Mode : ✋ Déplacer — clique/glisse la carte avec la main
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map = L.map('map', { zoomControl: true }).setView([46.6, 2.4], 6);
+const mapEl = document.getElementById('map');
+const statusEl = document.getElementById('status');
+
+// Tuiles IGN
+const ortho = L.tileLayer(
+  'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/jpeg',
+  { attribution: '© IGN-F/Géoportail', maxZoom: 19, minZoom: 2 }
+);
+const planIGN = L.tileLayer(
+  'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/png',
+  { attribution: '© IGN-F/Géoportail', maxZoom: 18, minZoom: 2 }
+);
+const cadastre = L.tileLayer(
+  'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=CADASTRALPARCELS.PARCELLAIRE_EXPRESS&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/png',
+  { attribution: 'Cadastre IGN', maxZoom: 19, minZoom: 16, opacity: 0.75 }
+);
+
+ortho.addTo(map);
+cadastre.addTo(map);
+
+function setFond(type) {
+  map.removeLayer(ortho);
+  map.removeLayer(planIGN);
+  map.removeLayer(cadastre);
+
+  if (type === 'ortho') {
+    ortho.addTo(map);
+  } else if (type === 'plan') {
+    planIGN.addTo(map);
+  } else if (type === 'mix') {
+    ortho.addTo(map);
+    cadastre.addTo(map);
+  }
+  document.querySelectorAll('#btnFondOrtho, #btnFondPlan, #btnFondMix').forEach(b => b.classList.remove('active'));
+  document.getElementById(type === 'ortho' ? 'btnFondOrtho' : type === 'plan' ? 'btnFondPlan' : 'btnFondMix').classList.add('active');
+}
+
+// Couche parcelles dynamiques
+let parcelles = L.geoJSON(null, {
+  style: { color: '#16a34a', weight: 2.5, fillColor: '#16a34a', fillOpacity: 0.3 },
+  onEachFeature: (feat, layer) => {
+    const p = feat.properties;
+    const surface_ha = (p.contenance / 10000).toFixed(3);
+    const payload = encodeURIComponent(JSON.stringify({
+      nom: `${p.section}${p.numero}`,
+      commune: p.nom_com || '',
+      surface_ha: p.contenance / 10000,
+      ref_cadastrale: p.idu || ''
+    }));
+    layer.bindPopup(`
+      <b>Parcelle ${p.section}${p.numero}</b><br>
+      IDU: <code>${p.idu}</code><br>
+      Commune: ${p.nom_com} (${p.code_insee})<br>
+      Surface: <b>${surface_ha} ha</b> (${p.contenance} m²)<br>
+      Feuille: ${p.feuille}<br>
+      <button onclick="ajouterAuxParcelles('${payload}')" style="margin-top:6px;padding:5px 10px;background:#16a34a;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:600;">
+        + Ajouter à mes parcelles
+      </button>
+    `);
+  }
+}).addTo(map);
+
+// URL API IGN Cadastre (nécessite le paramètre source_ign=BDP depuis migration Géoplateforme)
+const API_PARCELLE = 'https://apicarto.ign.fr/api/cadastre/parcelle';
+
+async function ajouterAuxParcelles(payloadEncoded) {
+  const data = JSON.parse(decodeURIComponent(payloadEncoded));
+  const fd = new FormData();
+  fd.append('nom', data.nom);
+  fd.append('commune', data.commune);
+  fd.append('surface_ha', data.surface_ha.toFixed(4));
+  fd.append('statut', 'bio');
+  fd.append('ref_cadastrale', data.ref_cadastrale);
+  fd.append('notes', `Importée depuis carte IGN le ${new Date().toLocaleDateString('fr-FR')}`);
+  try {
+    statusEl.textContent = `⏳ Ajout parcelle ${data.nom} (${data.surface_ha.toFixed(3)} ha)…`;
+    const r = await fetch('/parcelles/new', { method: 'POST', body: fd });
+    if (r.ok || r.status === 303) {
+      statusEl.textContent = `✓ Parcelle ${data.nom} ajoutée — ${data.surface_ha.toFixed(3)} ha`;
+      // Notifie le parent (le wrapper iframe) qu'on vient d'ajouter une parcelle
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'parcelle-added', nom: data.nom, surface_ha: data.surface_ha }, '*');
+      }
+    } else {
+      statusEl.textContent = `✗ Erreur ajout (HTTP ${r.status})`;
+    }
+  } catch (err) {
+    statusEl.textContent = `✗ Erreur réseau : ${err.message}`;
+  }
+}
+
+// Mode curseur
+let mode = 'move';
+function setMode(m) {
+  mode = m;
+  document.getElementById('btnModeMove').classList.toggle('active', m === 'move');
+  document.getElementById('btnModeSelect').classList.toggle('active', m === 'select');
+  if (m === 'select') {
+    mapEl.classList.add('mode-select');
+    statusEl.classList.add('selecting');
+    statusEl.textContent = '🎯 Mode sélection — clique sur une parcelle pour la récupérer';
+  } else {
+    mapEl.classList.remove('mode-select');
+    statusEl.classList.remove('selecting');
+    statusEl.textContent = 'Mode : ✋ Déplacer — clique/glisse la carte avec la main';
+  }
+}
+
+// Calcule surface approximative d'un polygone (en m²) via formule géodésique simplifiée
+function surfacePolygone(coords) {
+  // coords = [[lng, lat], ...] — polygone fermé ; approximation équirectangulaire
+  if (!coords || coords.length < 3) return 0;
+  const R = 6378137; // rayon Terre en m (EPSG:4326)
+  const toRad = d => d * Math.PI / 180;
+  let total = 0;
+  for (let i = 0; i < coords.length; i++) {
+    const [lng1, lat1] = coords[i];
+    const [lng2, lat2] = coords[(i + 1) % coords.length];
+    total += toRad(lng2 - lng1) * (2 + Math.sin(toRad(lat1)) + Math.sin(toRad(lat2)));
+  }
+  return Math.abs(total * R * R / 2);
+}
+
+// Enrichit les features avec la contenance calculée (l'API ne la fournit plus)
+function enrichirFeatures(geo) {
+  if (!geo.features) return geo;
+  geo.features.forEach(f => {
+    const props = f.properties || {};
+    // IDU construit depuis code_insee + section + numero (padding 4 chiffres)
+    if (!props.idu) {
+      const num = String(props.numero || '').padStart(4, '0');
+      props.idu = `${props.code_insee || ''}000${props.section || ''}${num}`;
+    }
+    // Contenance calculée depuis la géométrie si absente
+    if (!props.contenance && f.geometry) {
+      let coords = null;
+      if (f.geometry.type === 'Polygon') coords = f.geometry.coordinates[0];
+      else if (f.geometry.type === 'MultiPolygon') coords = f.geometry.coordinates[0][0];
+      if (coords) props.contenance = Math.round(surfacePolygone(coords));
+    }
+    f.properties = props;
+  });
+  return geo;
+}
+
+// Clic sur la carte (mode select) — recherche parcelle à l'endroit cliqué
+map.on('click', async (e) => {
+  if (mode !== 'select') return;
+  const { lat, lng } = e.latlng;
+  statusEl.textContent = `⏳ Recherche parcelle à ${lat.toFixed(5)}, ${lng.toFixed(5)}…`;
+  try {
+    const geom = encodeURIComponent(JSON.stringify({
+      type: 'Point', coordinates: [lng, lat]
+    }));
+    const url = `${API_PARCELLE}?geom=${geom}&_limit=1&source_ign=BDP`;
+    const r = await fetch(url);
+    const data = enrichirFeatures(await r.json());
+    if (data.features && data.features.length > 0) {
+      parcelles.addData(data);
+      const p = data.features[0].properties;
+      const ha = (p.contenance / 10000).toFixed(3);
+      statusEl.textContent = `✓ Parcelle ${p.section}${p.numero} — ${ha} ha (commune ${p.nom_com})`;
+      parcelles.getLayers().slice(-1)[0].openPopup();
+    } else {
+      statusEl.textContent = `✗ Aucune parcelle cadastrale à cet endroit`;
+    }
+  } catch (err) {
+    statusEl.textContent = `✗ Erreur : ${err.message}`;
+  }
+});
+
+async function chercherParcelle() {
+  const commune = document.getElementById('commune').value.trim();
+  const section = document.getElementById('section').value.trim();
+  const numero = document.getElementById('numero').value.trim();
+  const url = `${API_PARCELLE}?code_insee=${commune}&section=${section}&numero=${numero}&source_ign=BDP`;
+  statusEl.textContent = `⏳ Recherche ${section}${numero}…`;
+  try {
+    const r = await fetch(url);
+    const geo = enrichirFeatures(await r.json());
+    parcelles.addData(geo);
+    if (geo.features && geo.features.length > 0) {
+      map.fitBounds(parcelles.getBounds(), { maxZoom: 18 });
+      const p = geo.features[0].properties;
+      const ha = (p.contenance / 10000).toFixed(3);
+      statusEl.textContent = `✓ Parcelle ${p.section}${p.numero} — ${ha} ha (${p.nom_com})`;
+    } else {
+      statusEl.textContent = `✗ Aucune parcelle trouvée pour ${section}${numero} (${commune})`;
+    }
+  } catch (err) {
+    statusEl.textContent = `✗ Erreur API : ${err.message}`;
+  }
+}
+
+function effacerParcelles() {
+  parcelles.clearLayers();
+  statusEl.textContent = 'Sélection effacée';
+}
+
+// ============ Recherche d'adresse (API Adresse data.gouv.fr) ============
+// API publique gratuite, sans clé : https://adresse.data.gouv.fr/api-doc/adresse
+const API_ADRESSE = 'https://api-adresse.data.gouv.fr/search/';
+let suggestions = [];
+let suggestFocus = -1;
+let suggestDebounce = null;
+let adresseMarker = null;
+
+const adresseInput = document.getElementById('adresseInput');
+const suggestBox = document.getElementById('suggestBox');
+
+adresseInput.addEventListener('input', () => {
+  clearTimeout(suggestDebounce);
+  const q = adresseInput.value.trim();
+  if (q.length < 3) { suggestBox.classList.remove('open'); suggestions = []; return; }
+  suggestDebounce = setTimeout(() => fetchSuggestions(q), 220);
+});
+
+adresseInput.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    suggestFocus = Math.min(suggestFocus + 1, suggestions.length - 1);
+    renderSuggestions();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    suggestFocus = Math.max(suggestFocus - 1, -1);
+    renderSuggestions();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (suggestFocus >= 0 && suggestions[suggestFocus]) {
+      selectSuggestion(suggestions[suggestFocus]);
+    } else {
+      centrerSurAdresse();
+    }
+  } else if (e.key === 'Escape') {
+    suggestBox.classList.remove('open');
+    suggestFocus = -1;
+  }
+});
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.header-search')) {
+    suggestBox.classList.remove('open');
+  }
+});
+
+async function fetchSuggestions(q) {
+  try {
+    const url = `${API_ADRESSE}?q=${encodeURIComponent(q)}&limit=6&autocomplete=1`;
+    const r = await fetch(url);
+    const data = await r.json();
+    suggestions = (data.features || []).map(f => ({
+      label: f.properties.label,
+      ctx: `${f.properties.context || ''} · ${f.properties.type || ''}`.trim(),
+      lat: f.geometry.coordinates[1],
+      lng: f.geometry.coordinates[0],
+      postcode: f.properties.postcode || '',
+      city: f.properties.city || ''
+    }));
+    suggestFocus = -1;
+    renderSuggestions();
+  } catch (err) {
+    suggestions = [];
+    suggestBox.classList.remove('open');
+  }
+}
+
+function renderSuggestions() {
+  if (suggestions.length === 0) {
+    suggestBox.classList.remove('open');
+    suggestBox.innerHTML = '';
+    return;
+  }
+  suggestBox.innerHTML = suggestions.map((s, i) => `
+    <div class="suggest-item ${i === suggestFocus ? 'focus' : ''}" onclick="selectSuggestion(suggestions[${i}])">
+      <div class="label">${escapeHtml(s.label)}</div>
+      <div class="ctx">${escapeHtml(s.ctx)}</div>
+    </div>
+  `).join('');
+  suggestBox.classList.add('open');
+}
+
+function selectSuggestion(s) {
+  adresseInput.value = s.label;
+  suggestBox.classList.remove('open');
+  centrerCarte(s.lat, s.lng, s.label);
+}
+
+function centrerSurAdresse() {
+  const q = adresseInput.value.trim();
+  if (!q) return;
+  if (suggestions.length > 0) {
+    selectSuggestion(suggestions[0]);
+  } else {
+    fetchSuggestions(q).then(() => {
+      if (suggestions[0]) selectSuggestion(suggestions[0]);
+    });
+  }
+}
+
+function centrerCarte(lat, lng, label) {
+  map.flyTo([lat, lng], 17, { duration: 1.2 });
+  // Marker temporaire à l'adresse
+  if (adresseMarker) map.removeLayer(adresseMarker);
+  adresseMarker = L.marker([lat, lng], {
+    icon: L.divIcon({
+      className: 'adresse-marker',
+      html: '<div style="background:#16a34a;width:14px;height:14px;border-radius:50%;border:3px solid white;box-shadow:0 0 8px rgba(22,163,74,0.6);"></div>',
+      iconSize: [14, 14],
+      iconAnchor: [7, 7]
+    })
+  }).addTo(map).bindPopup(`<b>📍 ${label}</b><br><small>Passe en mode 🎯 Sélectionner et clique sur tes parcelles autour.</small>`).openPopup();
+  statusEl.textContent = `📍 Centré sur : ${label}`;
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Chargement initial : parcelle 0E1871 Sainte-Foy (vraie géométrie depuis IGN)
+chercherParcelle();
+</script>
+</body>
+</html>

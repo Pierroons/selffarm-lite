@@ -1,7 +1,7 @@
 # Roadmap `self-parcelles` — module cartographique SelfFarm-Lite
 
 Date : 22 avril 2026
-Statut : concept validé, prototype démo OK (`demo-carto-[commune].html`)
+Statut : concept validé, prototype démo OK (`demo-carto.html`)
 
 Ce document consigne les besoins fonctionnels et les décisions de
 conception pour le futur module de cartographie parcellaire.
@@ -39,7 +39,7 @@ Architecture recommandée :
 
 ```python
 class Parcelle(BaseModel):
-    id_cadastre: str          # IDU complet (14 caractères, ex: [insee]000E1871)
+    id_cadastre: str          # IDU complet (14 caractères, ex: 33220000A0001)
     code_insee: str           # 5 digits, permet filtre/groupement
     commune_nom: str          # humain, pour UI
     section: str
@@ -52,7 +52,7 @@ class Parcelle(BaseModel):
 Table SQL :
 ```sql
 CREATE TABLE parcelles (
-    id_cadastre TEXT PRIMARY KEY,     -- ex: [insee]000E1871
+    id_cadastre TEXT PRIMARY KEY,     -- ex: 33220000A0001
     code_insee TEXT NOT NULL,          -- indexed, pour filtre/groupement
     commune_nom TEXT NOT NULL,
     section TEXT NOT NULL,
@@ -67,7 +67,7 @@ CREATE INDEX idx_parcelles_geom ON parcelles USING GIST(geometry);
 
 ## Prototype actuel — état
 
-`docs/demo-carto-[commune].html` (standalone, zéro backend) :
+`docs/demo-carto.html` (standalone, zéro backend) :
 
 - ✅ Fond orthophoto IGN / Plan IGN / Sat + Cadastre
 - ✅ Mode ✋ Déplacer / 🎯 Sélectionner par clic

@@ -14,7 +14,7 @@ applicatif qui repose sur les 3 piliers » (identité / droit / sécurité).
 | [`self-dnja`](modules/self_dnja) | Prévisionnel DNJA 4 ans + dossier PDF CDOA | ✅ live |
 | [`self-aid`](modules/self_aid) | Catalogue aides publiques sourcées officiellement | ✅ live (V1 JA, V2 NA/AGRI/PME à venir) |
 | [`self-banking`](modules/self_banking) | Parser PDF relevés bancaires (fake-first, SG OK) | ✅ live |
-| [`self-parcelles`](docs/demo-carto-[commune].html) | Cartographie IGN Géoportail (parcellaire cadastre) | ✅ live (multi-commune V0.4) |
+| [`self-parcelles`](docs/demo-carto.html) | Cartographie IGN Géoportail (parcellaire cadastre) | ✅ live (multi-commune V0.4) |
 | [`self-factur-x-agri`](modules/self_factur_x_agri) | TVA agricole + UOM HAR/TNE (à fusionner avec self_invoice) | 🏗️ à fusionner |
 
 Ces modules sont utilisables **seuls ou combinés**, ils n'exigent aucun

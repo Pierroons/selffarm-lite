@@ -40,7 +40,7 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/parcelles", tags=["parcelles"])
 
 TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
-DEMO_CARTO = Path(__file__).parent.parent.parent / "docs" / "demo-carto-[commune].html"
+DEMO_CARTO = Path(__file__).parent.parent.parent / "docs" / "demo-carto.html"
 
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
