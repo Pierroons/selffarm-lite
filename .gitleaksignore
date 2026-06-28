@@ -1,4 +1,4 @@
-# Findings historiques acceptés
+# historique accepté
 00ae6851c8cef9406bee7192ca947e0beff6443d:modules/self_agri_book/exploitation.py:myself-business-perso:53
 00ae6851c8cef9406bee7192ca947e0beff6443d:webapp/templates/onboarding/step_2_identite.html:myself-business-perso:17
 00ae6851c8cef9406bee7192ca947e0beff6443d:webapp/templates/onboarding/step_3_localisation.html:myself-localisation:17
