@@ -1,0 +1,48 @@
+{% extends "onboarding/_layout.html" %}
+{% set step_num = 4 %}
+{% set step_total = 7 %}
+{% block title %}Étape 4 — Installation — SelfFarm-Lite{% endblock %}
+{% block wizard_content %}
+
+<h1>Ton <span class="accent">installation</span>.</h1>
+<p class="lead">
+  Important pour calculer ton compteur d'années JA (5 ans max) et tes exonérations dégressives.
+</p>
+
+<form action="/onboarding/4" method="post">
+  <div class="field">
+    <label for="date_installation">Date d'installation</label>
+    <input type="date" id="date_installation" name="date_installation"
+           value="{{ form.date_installation | default('') }}"
+           autofocus style="max-width: 240px;">
+    <div class="hint">
+      Date de début d'activité officielle (déclaration MSA / CFE).
+      Si tu n'as pas encore commencé, laisse vide — tu pourras renseigner plus tard.
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="saison_courante">Saison de production courante <span class="req">*</span></label>
+    <input type="number" id="saison_courante" name="saison_courante"
+           value="{{ form.saison_courante | default(2026) }}"
+           min="2020" max="2050" required style="max-width: 140px;">
+    <div class="hint">
+      L'année agricole en cours (par défaut l'année courante).
+      Une saison = une année civile pour la compta agricole.
+    </div>
+  </div>
+
+  <div class="wizard-nav">
+    <a href="/onboarding/3" class="btn-ghost">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Précédent
+    </a>
+    <div class="nav-spacer"></div>
+    <button type="submit" class="btn-primary">
+      Suivant
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+  </div>
+</form>
+
+{% endblock %}

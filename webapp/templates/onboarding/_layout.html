@@ -1,0 +1,340 @@
+{# Layout autonome wizard d'onboarding — pas de sidebar (user pas encore dans l'app) #}
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}SelfFarm-Lite — premier démarrage{% endblock %}</title>
+<link rel="icon" type="image/svg+xml" href="/static/img/selffarm/svg/logo-badge.svg">
+<meta name="theme-color" content="#0a0f0d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/app.css">
+<style>
+  :root {
+    --bg-base:         #0a0f0d;
+    --bg-card:         #0f1814;
+    --bg-elev:         #16261e;
+    --border-subtle:   #1c302a;
+    --border-default:  #2a4035;
+    --text-primary:    #e8efe9;
+    --text-secondary:  #9bb09f;
+    --text-muted:      #6a8070;
+    --accent-200:      #86a890;
+    --accent-400:      #4a7c5e;
+    --accent-500:      #2d5a3a;
+    --accent-600:      #1f4e3d;
+    --accent-bg-soft:  rgba(45, 90, 58, 0.14);
+    --warm-amber:      #d4a056;
+  }
+
+  * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+
+  body {
+    margin: 0;
+    background: var(--bg-base);
+    background-image:
+      radial-gradient(at 25% 18%, rgba(45, 90, 58, 0.14) 0px, transparent 55%),
+      radial-gradient(at 78% 88%, rgba(212, 160, 86, 0.05) 0px, transparent 50%);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    letter-spacing: -0.005em;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  h1, h2, h3 { font-family: 'Fraunces', Georgia, serif; letter-spacing: -0.02em; margin: 0; }
+
+  a { color: var(--accent-200); text-decoration: none; transition: color 0.15s ease; }
+  a:hover { color: var(--accent-400); }
+
+  /* ============ Header wizard ============ */
+  .wizard-header {
+    padding: 22px 28px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex; align-items: center; justify-content: space-between;
+    backdrop-filter: blur(8px);
+  }
+  .wizard-header .brand {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .wizard-header .brand img {
+    width: 34px; height: 34px;
+  }
+  .wizard-header .brand-text .name {
+    font-size: 15px; font-weight: 600;
+    color: var(--text-primary);
+  }
+  .wizard-header .brand-text .name .lite { color: var(--accent-400); font-weight: 400; }
+  .wizard-header .brand-text .tag {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    margin-top: 1px;
+  }
+  .wizard-header .step-counter {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .wizard-header .step-counter strong {
+    color: var(--accent-200);
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  /* ============ Progress bar ============ */
+  .wizard-progress {
+    height: 3px;
+    background: var(--bg-elev);
+    position: relative;
+  }
+  .wizard-progress .fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-500), var(--accent-400));
+    transition: width 0.3s ease;
+  }
+
+  /* ============ Container principal ============ */
+  .wizard-main {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 60px 24px 40px;
+  }
+  .wizard-card {
+    width: 100%;
+    max-width: 620px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 36px 40px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+  }
+
+  .wizard-card h1 {
+    font-size: 28px;
+    margin-bottom: 6px;
+    color: var(--text-primary);
+  }
+  .wizard-card h1 .accent { color: var(--accent-400); font-style: italic; }
+  .wizard-card .lead {
+    font-size: 14.5px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 28px;
+  }
+
+  /* ============ Form fields ============ */
+  .field { margin-bottom: 20px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .field label .req { color: var(--warm-amber); margin-left: 3px; }
+  .field .hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+  .field input[type="text"],
+  .field input[type="date"],
+  .field input[type="number"],
+  .field input[type="email"],
+  .field select {
+    width: 100%;
+    background: #0a1410;
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: inherit;
+    font-size: 14px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .field input:focus, .field select:focus {
+    outline: none;
+    border-color: var(--accent-500);
+    box-shadow: 0 0 0 3px var(--accent-bg-soft);
+  }
+
+  /* ============ Radio cards (statut, régime) ============ */
+  .radio-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+  .radio-card {
+    position: relative;
+    cursor: pointer;
+  }
+  .radio-card input {
+    position: absolute; opacity: 0; pointer-events: none;
+  }
+  .radio-card .card-body {
+    padding: 14px 16px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    transition: all 0.15s ease;
+  }
+  .radio-card:hover .card-body { border-color: var(--accent-400); }
+  .radio-card input:checked + .card-body {
+    border-color: var(--accent-500);
+    background: var(--accent-bg-soft);
+    box-shadow: 0 0 0 2px rgba(45, 90, 58, 0.25);
+  }
+  .radio-card .title {
+    font-size: 14px; font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 3px;
+  }
+  .radio-card .desc {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .radio-card input:checked + .card-body .title { color: var(--accent-200); }
+
+  /* ============ Checkboxes en grille (productions) ============ */
+  .checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 8px;
+  }
+  .checkbox-card {
+    position: relative; cursor: pointer;
+  }
+  .checkbox-card input {
+    position: absolute; opacity: 0; pointer-events: none;
+  }
+  .checkbox-card .card-body {
+    padding: 11px 14px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border-subtle);
+    border-radius: 7px;
+    display: flex; align-items: center; gap: 8px;
+    transition: all 0.15s ease;
+  }
+  .checkbox-card:hover .card-body { border-color: var(--accent-400); }
+  .checkbox-card input:checked + .card-body {
+    border-color: var(--accent-500);
+    background: var(--accent-bg-soft);
+  }
+  .checkbox-card .icon { font-size: 18px; }
+  .checkbox-card .label { font-size: 13px; color: var(--text-primary); }
+
+  /* ============ Recap entries ============ */
+  .recap-grid {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 10px 18px;
+    margin-bottom: 24px;
+  }
+  .recap-grid dt {
+    color: var(--text-muted);
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding-top: 2px;
+  }
+  .recap-grid dd {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  /* ============ Boutons ============ */
+  .wizard-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 32px; padding-top: 22px;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .btn-primary, .btn-ghost {
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid;
+  }
+  .btn-primary {
+    background: linear-gradient(180deg, var(--accent-500), var(--accent-600));
+    color: var(--text-primary);
+    border-color: var(--accent-600);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border-color: var(--border-default);
+  }
+  .btn-ghost:hover { border-color: var(--accent-500); color: var(--accent-200); background: var(--accent-bg-soft); }
+  .wizard-nav .nav-spacer { flex: 1; }
+
+  /* ============ Footer ============ */
+  .wizard-footer {
+    text-align: center; padding: 20px;
+    font-size: 11px; color: var(--text-muted);
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  /* ============ Mobile ============ */
+  @media (max-width: 640px) {
+    .wizard-main { padding: 24px 14px; }
+    .wizard-card { padding: 24px 22px; border-radius: 10px; }
+    .wizard-card h1 { font-size: 22px; }
+    .wizard-header { padding: 14px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="wizard-header">
+  <div class="brand">
+    <img src="/static/img/selffarm/svg/logo-mark.svg" alt="SelfFarm-Lite">
+    <div class="brand-text">
+      <div class="name">SelfFarm<span class="lite">·Lite</span></div>
+      <div class="tag">premier démarrage</div>
+    </div>
+  </div>
+  {% block step_counter %}
+  <div class="step-counter">Étape <strong>{{ step_num | default(1) }}</strong> / {{ step_total | default(7) }}</div>
+  {% endblock %}
+</header>
+
+<div class="wizard-progress">
+  <div class="fill" style="width: {{ ((step_num | default(1)) / (step_total | default(7)) * 100) | round }}%;"></div>
+</div>
+
+<main class="wizard-main">
+  <div class="wizard-card">
+    {% block wizard_content %}{% endblock %}
+  </div>
+</main>
+
+<footer class="wizard-footer">
+  SelfFarm-Lite v{{ version | default('0.4.x') }} · AGPL-3.0-or-later · données locales · zéro cloud
+</footer>
+
+</body>
+</html>

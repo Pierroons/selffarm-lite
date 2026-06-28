@@ -1,0 +1,113 @@
+{% extends "onboarding/_layout.html" %}
+{% set step_num = 7 %}
+{% set step_total = 7 %}
+{% block title %}Étape 7 — Récap — SelfFarm-Lite{% endblock %}
+{% block wizard_content %}
+
+{# Labels lisibles pour les valeurs techniques #}
+{% set statut_labels = {'JA': 'Jeune Agriculteur', 'NA': 'Nouvel Agri', 'AGRI': 'Agriculteur installé', 'PME': 'PME agricole'} %}
+{% set regime_labels = {
+  'micro_ba': 'Micro-BA',
+  'reel_simplifie': 'Réel simplifié',
+  'reel_normal': 'Réel normal'
+} %}
+{% set tva_labels = {
+  'franchise': 'Franchise TVA (pas de collecte)',
+  'rsa': 'Régime simplifié agricole (RSA)',
+  'reel_tva': 'Réel normal TVA'
+} %}
+{% set production_labels = {
+  'maraichage': '🥬 Maraîchage',
+  'chanvre': '🌿 Chanvre',
+  'fruits': '🍎 Fruits / Verger',
+  'grandes_cultures': '🌾 Grandes cultures',
+  'elevage_bovin': '🐄 Élevage bovin',
+  'elevage_ovin_caprin': '🐑 Ovin / caprin',
+  'elevage_volaille': '🐔 Volailles / œufs',
+  'apiculture': '🐝 Apiculture',
+  'viticulture': '🍇 Viticulture',
+  'ppam': '🌱 PPAM',
+  'transformation': '🫙 Transformation',
+  'autre': '📦 Autre'
+} %}
+
+<h1>On <span class="accent">valide</span>.</h1>
+<p class="lead">
+  Vérifie un coup, et lance SelfFarm. Tout est modifiable plus tard depuis <strong>Paramètres &gt; Profil</strong>.
+</p>
+
+<dl class="recap-grid">
+  <dt>Nom</dt>
+  <dd>{{ form.nom | default('—') }}</dd>
+
+  <dt>Statut</dt>
+  <dd>
+    <strong>{{ form.statut | default('—') }}</strong>
+    {% if form.statut %}
+      <span style="color: var(--text-muted); font-size: 12px;">— {{ statut_labels[form.statut] | default('') }}</span>
+    {% endif %}
+  </dd>
+
+  {% if form.siret %}
+  <dt>SIRET</dt>
+  <dd>{{ form.siret }}</dd>
+  {% endif %}
+
+  <dt>Localisation</dt>
+  <dd>{{ form.commune | default('—') }} ({{ form.code_postal | default('—') }}) — Dépt {{ form.departement | default('—') }}</dd>
+
+  {% if form.date_installation %}
+  <dt>Date install</dt>
+  <dd>{{ form.date_installation }}</dd>
+  {% endif %}
+
+  <dt>Saison</dt>
+  <dd>{{ form.saison_courante | default(2026) }}</dd>
+
+  <dt>Régime bénéfices</dt>
+  <dd>{{ regime_labels[form.regime_fiscal] | default(form.regime_fiscal | default('—')) }}</dd>
+
+  <dt>Régime TVA</dt>
+  <dd>{{ tva_labels[form.regime_tva] | default(form.regime_tva | default('—')) }}</dd>
+
+  <dt>Productions</dt>
+  <dd>
+    {% if form.productions %}
+      {% for p in form.productions %}
+        <span style="display: inline-block; padding: 3px 9px; background: var(--accent-bg-soft); color: var(--accent-200); border-radius: 5px; font-size: 12px; margin: 2px 4px 2px 0;">{{ production_labels[p] | default(p) }}</span>
+      {% endfor %}
+    {% else %}
+      <span style="color: var(--text-muted);">aucune sélectionnée</span>
+    {% endif %}
+  </dd>
+</dl>
+
+<div style="background: var(--accent-bg-soft); border: 1px solid var(--accent-500); border-radius: 8px; padding: 14px 18px; margin-bottom: 24px;">
+  <div style="display: flex; align-items: start; gap: 12px;">
+    <div style="font-size: 20px;">🌱</div>
+    <div>
+      <div style="font-size: 13px; font-weight: 600; color: var(--accent-200); margin-bottom: 4px;">Tu y es presque.</div>
+      <p style="font-size: 12.5px; color: var(--text-secondary); margin: 0; line-height: 1.5;">
+        En cliquant sur <strong>Lancer SelfFarm</strong>, ton profil est enregistré localement (BDD SQLite, dans
+        <code style="font-size: 11px; background: rgba(0,0,0,0.2); padding: 1px 5px; border-radius: 3px;">~/.selffarm-perso/compta.db</code>),
+        et tu accèdes au tableau de bord.
+      </p>
+    </div>
+  </div>
+</div>
+
+<form action="/onboarding/7" method="post">
+  <div class="wizard-nav">
+    <a href="/onboarding/6" class="btn-ghost">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Modifier
+    </a>
+    <div class="nav-spacer"></div>
+    <button type="submit" class="btn-primary">
+      Lancer SelfFarm
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    </button>
+  </div>
+</form>
+
+{% endblock %}

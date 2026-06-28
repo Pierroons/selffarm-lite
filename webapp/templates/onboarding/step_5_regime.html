@@ -1,0 +1,101 @@
+{% extends "onboarding/_layout.html" %}
+{% set step_num = 5 %}
+{% set step_total = 7 %}
+{% block title %}Étape 5 — Régime fiscal — SelfFarm-Lite{% endblock %}
+{% block wizard_content %}
+
+<h1>Ton <span class="accent">régime fiscal</span>.</h1>
+<p class="lead">
+  Deux questions indépendantes. En cas de doute, les choix par défaut sont les plus courants à l'installation.
+</p>
+
+<form action="/onboarding/5" method="post">
+
+  {# ============ Bloc 1 : régime d'imposition des bénéfices ============ #}
+  <div class="field">
+    <label>
+      Régime d'imposition des bénéfices <span class="req">*</span>
+    </label>
+    <div class="hint" style="margin-bottom: 10px; margin-top: 0;">
+      Comment ton <strong>bénéfice agricole</strong> est calculé et déclaré aux impôts.
+    </div>
+    <div class="radio-cards" style="grid-template-columns: 1fr;">
+      <label class="radio-card">
+        <input type="radio" name="regime_fiscal" value="micro_ba"
+               {% if form.regime_fiscal == 'micro_ba' or not form.regime_fiscal %}checked{% endif %} required>
+        <div class="card-body">
+          <div class="title">Micro-BA <span style="font-size: 11px; color: var(--accent-400); margin-left: 6px;">— recommandé début installation</span></div>
+          <div class="desc">Recettes ≤ 120 000 €/an (moyenne 3 ans). Abattement forfaitaire 87 % automatique. Aucune compta tenue obligatoire.</div>
+        </div>
+      </label>
+      <label class="radio-card">
+        <input type="radio" name="regime_fiscal" value="reel_simplifie"
+               {% if form.regime_fiscal == 'reel_simplifie' %}checked{% endif %}>
+        <div class="card-body">
+          <div class="title">Réel simplifié</div>
+          <div class="desc">Recettes 120 000 € à 391 000 €/an. Compta tenue, bilan et résultat simplifiés. Option possible en-dessous du seuil.</div>
+        </div>
+      </label>
+      <label class="radio-card">
+        <input type="radio" name="regime_fiscal" value="reel_normal"
+               {% if form.regime_fiscal == 'reel_normal' %}checked{% endif %}>
+        <div class="card-body">
+          <div class="title">Réel normal</div>
+          <div class="desc">Recettes &gt; 391 000 €/an. Compta complète avec annexes détaillées (bilan, immobilisations, etc.).</div>
+        </div>
+      </label>
+    </div>
+  </div>
+
+  <div style="height: 1px; background: var(--border-subtle); margin: 28px 0;"></div>
+
+  {# ============ Bloc 2 : régime TVA (indépendant du régime de bénéfices) ============ #}
+  <div class="field">
+    <label>
+      Régime TVA <span class="req">*</span>
+    </label>
+    <div class="hint" style="margin-bottom: 10px; margin-top: 0;">
+      Indépendant du régime de bénéfices ci-dessus. Concerne si tu <strong>collectes la TVA sur tes ventes</strong> et peux la déduire sur tes achats.
+    </div>
+    <div class="radio-cards" style="grid-template-columns: 1fr;">
+      <label class="radio-card">
+        <input type="radio" name="regime_tva" value="franchise"
+               {% if form.regime_tva == 'franchise' or not form.regime_tva %}checked{% endif %} required>
+        <div class="card-body">
+          <div class="title">Franchise TVA <span style="font-size: 11px; color: var(--accent-400); margin-left: 6px;">— recommandé début installation</span></div>
+          <div class="desc">CA &lt; 91 900 €/an (services) ou 36 800 € (ventes). Pas de TVA à collecter, pas de déclaration TVA. Simplification administrative max.</div>
+        </div>
+      </label>
+      <label class="radio-card">
+        <input type="radio" name="regime_tva" value="rsa"
+               {% if form.regime_tva == 'rsa' %}checked{% endif %}>
+        <div class="card-body">
+          <div class="title">Régime simplifié agricole (RSA)</div>
+          <div class="desc">TVA collectée et déduite. 1 déclaration annuelle CA12A. Option utile si gros achats avec TVA à récupérer (tracteur, irrigation…).</div>
+        </div>
+      </label>
+      <label class="radio-card">
+        <input type="radio" name="regime_tva" value="reel_tva"
+               {% if form.regime_tva == 'reel_tva' %}checked{% endif %}>
+        <div class="card-body">
+          <div class="title">Réel normal TVA</div>
+          <div class="desc">Déclarations TVA trimestrielles ou mensuelles (CA3). Pour grosses exploitations ou activité majoritairement non-agricole.</div>
+        </div>
+      </label>
+    </div>
+  </div>
+
+  <div class="wizard-nav">
+    <a href="/onboarding/4" class="btn-ghost">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="19 12 5 12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Précédent
+    </a>
+    <div class="nav-spacer"></div>
+    <button type="submit" class="btn-primary">
+      Suivant
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+  </div>
+</form>
+
+{% endblock %}
