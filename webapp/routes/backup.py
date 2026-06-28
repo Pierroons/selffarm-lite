@@ -21,9 +21,17 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 log = logging.getLogger("selffarm-webapp.backup")
 
 
+def _is_demo() -> bool:
+    return os.environ.get("SELFFARM_ENV", "prod") == "demo"
+
+
 def _block_in_demo():
-    """Le backup/restore n'a pas de sens sur la démo publique partagée."""
-    if os.environ.get("SELFFARM_ENV", "prod") == "demo":
+    """Bloque les ACTIONS backup/restore (POST) sur la démo publique partagée.
+
+    La page GET /backup, elle, reste consultable en mode vitrine lecture seule
+    (cf. backup_index) — on montre l'interface, on interdit juste d'agir.
+    """
+    if _is_demo():
         raise HTTPException(
             status_code=404,
             detail="Backup/restore désactivé sur la démo publique. "
@@ -31,9 +39,37 @@ def _block_in_demo():
         )
 
 
+# Données d'exemple pour la vitrine démo — AUCUNE donnée réelle du serveur
+# (pas de chemin disque, montage, ni config SFTP de l'instance de démo).
+_DEMO_CONTEXT = {
+    "demo_readonly": True,
+    "db_path": "~/.selffarm/compta.db",
+    "db_exists": True,
+    "db_size": 245760,
+    "stats": {
+        "nb_ecritures": 128,
+        "first_date": "2026-01-05",
+        "last_date": "2026-06-20",
+        "sources": {"factures": 42, "saisie": 64, "import": 22},
+    },
+    "external_mounts": [],
+    "ext_config": {},
+    "nb_snapshots": 3,
+    "last_snapshot_age_h": 6,
+    "cron_schedule": None,
+    "sftp_config": {},
+}
+
+
 @router.get("", response_class=HTMLResponse)
 async def backup_index(request: Request):
-    _block_in_demo()
+    if _is_demo():
+        # Vitrine publique : on affiche l'UI complète en lecture seule, sans
+        # toucher à l'état réel du serveur (OPSEC) ni autoriser la moindre action.
+        return templates.TemplateResponse(
+            "backup/index.html",
+            {"request": request, "version": __version__, **_DEMO_CONTEXT},
+        )
     from self_backup import (
         _db_path, _stats_db, list_external_mounts, load_ext_config,
         _snapshots, _last_snapshot_age_hours, get_cron_schedule,
@@ -48,6 +84,7 @@ async def backup_index(request: Request):
         {
             "request": request,
             "version": __version__,
+            "demo_readonly": False,
             "db_path": str(db_path),
             "db_exists": db_exists,
             "db_size": db_size,

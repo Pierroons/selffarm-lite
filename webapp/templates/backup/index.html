@@ -2,6 +2,19 @@
 {% block title %}Sauvegarde — SelfFarm-Lite{% endblock %}
 {% block content %}
 
+{% if demo_readonly %}
+<!-- BANDEAU VITRINE DÉMO : UI montrée, actions désactivées -->
+<div style="background: rgba(244, 196, 122, 0.10); border: 1px solid rgba(244, 196, 122, 0.45); border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; font-size: 13px; color: var(--text-secondary); line-height: 1.55;">
+  🔒 <strong style="color: var(--text-primary);">Démo publique</strong> — la sauvegarde et la restauration sont <strong style="color: var(--text-primary);">désactivées ici</strong> (interface en lecture seule, données d'exemple). Sur ton instance perso ou via Docker, tout est actif. <a href="https://github.com/Pierroons/my-self" target="_blank" rel="noopener" style="color: var(--accent-200);">Voir le code →</a>
+</div>
+<style>
+  /* Neutralise toutes les actions backup dans la vitrine (liens, boutons, formulaires) */
+  .card a[href^="/backup"], .card a.btn, .card button, .card form, .card input, .card select {
+    pointer-events: none !important; opacity: 0.5 !important; cursor: not-allowed !important;
+  }
+</style>
+{% endif %}
+
 <!-- HEADER -->
 <div style="margin-bottom: 22px;">
   <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
