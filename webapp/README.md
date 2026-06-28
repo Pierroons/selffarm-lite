@@ -6,7 +6,7 @@ SelfFarm-Lite. Dark mode, léger, AGPL, self-hosted.
 ## Lancement
 
 ```bash
-cd /home/user/Bureau/outputs/selffarm-lite
+cd selffarm-lite
 PYTHONPATH=modules:. .venv/bin/uvicorn webapp.main:app --reload --port 8001
 ```
 

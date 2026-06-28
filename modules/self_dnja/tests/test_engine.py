@@ -29,7 +29,7 @@ def _minimal_hyp(**overrides) -> Hypotheses:
     base = dict(
         candidat="Testeur",
         date_installation=date(2026, 6, 1),
-        commune="[commune]",
+        commune="Sainte-Foy",
         departement="le departement",
         statut_juridique=StatutJuridique.INDIVIDUEL,
         regime_fiscal=RegimeFiscal.REEL_SIMPLIFIE,

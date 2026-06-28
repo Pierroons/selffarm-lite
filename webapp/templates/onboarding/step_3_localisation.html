@@ -14,7 +14,7 @@
     <label for="commune">Commune principale <span class="req">*</span></label>
     <input type="text" id="commune" name="commune"
            value="{{ form.commune | default('') }}"
-           placeholder="ex : [commune], Bénévent-l'Abbaye, Saint-Vaury…"
+           placeholder="ex : votre commune"
            required autofocus>
     <div class="hint">La commune où sont tes parcelles principales (siège d'exploitation).</div>
   </div>
@@ -23,7 +23,7 @@
     <label for="code_postal">Code postal <span class="req">*</span></label>
     <input type="text" id="code_postal" name="code_postal"
            value="{{ form.code_postal | default('') }}"
-           placeholder="ex : [cp]"
+           placeholder="ex : 33220"
            pattern="[0-9]{5}" maxlength="5" required style="max-width: 180px;">
   </div>
 

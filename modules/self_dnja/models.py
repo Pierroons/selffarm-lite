@@ -158,7 +158,7 @@ class Hypotheses(BaseModel):
     candidat: str = Field(description="Nom du candidat (ex: 'Pierroons')")
     date_installation: date
     adresse_exploitation: str | None = Field(default=None, description="Ex: '3, [adresse]'")
-    code_postal: str | None = Field(default=None, description="Ex: '[cp]'")
+    code_postal: str | None = Field(default=None, description="Ex: '33220'")
     commune: str
     departement: str
     statut_juridique: StatutJuridique
