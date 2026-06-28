@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Carte parcellaire — SelfFarm-Lite{% endblock %}
+{% block breadcrumb %}Production · Parcellaire{% endblock %}
+{% block page_title %}Carte parcellaire IGN{% endblock %}
+
+{% block topbar_actions %}
+  <a href="/parcelles" class="btn-ghost">← Retour à mes parcelles</a>
+  <a href="/parcelles/carto/embed" target="_blank" class="btn-ghost" title="Ouvrir en plein écran">⛶ Plein écran</a>
+{% endblock %}
+
+{% block content %}
+<style>
+  /* La carte mange tout l'espace dispo sous la topbar */
+  .main-area { padding: 0 !important; }
+  .carto-wrap {
+    width: 100%;
+    height: calc(100vh - 60px);
+    background: var(--bg-base);
+    position: relative;
+  }
+  body.has-env-banner .carto-wrap { height: calc(100vh - 90px); }
+  .carto-wrap iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+  .carto-help {
+    position: absolute;
+    bottom: 12px; left: 12px;
+    background: rgba(10, 15, 13, 0.85);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    max-width: 340px;
+    line-height: 1.5;
+    z-index: 5;
+    backdrop-filter: blur(4px);
+  }
+  .carto-help b { color: var(--accent-200); }
+  .carto-help kbd {
+    background: var(--bg-elev);
+    border: 1px solid var(--border-default);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-primary);
+  }
+</style>
+
+<style>
+  .toast-add {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    z-index: 9999;
+    background: linear-gradient(180deg, var(--accent-500), var(--accent-600));
+    color: var(--text-primary);
+    border: 1px solid var(--accent-400);
+    border-radius: 8px;
+    padding: 12px 18px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    font-size: 13px;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 12px;
+    animation: slideUp 0.25s ease;
+  }
+  .toast-add.show { display: flex; }
+  .toast-add a {
+    color: #d4e3d6;
+    text-decoration: underline;
+    font-weight: 600;
+  }
+  .toast-add a:hover { color: #fff; }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+</style>
+
+<div class="carto-wrap">
+  <iframe src="/parcelles/carto/embed" title="Carte IGN" allow="fullscreen"></iframe>
+  <div class="carto-help">
+    <b>🛰️ Fond satellite IGN</b> + cadastre superposé.
+    Bascule le mode curseur sur <kbd>🎯 Sélectionner</kbd> puis clique une parcelle pour récupérer
+    son IDU et sa surface (BDParcellaire IGN).
+    <br><br>
+    Bouton <b>+ Ajouter à mes parcelles</b> dans le popup → la parcelle apparaît
+    dans <a href="/parcelles" style="color: var(--accent-200); text-decoration: underline;">Plan de culture</a>.
+  </div>
+</div>
+
+<div id="toast-add" class="toast-add">
+  <span id="toast-add-msg">✓ Parcelle ajoutée</span>
+  <a href="/parcelles">Voir le plan de culture →</a>
+</div>
+
+<script>
+  // Reçoit la notification d'ajout depuis l'iframe IGN
+  window.addEventListener('message', (event) => {
+    if (!event.data || event.data.type !== 'parcelle-added') return;
+    const toast = document.getElementById('toast-add');
+    const msg = document.getElementById('toast-add-msg');
+    msg.textContent = `✓ Parcelle ${event.data.nom} ajoutée (${event.data.surface_ha.toFixed(3)} ha)`;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 6000);
+  });
+</script>
+{% endblock %}

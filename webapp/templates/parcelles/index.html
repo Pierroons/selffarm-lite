@@ -1,27 +1,479 @@
 {% extends "base.html" %}
-{% block title %}Parcelles — SelfFarm-Lite{% endblock %}
+{% block title %}Parcelles & Cultures — SelfFarm-Lite{% endblock %}
+
 {% block content %}
 
-<!-- HEADER -->
-<div style="margin-bottom: 18px;">
-  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-    <span style="font-size: 11px; color: var(--text-muted); letter-spacing: 0.6px; text-transform: uppercase; font-weight: 600;">Module · alpha</span>
-    <span style="display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: #fca5a5;"></span>
+<style>
+/* ===== Page Parcelles & Cultures ===== */
+.page-header {margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;}
+.page-header h1 {font-size:24px; color:var(--text-primary); font-family:'Fraunces',serif; font-weight:600; margin:0 0 4px 0; letter-spacing:-0.018em;}
+.page-header h1 .accent {color:var(--accent-400); font-style:italic;}
+.page-header .subtitle {font-size:12.5px; color:var(--text-secondary);}
+.page-header .pill {display:inline-block; padding:2px 9px; background:var(--accent-bg-soft); color:var(--accent-200); border-radius:11px; font-size:11px; font-weight:600; margin-right:6px;}
+
+/* ===== Stats bandeau ===== */
+.stats-bar {display:flex; gap:14px; margin-bottom:20px; flex-wrap:wrap;}
+.stat-item {
+  background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:9px;
+  padding:10px 16px; min-width:140px;
+}
+.stat-item .label {font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px; font-weight:600;}
+.stat-item .value {font-size:18px; font-family:'Fraunces',serif; color:var(--text-primary); font-weight:600; margin-top:2px;}
+.stat-item .value .unit {font-size:11px; color:var(--text-muted); font-weight:400;}
+
+/* ===== Sections de contenu ===== */
+.section {margin-bottom:24px;}
+.section-header {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:12px; gap:10px;
+}
+.section-header h2 {
+  font-size:14px; color:var(--text-primary); font-weight:600;
+  display:flex; align-items:center; gap:7px;
+  font-family:'Fraunces',serif; margin:0;
+}
+.section-header h2 svg {color:var(--accent-400); width:14px; height:14px;}
+.section-header h2 .count {font-size:10.5px; color:var(--text-muted); font-weight:400; margin-left:6px;}
+
+/* ===== Tableaux ===== */
+.dash-table {
+  width:100%; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px;
+  border-collapse:separate; border-spacing:0; overflow:hidden;
+}
+.dash-table th {
+  text-align:left; padding:9px 12px;
+  background:var(--bg-elev); color:var(--text-muted);
+  font-size:10.5px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600;
+  border-bottom:1px solid var(--border-default);
+}
+.dash-table td {
+  padding:10px 12px; font-size:12.5px; color:var(--text-secondary);
+  border-bottom:1px solid var(--border-subtle);
+}
+.dash-table tr:last-child td {border-bottom:none;}
+.dash-table tr:hover {background:var(--accent-bg-soft);}
+.dash-table td.strong {color:var(--text-primary); font-weight:500;}
+.dash-table .badge {
+  display:inline-block; padding:1px 7px; border-radius:3px;
+  font-size:10px; font-weight:600; letter-spacing:0.2px;
+}
+.dash-table .badge-bio {background:var(--accent-bg-soft); color:var(--accent-200); border:1px solid rgba(45,90,58,0.35);}
+.dash-table .badge-convers {background:rgba(212,160,86,0.12); color:var(--warm-amber); border:1px solid rgba(212,160,86,0.30);}
+.dash-table .badge-conv {background:rgba(106,128,112,0.15); color:var(--text-muted); border:1px solid var(--border-default);}
+.dash-table .badge-prevu {background:rgba(107,142,157,0.12); color:#6b8e9d;}
+.dash-table .badge-en_cours {background:var(--accent-bg-soft); color:var(--accent-200);}
+.dash-table .badge-recolte {background:rgba(212,160,86,0.12); color:var(--warm-amber);}
+
+/* Actions */
+.icon-btn {
+  background:transparent; border:1px solid var(--border-subtle); color:var(--text-muted);
+  width:26px; height:26px; border-radius:5px; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+  transition:all 0.15s;
+}
+.icon-btn:hover {color:var(--warm-terra); border-color:var(--warm-terra);}
+.icon-btn svg {width:13px; height:13px;}
+
+/* Inline edit du nom de parcelle */
+.nom-cell {display:inline-flex; align-items:center; gap:6px;}
+.nom-cell .pencil {
+  opacity:0; transition:opacity 0.15s ease, color 0.15s ease;
+  background:transparent; border:none; color:var(--text-muted);
+  cursor:pointer; padding:2px; line-height:0; border-radius:3px;
+}
+.nom-cell .pencil svg {width:12px; height:12px;}
+.dash-table tr:hover .nom-cell .pencil {opacity:1;}
+.nom-cell .pencil:hover {color:var(--accent-400); background:var(--accent-bg-soft);}
+.nom-cell input.nom-edit {
+  background:#0a1410; color:var(--text-primary);
+  border:1px solid var(--accent-500); border-radius:4px;
+  padding:4px 8px; font-size:12.5px; font-family:inherit;
+  width:160px; outline:none;
+  box-shadow:0 0 0 3px var(--accent-bg-soft);
+}
+.nom-cell .save-hint {font-size:9.5px; color:var(--text-muted); letter-spacing:0.2px;}
+
+/* Empty state */
+.empty {
+  background:var(--bg-card); border:1px dashed var(--border-default); border-radius:10px;
+  padding:32px 24px; text-align:center;
+}
+.empty svg {width:36px; height:36px; color:var(--text-muted); margin-bottom:10px;}
+.empty h3 {font-size:14px; color:var(--text-secondary); font-weight:500; margin-bottom:6px; font-family:'Inter',sans-serif;}
+.empty p {font-size:12.5px; color:var(--text-muted); margin:0 0 14px 0;}
+
+/* Boutons */
+.btn {
+  padding:7px 14px; border-radius:6px; font-size:12.5px; font-weight:600;
+  cursor:pointer; font-family:inherit; transition:all 0.15s;
+  display:inline-flex; align-items:center; gap:6px; text-decoration:none;
+  border:1px solid;
+}
+.btn-primary {
+  background:linear-gradient(180deg, var(--accent-500), var(--accent-600));
+  color:var(--text-primary); border-color:var(--accent-600);
+  box-shadow:0 1px 0 rgba(255,255,255,0.06) inset, 0 1px 2px rgba(0,0,0,0.3);
+}
+.btn-primary:hover {filter:brightness(1.1);}
+.btn-ghost {background:transparent; border-color:var(--border-default); color:var(--text-secondary);}
+.btn-ghost:hover {border-color:var(--accent-500); color:var(--accent-200);}
+
+/* ===== Forms collapsibles ===== */
+details.form-card {
+  background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px;
+  margin-bottom:14px;
+}
+details.form-card[open] {border-color:var(--accent-500);}
+details.form-card summary {
+  padding:12px 18px; cursor:pointer; list-style:none;
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:13px; color:var(--text-primary); font-weight:600;
+}
+details.form-card summary::-webkit-details-marker {display:none;}
+details.form-card summary::after {
+  content: '+'; font-size:18px; color:var(--accent-400); transition:transform 0.2s;
+}
+details.form-card[open] summary::after {transform:rotate(45deg);}
+details.form-card .form-body {padding:0 18px 18px;}
+
+/* Form fields */
+.form-grid {display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;}
+.field-block {display:flex; flex-direction:column; gap:5px;}
+.field-block label {font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.3px; font-weight:600;}
+.field-block label .req {color:var(--warm-amber); margin-left:3px;}
+.field-block input, .field-block select, .field-block textarea {
+  background:#0a1410; color:var(--text-primary);
+  border:1px solid var(--border-default); border-radius:6px;
+  padding:8px 11px; font-family:inherit; font-size:13px;
+  transition:border-color 0.15s, box-shadow 0.15s;
+}
+.field-block input:focus, .field-block select:focus, .field-block textarea:focus {
+  outline:none; border-color:var(--accent-500); box-shadow:0 0 0 3px var(--accent-bg-soft);
+}
+.field-block .hint {font-size:10.5px; color:var(--text-muted); line-height:1.4;}
+.form-actions {display:flex; gap:8px; justify-content:flex-end; margin-top:14px; padding-top:12px; border-top:1px solid var(--border-subtle);}
+</style>
+
+<!-- ===== HEADER PAGE ===== -->
+<div class="page-header">
+  <div>
+    <h1>Parcelles & <span class="accent">Cultures</span></h1>
+    <div class="subtitle">
+      <span class="pill">Saison {{ saison }}</span>{{ stats.count }} parcelle{{ 's' if stats.count != 1 else '' }} · {{ stats.surface_total_ha }} ha total
+    </div>
   </div>
-  <h1 style="font-size: 28px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; margin-bottom: 6px;">
-    SelfParcelles <span style="color: var(--forest-500); font-style: italic; font-weight: 500;">— Cadastre IGN</span>
-  </h1>
-  <p style="font-size: 13.5px; color: var(--text-secondary); max-width: 820px; line-height: 1.55;">
-    Fond orthophoto + cadastre Géoportail · 100 % open data gouv.fr · sans clé API. Recherche par n° cadastral ou clic carte (mode sélection). Multi-commune.
-  </p>
+  <div>
+    <a href="/parcelles/carto" class="btn btn-ghost">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Carte cadastrale IGN
+    </a>
+  </div>
 </div>
 
-<div class="card" style="padding: 0; overflow: hidden; height: calc(100vh - 250px); min-height: 480px;">
-  <iframe src="/parcelles/carto" style="width: 100%; height: 100%; border: 0;"></iframe>
+<!-- ===== STATS ===== -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="label">Parcelles</div>
+    <div class="value">{{ stats.count }}</div>
+  </div>
+  <div class="stat-item">
+    <div class="label">Surface totale</div>
+    <div class="value">{{ stats.surface_total_ha }} <span class="unit">ha</span></div>
+  </div>
+  <div class="stat-item">
+    <div class="label">Bio</div>
+    <div class="value">{{ stats.par_statut.bio | default(0) }} <span class="unit">/ {{ stats.count }}</span></div>
+  </div>
+  <div class="stat-item">
+    <div class="label">Conversion</div>
+    <div class="value">{{ stats.par_statut.conversion | default(0) }}</div>
+  </div>
+  <div class="stat-item">
+    <div class="label">Cultures actives</div>
+    <div class="value">{{ stats.par_culture | length }}</div>
+  </div>
 </div>
 
-<div style="margin-top: 14px; font-size: 11px; color: var(--text-muted); text-align: center; line-height: 1.5;">
-  Sources : IGN Géoplateforme (<code style="font-size: 10.5px;">data.geopf.fr</code>), Api Carto cadastre (<code style="font-size: 10.5px;">apicarto.ign.fr</code>), <code style="font-size: 10.5px;">api-adresse.data.gouv.fr</code>. Attribution © IGN-F / Géoportail.
+<!-- ===== SECTION 1 : PARCELLES ===== -->
+<div class="section">
+  <div class="section-header">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Tes parcelles
+      <span class="count">{{ parcelles | length }} déclarée{{ 's' if (parcelles | length) != 1 else '' }}</span>
+    </h2>
+  </div>
+
+  {% if parcelles %}
+  <table class="dash-table">
+    <thead>
+      <tr><th>Nom</th><th>Réf cad.</th><th>Commune</th><th style="text-align:right;">Surface</th><th>Statut</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for p in parcelles %}
+      <tr data-parcelle-id="{{ p.id }}">
+        <td class="strong">
+          <span class="nom-cell" id="nom-cell-{{ p.id }}">
+            <span class="nom-text">{{ p.nom }}</span>
+            <button type="button" class="pencil" title="Renommer cette parcelle" onclick="startRenameParcelle({{ p.id }})">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </button>
+          </span>
+        </td>
+        <td>{{ p.ref_cadastrale or '—' }}</td>
+        <td>{{ p.commune }}{% if p.code_postal %} ({{ p.code_postal }}){% endif %}</td>
+        <td style="text-align:right; color:var(--text-primary); font-feature-settings:'tnum';">{{ "%.2f"|format(p.surface_ha) }} ha</td>
+        <td><span class="badge badge-{{ 'bio' if p.statut == 'bio' else 'convers' if p.statut == 'conversion' else 'conv' }}">{{ p.statut }}</span></td>
+        <td style="text-align:right;">
+          <form action="/parcelles/{{ p.id }}/delete" method="post" style="display:inline;" onsubmit="return confirm('Supprimer la parcelle « {{ p.nom }} » ? (les cultures liées seront aussi supprimées)');">
+            <button type="submit" class="icon-btn" title="Supprimer cette parcelle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    <h3>Aucune parcelle pour l'instant</h3>
+    <p>Ajoute ta première parcelle ci-dessous pour commencer à planifier tes cultures.</p>
+  </div>
+  {% endif %}
+
+  <!-- Form ajout parcelle -->
+  <details class="form-card" style="margin-top:14px;">
+    <summary>Ajouter une parcelle</summary>
+    <div class="form-body">
+      <form action="/parcelles/new" method="post">
+        <div class="form-grid">
+          <div class="field-block">
+            <label>Nom de la parcelle <span class="req">*</span></label>
+            <input type="text" name="nom" required placeholder="ex : Champ du haut, Pré aux chèvres…">
+          </div>
+          <div class="field-block">
+            <label>Référence cadastrale</label>
+            <input type="text" name="ref_cadastrale" placeholder="ex : ZA 0042 (optionnel)">
+          </div>
+          <div class="field-block">
+            <label>Commune <span class="req">*</span></label>
+            <input type="text" name="commune" required placeholder="ex : [commune]">
+          </div>
+          <div class="field-block">
+            <label>Code postal</label>
+            <input type="text" name="code_postal" placeholder="[cp]" maxlength="5">
+          </div>
+          <div class="field-block">
+            <label>Surface (ha) <span class="req">*</span></label>
+            <input type="number" name="surface_ha" required step="0.01" min="0.01" placeholder="1.20">
+          </div>
+          <div class="field-block">
+            <label>Statut</label>
+            <select name="statut">
+              <option value="conventionnel" selected>Conventionnel</option>
+              <option value="conversion">En conversion</option>
+              <option value="bio">Bio (AB)</option>
+            </select>
+          </div>
+          <div class="field-block" style="grid-column:1/-1;">
+            <label>Notes</label>
+            <textarea name="notes" rows="2" placeholder="Type de sol, accès eau, particularités…"></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="reset" class="btn btn-ghost">Annuler</button>
+          <button type="submit" class="btn btn-primary">Créer la parcelle</button>
+        </div>
+      </form>
+    </div>
+  </details>
 </div>
+
+<!-- ===== SECTION 2 : PLAN DE CULTURE ===== -->
+<div class="section">
+  <div class="section-header">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19.2 2.96c1.4 3.43 1.92 8.55-3.21 12.81-1.85 1.53-4.59 2.46-5 4.74"/></svg>
+      Plan de culture {{ saison }}
+      <span class="count">{{ plans | length }} culture{{ 's' if (plans | length) != 1 else '' }}</span>
+    </h2>
+  </div>
+
+  {% if plans %}
+  <table class="dash-table">
+    <thead>
+      <tr><th>Parcelle</th><th>Culture</th><th>Variété</th><th style="text-align:right;">Surface</th><th>Semis prévu</th><th>Récolte prévue</th><th>Mode</th><th>Statut</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for plan in plans %}
+      <tr>
+        <td class="strong">{{ plan.parcelle_nom }}</td>
+        <td>{{ plan.culture_label or plan.culture }}</td>
+        <td>{{ plan.variete or '—' }}</td>
+        <td style="text-align:right; color:var(--text-primary); font-feature-settings:'tnum';">{% if plan.surface_ha %}{{ "%.2f"|format(plan.surface_ha) }} ha{% else %}—{% endif %}</td>
+        <td>{{ plan.date_semis_prev or '—' }}</td>
+        <td>{{ plan.date_recolte_prev or '—' }}</td>
+        <td><span class="badge" style="background:var(--bg-elev); color:var(--text-secondary);">{{ plan.mode_production }}</span></td>
+        <td><span class="badge badge-{{ plan.statut }}">{{ plan.statut }}</span></td>
+        <td style="text-align:right;">
+          <form action="/parcelles/culture/{{ plan.id }}/delete" method="post" style="display:inline;" onsubmit="return confirm('Supprimer ce plan de culture ?');">
+            <button type="submit" class="icon-btn" title="Supprimer ce plan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19.2 2.96c1.4 3.43 1.92 8.55-3.21 12.81-1.85 1.53-4.59 2.46-5 4.74"/></svg>
+    <h3>Aucune culture pour la saison {{ saison }}</h3>
+    {% if parcelles %}
+    <p>Ajoute des cultures sur tes parcelles ci-dessous pour commencer le plan de culture.</p>
+    {% else %}
+    <p>Commence d'abord par ajouter au moins une parcelle, puis tu pourras y planter des cultures.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Form ajout culture -->
+  {% if parcelles %}
+  <details class="form-card" style="margin-top:14px;">
+    <summary>Ajouter une culture sur une parcelle</summary>
+    <div class="form-body">
+      <form action="" method="post" id="form-add-culture" onsubmit="this.action = '/parcelles/' + this.parcelle_id.value + '/culture/new';">
+        <div class="form-grid">
+          <div class="field-block">
+            <label>Parcelle <span class="req">*</span></label>
+            <select name="parcelle_id" required>
+              <option value="">— Choisis une parcelle —</option>
+              {% for p in parcelles %}
+              <option value="{{ p.id }}">{{ p.nom }} ({{ "%.2f"|format(p.surface_ha) }} ha · {{ p.commune }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field-block">
+            <label>Culture / variété <span class="req">*</span></label>
+            <input type="text" name="culture" list="catalog-varietes" required placeholder="Tape ou choisis dans la liste…" autocomplete="off">
+            <datalist id="catalog-varietes">
+              {% for v in catalog %}
+              <option value="{{ v.value }}" label="{{ v.label_attr }}"></option>
+              {% endfor %}
+            </datalist>
+            <div class="hint">{{ catalog | length }} variétés au catalogue + saisie libre possible</div>
+          </div>
+          <div class="field-block">
+            <label>Variété précise</label>
+            <input type="text" name="variete" placeholder="ex : Kompolti FBS, Marmande…">
+          </div>
+          <div class="field-block">
+            <label>Surface dédiée (ha)</label>
+            <input type="number" name="surface_ha" step="0.01" min="0.01" placeholder="ex : 1.20 (laisse vide = toute la parcelle)">
+          </div>
+          <div class="field-block">
+            <label>Date de semis prévue</label>
+            <input type="date" name="date_semis_prev">
+          </div>
+          <div class="field-block">
+            <label>Date de récolte prévue</label>
+            <input type="date" name="date_recolte_prev">
+          </div>
+          <div class="field-block">
+            <label>Mode de production</label>
+            <select name="mode_production">
+              <option value="ab" selected>AB (Agriculture biologique)</option>
+              <option value="nt">NT (Non traité)</option>
+              <option value="hve">HVE (Haute Valeur Environnementale)</option>
+              <option value="conv">Conventionnel</option>
+            </select>
+          </div>
+          <div class="field-block">
+            <label>Rendement attendu (kg)</label>
+            <input type="number" name="rendement_kg_attendu" step="1" min="0" placeholder="optionnel">
+          </div>
+          <div class="field-block" style="grid-column:1/-1;">
+            <label>Notes</label>
+            <textarea name="notes" rows="2" placeholder="Itinéraire technique, particularités, fournisseur semences…"></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="reset" class="btn btn-ghost">Annuler</button>
+          <button type="submit" class="btn btn-primary">Ajouter la culture</button>
+        </div>
+      </form>
+    </div>
+  </details>
+  {% endif %}
+</div>
+
+<script>
+// ===== Renommer une parcelle (édition inline) =====
+function startRenameParcelle(id) {
+  const cell = document.getElementById('nom-cell-' + id);
+  if (!cell) return;
+  const txt = cell.querySelector('.nom-text');
+  const currentNom = txt.textContent.trim();
+  cell.innerHTML = `
+    <input type="text" class="nom-edit" id="nom-input-${id}" value="${escapeAttr(currentNom)}" maxlength="80">
+    <span class="save-hint">↵ Sauver · Échap Annuler</span>
+  `;
+  const input = document.getElementById('nom-input-' + id);
+  input.focus();
+  input.select();
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commitRename(id, currentNom); }
+    else if (e.key === 'Escape') { e.preventDefault(); cancelRename(id, currentNom); }
+  });
+  input.addEventListener('blur', () => { commitRename(id, currentNom); });
+}
+
+async function commitRename(id, oldNom) {
+  const input = document.getElementById('nom-input-' + id);
+  if (!input) return;
+  const newNom = input.value.trim();
+  if (!newNom || newNom === oldNom) { cancelRename(id, oldNom); return; }
+  const fd = new FormData();
+  fd.append('nom', newNom);
+  try {
+    const r = await fetch(`/parcelles/${id}/rename`, { method: 'POST', body: fd });
+    if (r.ok) {
+      const data = await r.json();
+      restoreNomCell(id, data.nom || newNom);
+    } else {
+      restoreNomCell(id, oldNom);
+      alert('Erreur lors du renommage (HTTP ' + r.status + ')');
+    }
+  } catch (err) {
+    restoreNomCell(id, oldNom);
+    alert('Erreur réseau : ' + err.message);
+  }
+}
+
+function cancelRename(id, oldNom) {
+  restoreNomCell(id, oldNom);
+}
+
+function restoreNomCell(id, nom) {
+  const cell = document.getElementById('nom-cell-' + id);
+  if (!cell) return;
+  cell.innerHTML = `
+    <span class="nom-text">${escapeHtml(nom)}</span>
+    <button type="button" class="pencil" title="Renommer cette parcelle" onclick="startRenameParcelle(${id})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    </button>
+  `;
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s) {
+  return String(s ?? '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+</script>
 
 {% endblock %}
