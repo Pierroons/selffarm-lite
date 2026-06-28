@@ -9,9 +9,6 @@
     <strong>masque de l'interface</strong> — <strong style="color: var(--accent-200);">tes données restent intactes</strong>
     et réapparaissent si tu le réactives plus tard.
   </p>
-  <p class="muted" style="font-size: 11.5px; margin-bottom: 18px;">
-    Affichage de la barre latérale : utilise le toggle <em>Mon activité / Vue complète</em> en haut de la sidebar.
-  </p>
 
   {% for tab_key, tab_label, tab_icon in modules_catalog.tabs() %}
     {% set mods = modules_catalog.modules_by_tab(tab_key) %}

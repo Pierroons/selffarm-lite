@@ -16,8 +16,6 @@ Sémantique (cf project_selffarm_modes_modulaires) :
 """
 from __future__ import annotations
 
-import os
-
 from webapp import modules_catalog as cat
 from self_agri_book.exploitation import get_exploitation, save_exploitation
 
@@ -38,13 +36,9 @@ def is_module_active(mid: str) -> bool:
 
 
 def get_view_mode() -> str:
-    # Démo publique : vue complète forcée → on montre TOUS les modules (actifs
-    # + à venir grisés "bientôt") pour exposer la feuille de route SelfFarm.
-    if os.environ.get("SELFFARM_ENV", "prod") == "demo":
-        return "full"
-    expl = get_exploitation()
-    vm = (expl or {}).get("view_mode")
-    return vm if vm in cat.VALID_VIEW_MODES else "mine"
+    # Vue unique : on montre TOUJOURS tous les modules (développés cliquables,
+    # à venir grisés "bientôt"). Le choix de vue Mon activité/Vue complète a été retiré.
+    return "full"
 
 
 def is_module_visible(mid: str, view_mode: str | None = None) -> bool:
