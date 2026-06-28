@@ -45,3 +45,8 @@ Thumbs.db
 # Tailwind binary platform-specific (gros + arch-spécifique, regénérable)
 scripts/tailwindcss
 *.bak.*
+*.env
+.env
+*.key
+vault.key
+*.pem
