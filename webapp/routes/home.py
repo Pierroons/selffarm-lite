@@ -1,15 +1,18 @@
-"""Route d'accueil."""
+"""Route d'accueil + endpoint stats dashboard."""
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from webapp import __version__
-from self_aid.loader import load_all, total_enveloppe
+from webapp.services.dashboard_stats import get_dashboard_stats
+
+log = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -19,24 +22,29 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    # Stats pour les tuiles du dashboard
-    aides = load_all()
-    mn, mx = total_enveloppe(aides)
-
-    examples_dir = Path(__file__).parent.parent.parent / "examples"
-    dnja_examples_count = len(list(examples_dir.glob("hypotheses-*.yaml")))
-
-    # Stats compta live (best-effort, fallback 0)
+    """Dashboard principal — KPI + 4 charts + dernières écritures."""
     try:
-        from self_agri_book.storage import stats_globales
-        compta = stats_globales()
-        nb_ecritures = compta.get("nb_ecritures", 0)
-        nb_factures = compta.get("par_source", {}).get("self_invoice", 0)
-        volume_ttc = compta.get("total_volume", 0)
+        stats = get_dashboard_stats()
     except Exception:
-        nb_ecritures = 0
-        nb_factures = 0
-        volume_ttc = 0
+        log.exception("get_dashboard_stats a échoué — fallback vide")
+        stats = {
+            "saison": 2026,
+            "kpis": {
+                "parcelles": {"count": 0, "surface_ha": 0},
+                "cultures": {"count": 0, "actives": 0},
+                "factures": {"count": 0, "volume": 0},
+                "resultat": {"recettes": 0, "charges": 0, "solde": 0},
+                "aides": {"percu": 0, "plafond": 0, "reste": 0, "count_actives": 0},
+                "banking": {"imports": 0},
+                "ecritures_total": 0,
+            },
+            "chart_revenus": {"labels": [], "recettes": [], "charges": []},
+            "chart_cultures": {"labels": [], "data": []},
+            "chart_aides": {"labels": [], "percu": [], "plafond": [],
+                            "total_percu": 0, "total_plafond": 0, "reste": 0},
+            "gauge": {"pct": 0, "nb_ecritures": 0, "target": 40},
+            "dernieres_ecritures": [],
+        }
 
     return templates.TemplateResponse(
         "home.html",
@@ -44,14 +52,12 @@ async def home(request: Request):
             "request": request,
             "version": __version__,
             "active_page": "home",
-            "stats": {
-                "aides_count": len(aides),
-                "aides_min": f"{mn:,.0f}".replace(",", " "),
-                "aides_max": f"{mx:,.0f}".replace(",", " "),
-                "dnja_examples": dnja_examples_count,
-                "nb_ecritures": nb_ecritures,
-                "nb_factures": nb_factures,
-                "volume_ttc": f"{volume_ttc:,.0f}".replace(",", " "),
-            },
+            "stats": stats,
         },
     )
+
+
+@router.get("/api/dashboard/stats")
+async def api_dashboard_stats():
+    """Endpoint JSON pour les stats du dashboard (réutilisable côté JS / mobile)."""
+    return JSONResponse(get_dashboard_stats())

@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 120" width="480" height="120">
+  <title>SelfFarm Lite — wordmark [exploitation]</title>
+  <rect width="480" height="120" fill="#2d5a3a"></rect>
+  <g transform="translate(20 20) scale(0.8)">
+    
+  <circle cx="50" cy="50" r="42" fill="none" stroke="#e8efe9" stroke-width="1.6"></circle>
+  <g fill="none" stroke="#e8efe9" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">
+    
+    <path d="M 41 56 A 9 9 0 0 1 59 56 Z" fill="#e8efe9" stroke="none"></path>
+    <line x1="28" y1="56" x2="72" y2="56"></line>
+    <line x1="30" y1="72" x2="43" y2="56.5"></line>
+    <line x1="50" y1="72" x2="50" y2="56.5"></line>
+    <line x1="70" y1="72" x2="57" y2="56.5"></line>
+    <line x1="40" y1="68" x2="45.5" y2="58" stroke-width="2.34" opacity="0.55"></line>
+    <line x1="60" y1="68" x2="54.5" y2="58" stroke-width="2.34" opacity="0.55"></line>
+
+  </g>
+
+  </g>
+  <text x="120" y="58" font-family="-apple-system, &#39;Helvetica Neue&#39;, Arial, sans-serif" font-size="26" font-weight="600" fill="#e8efe9">
+    SelfFarm<tspan font-weight="400" opacity="0.7">·Lite</tspan>
+  </text>
+  <text x="120" y="84" font-family="-apple-system, &#39;Helvetica Neue&#39;, Arial, sans-serif" font-size="13" letter-spacing="2.4" fill="#e8efe9" opacity="0.6" text-transform="uppercase">[exploitation]</text>
+</svg>
