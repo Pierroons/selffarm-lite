@@ -94,6 +94,20 @@ async def pos_index(request: Request):
 
 
 # ============================================================
+# Vitrine split-screen : caisse PC + app mobile côte à côte
+# ============================================================
+
+@router.get("/pos/demo", response_class=HTMLResponse)
+async def pos_demo_split(request: Request):
+    """Vitrine : la caisse PC (/pos) et l'app mobile (/pos/mobile) affichées
+    côte à côte en iframes live (même origine). Montre que SelfPOS = les deux."""
+    return templates.TemplateResponse(
+        "pos/demo_split.html",
+        {"request": request, "version": __version__},
+    )
+
+
+# ============================================================
 # Catalogue produits
 # ============================================================
 

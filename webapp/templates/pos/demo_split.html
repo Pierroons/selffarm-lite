@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SelfPOS — Caisse PC + app mobile | SelfFarm</title>
+  <link rel="icon" href="/static/img/favicon.svg">
+  <style>
+    :root {
+      --bg: #0d1310; --bg-2: #121b16; --card: #16211b;
+      --border: #25342b; --text: #e8efe9; --muted: #8aa195;
+      --forest: #4ade80; --forest-dim: #2f7d52;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+    }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; padding: 14px 22px; border-bottom: 1px solid var(--border);
+      background: var(--bg-2); flex-wrap: wrap;
+    }
+    header .title { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+    header .title span { color: var(--forest); font-style: italic; }
+    header .sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+    .back {
+      font-size: 13px; color: var(--text); text-decoration: none;
+      border: 1px solid var(--border); border-radius: 8px; padding: 7px 14px;
+      background: var(--card); transition: background .15s; white-space: nowrap;
+    }
+    .back:hover { background: #1d2b23; }
+
+    .stage {
+      display: flex; gap: 26px; align-items: flex-start; justify-content: center;
+      padding: 24px 22px 36px; flex-wrap: wrap;
+    }
+
+    /* Écran PC */
+    .pc { flex: 1 1 620px; max-width: 1100px; min-width: 320px; }
+    .pc .frame {
+      border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+      background: var(--card); box-shadow: 0 10px 40px rgba(0,0,0,.35);
+    }
+    .pc .bar {
+      display: flex; align-items: center; gap: 7px; padding: 9px 12px;
+      background: #0f1814; border-bottom: 1px solid var(--border);
+    }
+    .pc .bar i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+    .pc .bar .url {
+      margin-left: 10px; font-size: 11.5px; color: var(--muted);
+      font-family: ui-monospace, monospace;
+    }
+    .pc iframe { width: 100%; height: 78vh; border: 0; display: block; background: #fff; }
+
+    /* Téléphone */
+    .phone { flex: 0 0 auto; }
+    .phone .device {
+      width: 360px; max-width: 88vw; height: 78vh; max-height: 760px;
+      border: 12px solid #1b1b1f; border-radius: 40px; overflow: hidden;
+      background: #000; box-shadow: 0 10px 40px rgba(0,0,0,.45); position: relative;
+    }
+    .phone .notch {
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 120px; height: 22px; background: #1b1b1f;
+      border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; z-index: 2;
+    }
+    .phone iframe { width: 100%; height: 100%; border: 0; display: block; background: #fff; }
+
+    .cap { text-align: center; font-size: 12.5px; color: var(--muted); margin-top: 12px; }
+    .cap strong { color: var(--text); }
+
+    .hint {
+      max-width: 1000px; margin: 0 auto; padding: 0 22px 30px;
+      font-size: 13px; color: var(--muted); line-height: 1.6; text-align: center;
+    }
+    .hint code { color: #86efac; font-family: ui-monospace, monospace; font-size: 12px; }
+
+    @media (max-width: 920px) {
+      .stage { gap: 30px; }
+      .pc iframe { height: 64vh; }
+      .phone .device { height: 64vh; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div class="title">SelfPOS — la même caisse, <span>sur PC et sur mobile</span></div>
+      <div class="sub">Catalogue, ventes et stock partagés. Le téléphone sert de caisse au marché, le PC à l'atelier.</div>
+    </div>
+    <a class="back" href="/pos">← Retour à la caisse</a>
+  </header>
+
+  <div class="stage">
+    <!-- Écran PC -->
+    <div class="pc">
+      <div class="frame">
+        <div class="bar">
+          <i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>
+          <span class="url">selffarm.my-self.fr/pos</span>
+        </div>
+        <iframe src="/pos" title="Caisse SelfPOS sur PC" loading="lazy"></iframe>
+      </div>
+      <div class="cap"><strong>💻 Caisse PC</strong> — gestion à l'atelier (sessions, catalogue, clôture)</div>
+    </div>
+
+    <!-- Téléphone -->
+    <div class="phone">
+      <div class="device">
+        <div class="notch"></div>
+        <iframe src="/pos/mobile" title="App SelfPOS mobile (PWA)" loading="lazy"></iframe>
+      </div>
+      <div class="cap"><strong>📱 App mobile (PWA)</strong> — encaissement au marché, hors-ligne</div>
+    </div>
+  </div>
+
+  <p class="hint">
+    Les deux interfaces tournent sur la même installation locale. Sur le terrain, le mobile s'appaire au PC
+    (<code>/pos/mode-marche</code>), encaisse <strong>même sans réseau</strong>, puis resynchronise les ventes au retour.
+    Aucun cloud, tout reste chez l'exploitant.
+  </p>
+</body>
+</html>
