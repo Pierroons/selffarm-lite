@@ -44,3 +44,4 @@ modules/self_banking/fixtures/private/
 Thumbs.db
 # Tailwind binary platform-specific (gros + arch-spécifique, regénérable)
 scripts/tailwindcss
+*.bak.*
