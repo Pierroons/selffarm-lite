@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Roadmap — SelfFarm-Lite{% endblock %}
+{% block breadcrumb %}Paramètres · Évolutions{% endblock %}
+{% block page_title %}Roadmap SelfFarm-Lite{% endblock %}
+
+{% block content %}
+<style>
+.roadmap-wrap {max-width:920px; margin:0 auto;}
+.beta-banner {
+  background: linear-gradient(180deg, var(--accent-bg-soft), transparent);
+  border:1px solid var(--accent-500);
+  border-radius:10px;
+  padding:18px 22px;
+  margin-bottom:24px;
+  display:flex; gap:16px; align-items:flex-start;
+}
+.beta-banner .badge-beta {
+  background:linear-gradient(180deg, var(--warm-amber), #b8884e);
+  color:#1c1917;
+  padding:4px 11px; border-radius:5px;
+  font-weight:700; font-size:11px; letter-spacing:0.5px;
+  flex-shrink:0;
+}
+.beta-banner .body p {margin:0 0 6px 0; font-size:13px; color:var(--text-primary); line-height:1.55;}
+.beta-banner .body p.muted {color:var(--text-secondary); font-size:12px;}
+
+.version-card {
+  background:var(--bg-card);
+  border:1px solid var(--border-subtle);
+  border-radius:10px;
+  padding:18px 22px;
+  margin-bottom:14px;
+  position:relative;
+}
+.version-card.current {border-color:var(--accent-500); background:linear-gradient(180deg, var(--accent-bg-soft) 0%, var(--bg-card) 100%);}
+.version-card.next {border-left:3px solid var(--warm-amber);}
+
+.version-head {display:flex; align-items:center; gap:12px; margin-bottom:10px;}
+.version-tag {
+  font-family:'Fraunces',serif; font-size:18px; font-weight:600;
+  color:var(--text-primary);
+}
+.version-tag .v {color:var(--accent-400);}
+.version-status {
+  font-size:10.5px; padding:2px 9px; border-radius:11px;
+  font-weight:600; letter-spacing:0.3px;
+}
+.version-status.live {background:var(--accent-bg-soft); color:var(--accent-200); border:1px solid rgba(45,90,58,0.35);}
+.version-status.next {background:rgba(212,160,86,0.13); color:var(--warm-amber); border:1px solid rgba(212,160,86,0.30);}
+.version-status.later {background:rgba(106,128,112,0.15); color:var(--text-muted); border:1px solid var(--border-default);}
+.version-head .version-status {margin-left:auto;}
+
+.version-items {margin:0; padding-left:20px; list-style:none;}
+.version-items li {
+  font-size:12.5px; color:var(--text-secondary);
+  padding:3px 0 3px 0; position:relative; line-height:1.5;
+}
+.version-items li::before {
+  content:'›'; color:var(--accent-400); margin-right:8px; font-weight:600;
+}
+.version-items li strong {color:var(--text-primary); font-weight:500;}
+
+.feedback-box {
+  margin-top:24px; padding:18px 22px;
+  background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px;
+  text-align:center;
+}
+.feedback-box h3 {font-size:14px; font-family:'Fraunces',serif; color:var(--text-primary); margin:0 0 6px 0;}
+.feedback-box p {font-size:12.5px; color:var(--text-secondary); margin:0 0 12px 0; line-height:1.5;}
+.feedback-box a {
+  display:inline-block;
+  padding:7px 16px;
+  background:linear-gradient(180deg, var(--accent-500), var(--accent-600));
+  color:var(--text-primary);
+  border-radius:6px; text-decoration:none;
+  font-size:12.5px; font-weight:600;
+  border:1px solid var(--accent-600);
+}
+.feedback-box a:hover {filter:brightness(1.1); color:var(--text-primary);}
+.feedback-box .small-links {margin-top:12px; font-size:11px; color:var(--text-muted);}
+.feedback-box .small-links a {
+  background:none; padding:0; color:var(--accent-200);
+  font-weight:400; border:none;
+}
+</style>
+
+<div class="roadmap-wrap">
+
+  <!-- Bandeau beta -->
+  <div class="beta-banner">
+    <div class="badge-beta">V0.1 BETA</div>
+    <div class="body">
+      <p><strong>Cette version est une beta privée.</strong> Pensée pour que tu testes le cœur métier (compta, factures, parcelles) sans risque sur tes vraies données.</p>
+      <p class="muted">Tout est local sur ta machine. Pas de cloud, pas de télémétrie, AGPL-3.0. Tes retours guident ce qui suit ↓</p>
+    </div>
+  </div>
+
+  <!-- V0.1 actuel -->
+  <div class="version-card current">
+    <div class="version-head">
+      <div class="version-tag"><span class="v">V0.1</span> · Cœur métier local</div>
+      <span class="version-status live">✓ disponible</span>
+    </div>
+    <ul class="version-items">
+      <li><strong>Compta hub</strong> · écritures auto depuis factures + saisie manuelle</li>
+      <li><strong>Factures Factur-X</strong> · format souverain conforme administration</li>
+      <li><strong>Parcelles + plan de culture</strong> · 36 variétés AB, carte IGN cadastre</li>
+    </ul>
+  </div>
+
+  <!-- V0.2 prochain -->
+  <div class="version-card next">
+    <div class="version-head">
+      <div class="version-tag"><span class="v">V0.2</span> · Mobilité et automatisation</div>
+      <span class="version-status next">en cours</span>
+    </div>
+    <ul class="version-items">
+      <li><strong>SelfPOS Caisse marché</strong> · encaissement mobile offline, ticket simplifié</li>
+      <li><strong>Banking auto</strong> · import relevé SG/CA, écritures pré-remplies</li>
+      <li><strong>Saisies guidées</strong> · achats, immos, aides en quelques clics</li>
+    </ul>
+  </div>
+
+  <!-- V0.3 -->
+  <div class="version-card">
+    <div class="version-head">
+      <div class="version-tag"><span class="v">V0.3</span> · Mobile autonome &amp; multi-profils</div>
+      <span class="version-status later">prévu</span>
+    </div>
+    <ul class="version-items">
+      <li><strong>Caisse mobile autonome</strong> · app vraiment offline sur ton tel/tablette au marché, sync au PC au retour</li>
+      <li><strong>Multi-profils JA / NA / AGRI / PME</strong> · switch sans perte de données</li>
+      <li><strong>Assistant IA local</strong> · Llama 3B sur ta machine, zéro cloud</li>
+    </ul>
+  </div>
+
+  <!-- V1.0 -->
+  <div class="version-card">
+    <div class="version-head">
+      <div class="version-tag"><span class="v">V1.0</span> · Stable et complet</div>
+      <span class="version-status later">prévu</span>
+    </div>
+    <ul class="version-items">
+      <li><strong>DNJA prévisionnel complet</strong> · 4 hypothèses, export Chambre</li>
+      <li><strong>Compte de résultat + bilan auto</strong> · export FEC fiscal</li>
+      <li><strong>Sauvegarde chiffrée</strong> · clé USB ou Proton Drive, restauration 1 clic</li>
+    </ul>
+  </div>
+
+  <!-- V2+ horizon -->
+  <div class="version-card">
+    <div class="version-head">
+      <div class="version-tag"><span class="v">V2+</span> · Le réseau paysan</div>
+      <span class="version-status later">recherche</span>
+    </div>
+    <ul class="version-items">
+      <li><strong>SelfFarm Sentinelle</strong> · réseau citoyen anti-mildiou, opt-in, P2P</li>
+      <li><strong>Application Android terrain</strong> · saisie au champ, sync wifi maison</li>
+      <li><strong>Écosystème MySelf</strong> · facturation + identité + recovery sans email</li>
+    </ul>
+  </div>
+
+  <!-- Feedback -->
+  <div class="feedback-box">
+    <h3>Ton retour compte le plus</h3>
+    <p>Beta privée = tu façonnes ce que devient l'app. Bug, idée, manque criant, allergique à un bouton ?</p>
+    <a href="mailto:contact@my-self.fr?subject=SelfFarm-Lite beta — retour&body=Salut Pierroons,%0A%0AVersion testée : V0.1 beta%0A%0AMon retour :%0A...">Écrire à Pierroons</a>
+    <div class="small-links">
+      Code source · <a href="https://github.com/Pierroons/selffarm-lite" target="_blank">github.com/Pierroons/selffarm-lite</a>
+      &nbsp;·&nbsp;
+      Licence AGPL-3.0
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
