@@ -477,12 +477,6 @@ td.amount { color: var(--text-primary); font-feature-settings: 'tnum'; }
     {% endfor %}
   </nav>
 
-  <!-- Toggle : Mon activité / Vue complète -->
-  <div class="view-toggle">
-    <a href="/parametres/vue/mine" class="{% if _vmode == 'mine' %}on{% endif %}">Mon activité</a>
-    <a href="/parametres/vue/full" class="{% if _vmode == 'full' %}on{% endif %}">Vue complète</a>
-  </div>
-
   <!-- Sections de l'onglet actif (générées depuis le catalogue) -->
   <div class="nav-sections">
     {% for m in modules_catalog.modules_by_tab(_tab) %}
