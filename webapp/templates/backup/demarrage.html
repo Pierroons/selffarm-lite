@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Protège tes données{% endblock %}
+{% block content %}
+
+<div class="card" style="max-width:600px; padding:22px;">
+  <h2 style="font-size:16px; font-weight:600; color:var(--text-primary); margin-bottom:10px;">🛡️ Protège tes données</h2>
+  <p style="font-size:13px; color:var(--text-secondary); line-height:1.6; margin-bottom:8px;">
+    SelfFarm garde tout sur cet ordinateur — <strong style="color:var(--text-primary);">tes données restent chez toi</strong>. 👍
+  </p>
+  <p style="font-size:13px; color:var(--text-secondary); line-height:1.6; margin-bottom:14px;">
+    Mais si l'ordinateur tombe en panne, tu risques de <strong style="color:var(--warm-terra);">tout perdre</strong> : factures, compta, parcelles.
+    Choisis où SelfFarm copiera tout, tout seul :
+  </p>
+
+  {% if request.query_params.get('err') %}
+  <div style="font-size:12px; color:var(--warm-terra); margin-bottom:10px;">✗ Échec — la clé est-elle toujours branchée ?</div>
+  {% endif %}
+
+  {% if mounts %}
+    {% for m in mounts %}
+    <div class="card" style="padding:14px; margin-bottom:10px; display:flex; align-items:center; gap:12px; {% if loop.first %}border:1px solid var(--accent-200);{% endif %}">
+      <span style="font-size:20px;">🔑</span>
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:13px; color:var(--text-primary);">
+          <strong>{{ m.label }}</strong> · {{ "%.0f"|format(m.free_bytes/1e9) }} Go libres
+          {% if loop.first %}<span style="font-size:10.5px; color:var(--accent-200); font-weight:600;"> ⭐ recommandé</span>{% endif %}
+        </div>
+        <div style="font-size:10.5px; color:var(--text-muted);">Détectée et prête.</div>
+      </div>
+      <form method="post" action="/backup/demarrage/utiliser" style="margin:0;">
+        <input type="hidden" name="mount_path" value="{{ m.path }}">
+        <button type="submit" class="btn" style="font-size:12.5px; padding:9px 16px;">Utiliser</button>
+      </form>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div style="font-size:12.5px; color:var(--text-muted); padding:14px; border:1px dashed var(--border-default); border-radius:8px; text-align:center;">
+      Aucun disque branché. Branche une clé USB et <a href="/backup/demarrage" style="color:var(--accent-200);">rafraîchis</a>, ou configure plus tard.
+    </div>
+  {% endif %}
+
+  <div style="margin-top:14px; font-size:12px; color:var(--text-secondary);">
+    📱 Mon téléphone · ☁️ Un cloud / serveur → à configurer ensuite dans <a href="/backup" style="color:var(--accent-200);">Sauvegardes</a>.
+  </div>
+
+  <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--border-subtle); display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+    <form method="post" action="/backup/demarrage/plus-tard" style="margin:0;">
+      <button type="submit" class="btn btn-ghost" style="font-size:12px;">Plus tard</button>
+    </form>
+    <span style="font-size:11px; color:var(--warm-terra);">⚠️ Tes données ne seront pas protégées (on te le rappellera).</span>
+  </div>
+</div>
+
+{% endblock %}
