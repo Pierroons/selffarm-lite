@@ -1,0 +1,23 @@
+# Findings historiques connus et acceptés (modèle de menace : pas de purge)
+00ae6851c8cef9406bee7192ca947e0beff6443d:webapp/templates/onboarding/step_3_localisation.html:myself-localisation:17
+00ae6851c8cef9406bee7192ca947e0beff6443d:webapp/templates/onboarding/step_3_localisation.html:myself-localisation:26
+79f3cb3b7537c2287128eee03c2d857e3f798262:webapp/templates/home.html:myself-localisation:159
+87e4a54040514c1d3f39aeccd4b9318e4282766a:README.md:myself-localisation:17
+87e4a54040514c1d3f39aeccd4b9318e4282766a:docs/demo-carto-[commune].html:myself-localisation:281
+87e4a54040514c1d3f39aeccd4b9318e4282766a:docs/demo-carto-[commune].html:myself-localisation:5
+87e4a54040514c1d3f39aeccd4b9318e4282766a:docs/demo-carto-[commune].html:myself-localisation:72
+87e4a54040514c1d3f39aeccd4b9318e4282766a:docs/demo-carto-[commune].html:myself-localisation:93
+87e4a54040514c1d3f39aeccd4b9318e4282766a:docs/roadmap-self-parcelles.md:myself-localisation:4
+87e4a54040514c1d3f39aeccd4b9318e4282766a:docs/roadmap-self-parcelles.md:myself-localisation:70
+87e4a54040514c1d3f39aeccd4b9318e4282766a:docs/document-retire.md:myself-localisation:66
+87e4a54040514c1d3f39aeccd4b9318e4282766a:docs/document-retire.md:myself-localisation:73
+87e4a54040514c1d3f39aeccd4b9318e4282766a:modules/self_dnja/models.py:myself-localisation:161
+87e4a54040514c1d3f39aeccd4b9318e4282766a:modules/self_dnja/tests/test_engine.py:myself-localisation:32
+87e4a54040514c1d3f39aeccd4b9318e4282766a:pyproject.toml:myself-email-perso:13
+87e4a54040514c1d3f39aeccd4b9318e4282766a:webapp/README.md:myself-chemin-perso:9
+87e4a54040514c1d3f39aeccd4b9318e4282766a:webapp/routes/parcelles.py:myself-localisation:16
+960872c8576de96bc6e9e0258d2f659b8adaaf0c:docs/demo-carto-[commune].html:myself-localisation:140
+960872c8576de96bc6e9e0258d2f659b8adaaf0c:webapp/templates/parcelles/index.html:myself-localisation:262
+960872c8576de96bc6e9e0258d2f659b8adaaf0c:webapp/templates/parcelles/index.html:myself-localisation:266
+f36a46ffa72d54d3fe6f2eb55c208be74aaa9c88:webapp/templates/invoice/form.html:myself-localisation:68
+f36a46ffa72d54d3fe6f2eb55c208be74aaa9c88:webapp/templates/invoice/form.html:myself-localisation:72
