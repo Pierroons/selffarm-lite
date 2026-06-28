@@ -34,6 +34,9 @@ dependencies = [
     "sqlalchemy>=2.0",
     "python-dateutil>=2.9",
     "python-multipart>=0.0.9",
+    "itsdangerous>=2.1",
+    "segno>=1.6",
+    "psutil>=5.9",
 ]
 
 [project.optional-dependencies]

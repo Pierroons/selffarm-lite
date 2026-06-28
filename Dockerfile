@@ -55,7 +55,10 @@ RUN pip install --upgrade pip wheel setuptools && \
         "python-multipart>=0.0.9" \
         "pdfplumber>=0.11" \
         "reportlab>=4.0" \
-        "drafthorse>=2.3"
+        "drafthorse>=2.3" \
+        "itsdangerous>=2.1" \
+        "segno>=1.6" \
+        "psutil>=5.9"
 
 RUN pip install --no-deps .
 
