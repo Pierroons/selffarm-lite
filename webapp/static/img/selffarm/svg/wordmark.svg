@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 120" width="480" height="120">
-  <title>SelfFarm Lite — wordmark [exploitation]</title>
+  <title>SelfFarm Lite — wordmark Gestion agricole locale</title>
   <rect width="480" height="120" fill="#2d5a3a"></rect>
   <g transform="translate(20 20) scale(0.8)">
     
@@ -21,5 +21,5 @@
   <text x="120" y="58" font-family="-apple-system, &#39;Helvetica Neue&#39;, Arial, sans-serif" font-size="26" font-weight="600" fill="#e8efe9">
     SelfFarm<tspan font-weight="400" opacity="0.7">·Lite</tspan>
   </text>
-  <text x="120" y="84" font-family="-apple-system, &#39;Helvetica Neue&#39;, Arial, sans-serif" font-size="13" letter-spacing="2.4" fill="#e8efe9" opacity="0.6" text-transform="uppercase">[exploitation]</text>
+  <text x="120" y="84" font-family="-apple-system, &#39;Helvetica Neue&#39;, Arial, sans-serif" font-size="13" letter-spacing="2.4" fill="#e8efe9" opacity="0.6" text-transform="uppercase">GESTION AGRICOLE LOCALE</text>
 </svg>
