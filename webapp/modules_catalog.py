@@ -68,7 +68,7 @@ CATALOG: tuple[Module, ...] = (
            desc="Le foncier + localisation — socle transversal (cultures, prairies, pâtures, ruchers). Toujours actif."),
     Module("cultures", "Cultures", "production", "sprout", "soon",
            modes=("full",),
-           desc="Activité végétale : plan de culture, assolement & rotations, semis → récolte. (Le plan de culture vit aujourd'hui dans Parcellaire ; à migrer ici au refactor.)"),
+           desc="Activité végétale : plan de culture, assolement & rotations, semis → récolte."),
     Module("interventions", "Interventions", "production", "tractor", "soon",
            modes=("full",),
            desc="Itinéraires techniques : semis, traitements, récolte, traçabilité parcelle."),
@@ -111,7 +111,7 @@ CATALOG: tuple[Module, ...] = (
            modes=("lite", "full"), core=True),
     Module("import_compta", "Reprise de compta", "gestion", "box", "soon",
            modes=("full",),
-           desc="Importer une compta existante d'un autre logiciel. FEC en pivot (format légal universel) ; les formats exotiques sont reconnus par le LLM (import assisté) et remontés au dev pour ajout d'un parser."),
+           desc="Importer une compta existante d'un autre logiciel. FEC en pivot (format légal universel) ; les formats exotiques sont reconnus par le LLM (import assisté)."),
     Module("dnja", "DNJA / Prévisionnel", "gestion", "clock", "live",
            (NavItem("Saisir DNJA", "/dnja", "/dnja"),
             NavItem("Comparer", "/dnja/compare"),
@@ -150,7 +150,7 @@ CATALOG: tuple[Module, ...] = (
            desc="LLM local (SelfHub) : questions sur l'app, aide à la saisie, recherche dans tes données — 100 % hors-ligne."),
     Module("ia_debug", "Debug assisté", "assistant", "robot", "soon",
            modes=("full",),
-           desc="Le LLM applique des règles de diagnostic sur l'app, corrige ce qu'il peut, puis transmet un rapport (fait / vu / reste à faire) au dev via le canal sécurisé."),
+           desc="Le LLM applique des règles de diagnostic sur l'app, corrige ce qu'il peut, et produit un rapport clair (fait / vu / reste à faire)."),
 
     # ===================== PARAMÈTRES =====================
     Module("backup", "Sauvegarde", "parametres", "download", "live",
