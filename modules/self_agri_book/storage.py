@@ -110,6 +110,254 @@ MIGRATIONS: list[tuple[int, str, str]] = [
             BEFORE DELETE ON audit_log
             BEGIN SELECT RAISE(ABORT, 'audit_log is append-only — DELETE forbidden'); END;
     """),
+    (4, "create_exploitation", """
+        -- Profil exploitation — single-row (id=1 toujours en V1 mono-exploitation)
+        -- Saisi via le wizard d'onboarding au premier lancement.
+        -- En V1.1+ : multi-exploitation possible via duplication ou switch profile.
+        CREATE TABLE IF NOT EXISTS exploitation (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nom TEXT NOT NULL,
+            initials TEXT,
+            statut TEXT NOT NULL CHECK(statut IN ('JA','NA','AGRI','PME')),
+            date_installation TEXT,            -- ISO YYYY-MM-DD (date de début JA pour compteur 5 ans)
+            saison_courante INTEGER,           -- année en cours (ex: 2026)
+            regime_fiscal TEXT CHECK(regime_fiscal IN ('franchise','micro_ba','reel_simplifie','reel_normal')),
+            tva_assujetti INTEGER NOT NULL DEFAULT 0,
+            siret TEXT,                        -- 14 chiffres, optionnel à l'install
+            commune TEXT,
+            code_postal TEXT,
+            departement TEXT,                  -- code INSEE du département, 2 chiffres (ex: '01')
+            productions TEXT,                  -- JSON array, ex: '["chanvre","maraichage","fruits"]'
+            onboarding_done INTEGER NOT NULL DEFAULT 0,  -- 1 quand wizard validé
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        -- Trigger : maj automatique updated_at sur UPDATE
+        CREATE TRIGGER IF NOT EXISTS trg_exploitation_updated_at
+            AFTER UPDATE ON exploitation
+            FOR EACH ROW
+            BEGIN
+                UPDATE exploitation SET updated_at = datetime('now') WHERE id = NEW.id;
+            END;
+    """),
+    (5, "create_parcelle", """
+        -- Parcelles déclarées de l'exploitation.
+        -- V1 simple, sans planches/zones (sera enrichi V2 via module self_culture complet).
+        CREATE TABLE IF NOT EXISTS parcelle (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nom TEXT NOT NULL,                       -- libellé court (ex: "Champ du haut")
+            ref_cadastrale TEXT,                     -- ex: "ZA 0042" (optionnel)
+            commune TEXT NOT NULL,
+            code_postal TEXT,
+            surface_ha REAL NOT NULL CHECK (surface_ha > 0),
+            statut TEXT NOT NULL DEFAULT 'bio' CHECK (statut IN ('bio','conversion','conventionnel')),
+            date_acquisition TEXT,                   -- ISO YYYY-MM-DD (optionnel)
+            notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_parcelle_commune ON parcelle(commune);
+        CREATE INDEX IF NOT EXISTS idx_parcelle_statut ON parcelle(statut);
+        -- Trigger maj updated_at
+        CREATE TRIGGER IF NOT EXISTS trg_parcelle_updated_at
+            AFTER UPDATE ON parcelle
+            FOR EACH ROW
+            BEGIN
+                UPDATE parcelle SET updated_at = datetime('now') WHERE id = NEW.id;
+            END;
+    """),
+    (6, "create_plan_culture", """
+        -- Plan de culture saisonnier : une culture sur une parcelle pour une année donnée.
+        -- Multi-culture possible sur 1 parcelle (sous-surface ha) à condition que la somme
+        -- soit ≤ surface parcelle (validation côté code, pas BDD pour souplesse).
+        CREATE TABLE IF NOT EXISTS plan_culture (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            parcelle_id INTEGER NOT NULL,
+            saison INTEGER NOT NULL CHECK (saison >= 2020 AND saison <= 2100),
+            culture TEXT NOT NULL,                   -- slug culture (chanvre_kompolti, maraichage_diversifie, verger_pommiers, etc.)
+            culture_label TEXT,                      -- libellé lisible (ex: "Chanvre Kompolti")
+            variete TEXT,                            -- variété précise (ex: "Kompolti FBS")
+            surface_ha REAL CHECK (surface_ha IS NULL OR surface_ha > 0),
+            date_semis_prev TEXT,                    -- ISO YYYY-MM-DD prévue
+            date_recolte_prev TEXT,                  -- ISO YYYY-MM-DD prévue
+            date_semis_reel TEXT,                    -- ISO YYYY-MM-DD constaté (post-semis)
+            date_recolte_reel TEXT,                  -- ISO YYYY-MM-DD constaté
+            rendement_kg_attendu REAL,
+            mode_production TEXT DEFAULT 'ab' CHECK (mode_production IN ('ab','nt','conv','hve')),
+            statut TEXT NOT NULL DEFAULT 'prevu' CHECK (statut IN ('prevu','en_cours','recolte','annule')),
+            notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (parcelle_id) REFERENCES parcelle(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_plan_culture_saison ON plan_culture(saison);
+        CREATE INDEX IF NOT EXISTS idx_plan_culture_parcelle ON plan_culture(parcelle_id);
+        CREATE INDEX IF NOT EXISTS idx_plan_culture_statut ON plan_culture(statut);
+        CREATE TRIGGER IF NOT EXISTS trg_plan_culture_updated_at
+            AFTER UPDATE ON plan_culture
+            FOR EACH ROW
+            BEGIN
+                UPDATE plan_culture SET updated_at = datetime('now') WHERE id = NEW.id;
+            END;
+    """),
+    (7, "create_pos_produit", """
+        -- SelfPOS — Catalogue produits (vente directe marché)
+        CREATE TABLE IF NOT EXISTS pos_produit (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nom TEXT NOT NULL,
+            prix_unitaire REAL NOT NULL CHECK (prix_unitaire >= 0),
+            unite TEXT NOT NULL DEFAULT 'pièce',
+            categorie TEXT,
+            emoji TEXT,
+            actif INTEGER NOT NULL DEFAULT 1,
+            ordre INTEGER DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_pos_produit_actif ON pos_produit(actif);
+    """),
+    (8, "create_pos_session", """
+        -- SelfPOS — Session de marché (1 session = 1 journée typique)
+        CREATE TABLE IF NOT EXISTS pos_session (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date_marche TEXT NOT NULL,
+            lieu TEXT NOT NULL,
+            statut TEXT NOT NULL DEFAULT 'ouverte' CHECK (statut IN ('ouverte','cloturee')),
+            total_ttc REAL NOT NULL DEFAULT 0,
+            total_especes REAL NOT NULL DEFAULT 0,
+            total_cb REAL NOT NULL DEFAULT 0,
+            total_cheque REAL NOT NULL DEFAULT 0,
+            nb_ventes INTEGER NOT NULL DEFAULT 0,
+            ecriture_id INTEGER,
+            notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            cloture_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_pos_session_statut ON pos_session(statut);
+        CREATE INDEX IF NOT EXISTS idx_pos_session_date ON pos_session(date_marche);
+    """),
+    (9, "create_pos_vente", """
+        -- SelfPOS — Vente individuelle attachée à une session
+        CREATE TABLE IF NOT EXISTS pos_vente (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id INTEGER NOT NULL,
+            lignes_json TEXT NOT NULL,
+            total_ttc REAL NOT NULL CHECK (total_ttc >= 0),
+            mode_paiement TEXT NOT NULL CHECK (mode_paiement IN ('especes','cb','cheque','mixte')),
+            details_paiement_json TEXT,
+            client_libelle TEXT,
+            offline_uuid TEXT UNIQUE,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (session_id) REFERENCES pos_session(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_pos_vente_session ON pos_vente(session_id);
+        CREATE INDEX IF NOT EXISTS idx_pos_vente_offline ON pos_vente(offline_uuid);
+    """),
+    (10, "create_pos_chargement", """
+        -- SelfPOS V0.3 — Chargement camion préparé avant un marché
+        CREATE TABLE IF NOT EXISTS pos_chargement (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id INTEGER NOT NULL,
+            produit_id INTEGER,
+            produit_nom TEXT NOT NULL,
+            unite TEXT NOT NULL DEFAULT 'pièce',
+            quantite_chargee REAL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (session_id) REFERENCES pos_session(id) ON DELETE CASCADE,
+            FOREIGN KEY (produit_id) REFERENCES pos_produit(id) ON DELETE SET NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_pos_chargement_session ON pos_chargement(session_id);
+    """),
+    (11, "create_pos_residu_marche", """
+        -- SelfPOS V0.3 — Résidu de marché : stock / invendu / transferé / hors-marché
+        CREATE TABLE IF NOT EXISTS pos_residu_marche (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id INTEGER NOT NULL,
+            produit_id INTEGER,
+            produit_nom TEXT NOT NULL,
+            unite TEXT NOT NULL DEFAULT 'pièce',
+            quantite REAL NOT NULL CHECK (quantite >= 0),
+            status TEXT NOT NULL CHECK (status IN ('stock','invendu','transfere','consomme_hors_marche')),
+            destination TEXT,
+            derniere_revue_at TEXT NOT NULL DEFAULT (datetime('now')),
+            next_session_id INTEGER,
+            archive INTEGER NOT NULL DEFAULT 0,
+            notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (session_id) REFERENCES pos_session(id) ON DELETE CASCADE,
+            FOREIGN KEY (produit_id) REFERENCES pos_produit(id) ON DELETE SET NULL,
+            FOREIGN KEY (next_session_id) REFERENCES pos_session(id) ON DELETE SET NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_pos_residu_session ON pos_residu_marche(session_id);
+        CREATE INDEX IF NOT EXISTS idx_pos_residu_status ON pos_residu_marche(status, archive);
+    """),
+    (12, "create_pos_planning_marche", """
+        -- SelfPOS V0.3 — Marchés récurrents planifiés + config rappels
+        CREATE TABLE IF NOT EXISTS pos_planning_marche (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nom TEXT NOT NULL,
+            lieu TEXT NOT NULL,
+            recurrence TEXT NOT NULL DEFAULT 'hebdo' CHECK (recurrence IN ('hebdo','bihebdo','mensuel','ponctuel')),
+            jour_semaine INTEGER,
+            heure_debut TEXT,
+            heure_fin TEXT,
+            rappel_chargement_jours INTEGER NOT NULL DEFAULT 1,
+            rappel_jour_marche INTEGER NOT NULL DEFAULT 1,
+            active INTEGER NOT NULL DEFAULT 1,
+            notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_pos_planning_active ON pos_planning_marche(active);
+    """),
+    (13, "create_pos_point_vente_collectif", """
+        -- SelfPOS V0.3 — Point de vente collectif (magasin producteurs, Coccinelle Bio etc.)
+        CREATE TABLE IF NOT EXISTS pos_point_vente_collectif (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nom TEXT NOT NULL,
+            adresse TEXT,
+            convention TEXT NOT NULL DEFAULT 'depot_vente' CHECK (convention IN ('depot_vente','achat_direct')),
+            commission_pct REAL,
+            jour_recap INTEGER,
+            contact TEXT,
+            notes TEXT,
+            active INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_pos_collectif_active ON pos_point_vente_collectif(active);
+    """),
+    (14, "extend_pos_session_type", """
+        -- SelfPOS V0.3 — Distinction type de session (marché ponctuel vs point vente collectif)
+        ALTER TABLE pos_session ADD COLUMN type_vente TEXT NOT NULL DEFAULT 'marche_ponctuel';
+        ALTER TABLE pos_session ADD COLUMN point_vente_id INTEGER REFERENCES pos_point_vente_collectif(id) ON DELETE SET NULL;
+        CREATE INDEX IF NOT EXISTS idx_pos_session_type ON pos_session(type_vente);
+    """),
+    (15, "add_modules_state", """
+        -- Système de modes/modules (lite/full/perso) — cf project_selffarm_modes_modulaires.
+        -- modules_actifs : JSON array d'ids de modules actifs. NULL = pas encore configuré
+        --   (fallback côté code : tous les modules 'live' actifs).
+        -- view_mode : 'mine' (mes modules) | 'full' (vue complète, modules à venir grisés).
+        ALTER TABLE exploitation ADD COLUMN modules_actifs TEXT;
+        ALTER TABLE exploitation ADD COLUMN view_mode TEXT;
+    """),
+    (16, "create_ledger_outbox", """
+        -- Journal append-only des événements immuables du ledger (compta + facturation).
+        -- Réplication continue vers les supports (DD/NAS/mobile) = sauvegarde temps réel
+        -- du ledger (RPO≈0). seq = compteur de génération monotone (cf anti-rétrogradage).
+        -- Append-only : jamais de UPDATE/DELETE d'un événement ; seul replicated_to évolue.
+        CREATE TABLE IF NOT EXISTS ledger_outbox (
+            seq           INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_utc   TEXT NOT NULL,
+            event_type    TEXT NOT NULL,                 -- 'ecriture' | 'facture'
+            ecriture_id   INTEGER,                       -- lien vers ecritures_comptables.id
+            numero_piece  TEXT,
+            hash_data     TEXT,                          -- empreinte stable de l'écriture
+            payload_json  TEXT NOT NULL,                 -- contenu canonical de l'événement
+            replicated_to TEXT NOT NULL DEFAULT '[]'     -- JSON array d'ids de supports
+        );
+    """),
 ]
 
 
@@ -362,6 +610,19 @@ def save_ecriture(
         ecriture_id, numero_piece, compte_debit, montant_ttc, compte_credit,
         libelle[:40], hash_data[:12],
     )
+    # Journal append-only du ledger (outbox) — réplication continue (Partie E).
+    # Best-effort : NE DOIT JAMAIS bloquer une écriture comptable (la DB fait foi).
+    try:
+        from self_agri_book.outbox import append_event
+        append_event(
+            event_type="facture" if (numero_piece or "").startswith("F-") else "ecriture",
+            payload=payload,
+            hash_data=hash_data,
+            ecriture_id=ecriture_id,
+            numero_piece=numero_piece,
+        )
+    except Exception as e:  # noqa: BLE001
+        log.warning("Outbox append échoué (non bloquant) : %s", e)
     return ecriture_id, True
 
 
