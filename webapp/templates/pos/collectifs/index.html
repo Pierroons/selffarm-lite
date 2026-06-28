@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}Points de vente collectifs — SelfPOS{% endblock %}
+{% block breadcrumb %}Vente · Point de vente collectif{% endblock %}
+{% block page_title %}🏪 Points de vente collectifs{% endblock %}
+
+{% block topbar_actions %}
+  <a href="/pos" class="btn-ghost">← Caisse marché</a>
+{% endblock %}
+
+{% block content %}
+<style>
+.col-wrap {max-width:1100px; margin:0 auto;}
+.intro-card {
+  background:var(--bg-card); border:1px solid var(--border-subtle);
+  border-radius:10px; padding:18px 22px; margin-bottom:20px;
+}
+.intro-card h3 {margin:0 0 8px 0; font-family:'Fraunces',serif; font-size:14px; color:var(--text-primary);}
+.intro-card p {margin:0; font-size:12.5px; color:var(--text-secondary); line-height:1.5;}
+
+.magasins-table, .sessions-table {width:100%; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px; border-collapse:separate; border-spacing:0; margin-bottom:18px;}
+.magasins-table th, .sessions-table th {text-align:left; padding:9px 12px; background:var(--bg-elev); color:var(--text-muted); font-size:10.5px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600;}
+.magasins-table td, .sessions-table td {padding:11px 12px; font-size:12.5px; color:var(--text-secondary); border-top:1px solid var(--border-subtle);}
+.magasins-table tr.inactive td {opacity:0.5;}
+.badge-conv {display:inline-block; padding:1px 7px; border-radius:4px; font-size:10.5px; font-weight:600;}
+.badge-conv.depot {background:var(--accent-bg-soft); color:var(--accent-200);}
+.badge-conv.achat {background:rgba(107,142,157,0.13); color:#6b8e9d;}
+
+.section-title-mini {font-family:'Fraunces',serif; font-size:14px; color:var(--text-primary); margin:24px 0 12px 0; display:flex; align-items:center; gap:8px;}
+.section-title-mini svg {color:var(--accent-400); width:14px; height:14px;}
+
+details.form-card {background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px;}
+details.form-card[open] {border-color:var(--accent-500);}
+details.form-card summary {padding:12px 18px; cursor:pointer; list-style:none; display:flex; justify-content:space-between; font-size:13px; color:var(--text-primary); font-weight:600;}
+details.form-card summary::-webkit-details-marker {display:none;}
+details.form-card summary::after {content:'+'; font-size:18px; color:var(--accent-400); transition:transform 0.2s;}
+details.form-card[open] summary::after {transform:rotate(45deg);}
+details.form-card .form-body {padding:0 18px 18px;}
+.form-grid {display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px;}
+.field-block {display:flex; flex-direction:column; gap:5px;}
+.field-block label {font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.3px; font-weight:600;}
+.field-block .req {color:var(--warm-amber);}
+.field-block input, .field-block select, .field-block textarea {background:#0a1410; color:var(--text-primary); border:1px solid var(--border-default); border-radius:6px; padding:8px 11px; font-family:inherit; font-size:13px;}
+.field-block input:focus, .field-block select:focus, .field-block textarea:focus {outline:none; border-color:var(--accent-500); box-shadow:0 0 0 3px var(--accent-bg-soft);}
+.form-actions {display:flex; gap:8px; justify-content:flex-end; margin-top:14px; padding-top:12px; border-top:1px solid var(--border-subtle);}
+.btn-primary {padding:7px 14px; border-radius:6px; background:linear-gradient(180deg, var(--accent-500), var(--accent-600)); color:var(--text-primary); border:1px solid var(--accent-600); font-size:12.5px; font-weight:600; cursor:pointer; font-family:inherit;}
+.btn-primary:hover {filter:brightness(1.1);}
+.icon-btn {background:transparent; border:1px solid var(--border-subtle); color:var(--text-muted); width:26px; height:26px; border-radius:5px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;}
+.icon-btn:hover {color:var(--warm-terra); border-color:var(--warm-terra);}
+.icon-btn svg {width:13px; height:13px;}
+
+.depot-form-inline {display:flex; gap:6px; align-items:center;}
+.depot-form-inline input {padding:5px 8px; font-size:11.5px; background:#0a1410; color:var(--text-primary); border:1px solid var(--border-default); border-radius:4px; font-family:inherit;}
+.depot-form-inline button {padding:5px 10px; font-size:11.5px; background:var(--accent-500); color:var(--text-primary); border:1px solid var(--accent-600); border-radius:4px; cursor:pointer; font-family:inherit;}
+.depot-form-inline button:hover {filter:brightness(1.1);}
+
+.empty {background:var(--bg-card); border:1px dashed var(--border-default); border-radius:10px; padding:32px; text-align:center; color:var(--text-muted); font-size:13px;}
+</style>
+
+<div class="col-wrap">
+
+  <div class="intro-card">
+    <h3>Magasin de producteurs / dépôt-vente</h3>
+    <p>
+      Modèle différent du marché : tu <strong>déposes tes produits</strong> chez un magasin collectif (type magasin de producteurs),
+      le magasin tient la caisse et te transmet un <strong>récap périodique</strong> des ventes.
+      Pas de PWA mobile pour ce flux — tout se passe ici sur ton SelfFarm.
+    </p>
+  </div>
+
+  <h3 class="section-title-mini">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+    Mes magasins
+  </h3>
+
+  {% if collectifs %}
+  <table class="magasins-table">
+    <thead>
+      <tr><th>Nom</th><th>Convention</th><th>Commission</th><th>Adresse</th><th>Statut</th><th>Nouveau dépôt</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for c in collectifs %}
+      <tr class="{% if not c.active %}inactive{% endif %}">
+        <td style="color:var(--text-primary); font-weight:500;">{{ c.nom }}</td>
+        <td>
+          {% if c.convention == 'depot_vente' %}
+            <span class="badge-conv depot">Dépôt-vente</span>
+          {% else %}
+            <span class="badge-conv achat">Achat direct</span>
+          {% endif %}
+        </td>
+        <td>{% if c.commission_pct %}{{ "%.1f"|format(c.commission_pct) }} %{% else %}—{% endif %}</td>
+        <td>{{ c.adresse or '—' }}</td>
+        <td>{% if c.active %}<span style="color:var(--accent-200);">Actif</span>{% else %}<span style="color:var(--text-muted);">Désactivé</span>{% endif %}</td>
+        <td>
+          {% if c.active %}
+          <form action="/pos/collectifs/{{ c.id }}/depot" method="post" class="depot-form-inline">
+            <input type="date" name="date_depot" value="{{ '' }}" required style="font-size:11px;">
+            <button type="submit">+ Dépôt</button>
+          </form>
+          {% endif %}
+        </td>
+        <td style="text-align:right;">
+          {% if c.active %}
+          <form action="/pos/collectifs/{{ c.id }}/deactivate" method="post" style="display:inline;" onsubmit="return confirm('Désactiver {{ c.nom }} ?');">
+            <button type="submit" class="icon-btn" title="Désactiver">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">Aucun magasin enregistré. Crée ton premier ci-dessous.</div>
+  {% endif %}
+
+  <details class="form-card" style="margin-top:14px;">
+    <summary>+ Ajouter un magasin collectif</summary>
+    <div class="form-body">
+      <form action="/pos/collectifs/new" method="post">
+        <div class="form-grid">
+          <div class="field-block" style="grid-column:span 2;">
+            <label>Nom du magasin <span class="req">*</span></label>
+            <input type="text" name="nom" required placeholder="ex : Magasin de producteurs">
+          </div>
+          <div class="field-block">
+            <label>Convention</label>
+            <select name="convention">
+              <option value="depot_vente">Dépôt-vente (commission magasin)</option>
+              <option value="achat_direct">Achat direct (prix grossiste)</option>
+            </select>
+          </div>
+          <div class="field-block">
+            <label>Commission %</label>
+            <input type="number" name="commission_pct" step="0.1" min="0" max="100" placeholder="20.0">
+          </div>
+          <div class="field-block" style="grid-column:span 2;">
+            <label>Adresse</label>
+            <input type="text" name="adresse" placeholder="rue, ville">
+          </div>
+          <div class="field-block">
+            <label>Jour récap (0=dim..6=sam)</label>
+            <input type="number" name="jour_recap" min="0" max="6" placeholder="1 = lundi">
+          </div>
+          <div class="field-block">
+            <label>Contact</label>
+            <input type="text" name="contact" placeholder="tél / email">
+          </div>
+          <div class="field-block" style="grid-column:1/-1;">
+            <label>Notes</label>
+            <textarea name="notes" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Créer le magasin</button>
+        </div>
+      </form>
+    </div>
+  </details>
+
+  <h3 class="section-title-mini" style="margin-top:30px;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Sessions récentes
+  </h3>
+
+  {% if sessions %}
+  <table class="sessions-table">
+    <thead>
+      <tr><th>Date dépôt</th><th>Magasin</th><th>Statut</th><th style="text-align:right;">Total TTC</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for s in sessions %}
+      <tr>
+        <td>{{ s.date_marche }}</td>
+        <td>{{ s.collectif_nom or s.lieu }}</td>
+        <td>
+          {% if s.statut == 'ouverte' %}
+            <span style="color:var(--warm-amber);">Ouverte</span>
+          {% else %}
+            <span style="color:var(--accent-200);">Clôturée</span>
+          {% endif %}
+        </td>
+        <td style="text-align:right; color:var(--text-primary); font-feature-settings:'tnum';">{{ "%.2f"|format(s.total_ttc) }} €</td>
+        <td style="text-align:right;">
+          {% if s.statut == 'ouverte' %}
+            <a href="/pos/sessions/{{ s.id }}/chargement" style="color:var(--accent-200); font-size:11.5px;">Saisir dépôt →</a>
+          {% else %}
+            <a href="/pos/sessions/{{ s.id }}/recap" style="color:var(--text-secondary); font-size:11.5px;">Récap →</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">Aucune session collective.</div>
+  {% endif %}
+
+</div>
+{% endblock %}

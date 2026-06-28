@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}Statistiques produits — SelfPOS{% endblock %}
+{% block breadcrumb %}Vente · SelfPOS · Statistiques{% endblock %}
+{% block page_title %}📊 Statistiques produits{% endblock %}
+
+{% block topbar_actions %}
+  <a href="/pos" class="btn-ghost">← Caisse marché</a>
+{% endblock %}
+
+{% block content %}
+<style>
+.stats-wrap {max-width:1200px; margin:0 auto;}
+.kpi-grid {display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:20px;}
+.kpi {background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:11px; padding:14px 16px;}
+.kpi .label {font-size:10.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px; font-weight:600;}
+.kpi .value {font-size:22px; font-family:'Fraunces',serif; font-weight:600; color:var(--text-primary); margin-top:3px;}
+.kpi .value .unit {font-size:12px; color:var(--text-muted); font-weight:400;}
+.kpi .sub {font-size:11px; color:var(--accent-400); margin-top:2px;}
+
+.charts-row {display:grid; grid-template-columns:2fr 1fr; gap:14px; margin-bottom:14px;}
+@media (max-width:900px) {.charts-row {grid-template-columns:1fr;}}
+.block {background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:11px; padding:16px 18px; margin-bottom:14px;}
+.block h2 {font-size:14px; font-family:'Fraunces',serif; color:var(--text-primary); margin:0 0 14px 0; display:flex; align-items:center; gap:7px;}
+.chart-container {position:relative; height:260px;}
+.chart-container.small {height:220px;}
+
+.invendu-table {width:100%; border-collapse:collapse;}
+.invendu-table th {text-align:left; padding:8px 10px; background:var(--bg-elev); color:var(--text-muted); font-size:10.5px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600;}
+.invendu-table td {padding:9px 10px; font-size:12.5px; color:var(--text-secondary); border-bottom:1px solid var(--border-subtle);}
+.invendu-table td.num {text-align:right; font-feature-settings:'tnum'; color:var(--text-primary);}
+.taux-badge {display:inline-block; padding:2px 8px; border-radius:4px; font-size:10.5px; font-weight:600;}
+.taux-ok {background:var(--accent-bg-soft); color:var(--accent-200);}
+.taux-warn {background:rgba(212,160,86,0.13); color:var(--warm-amber);}
+.taux-bad {background:rgba(184,87,81,0.15); color:var(--warm-terra);}
+
+.empty {background:var(--bg-card); border:1px dashed var(--border-default); border-radius:11px; padding:40px 24px; text-align:center; color:var(--text-muted);}
+.empty svg {width:40px; height:40px; opacity:0.4; margin-bottom:12px;}
+</style>
+
+<div class="stats-wrap">
+
+  {% set k = stats.kpis %}
+  {% if k.nb_marches == 0 and k.nb_ventes == 0 %}
+  <div class="empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+    <h3 style="color:var(--text-secondary); font-size:14px; margin-bottom:6px;">Pas encore de données</h3>
+    <p style="font-size:12.5px;">Les statistiques apparaîtront après ton premier marché clôturé.<br>Fais quelques ventes sur la PWA mobile, exporte, importe ici.</p>
+  </div>
+  {% else %}
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="label">CA total</div>
+      <div class="value">{{ "%.0f"|format(k.ca_total) }} <span class="unit">€</span></div>
+      <div class="sub">{{ k.nb_marches }} marché{{ 's' if k.nb_marches != 1 else '' }}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Ventes</div>
+      <div class="value">{{ k.nb_ventes }}</div>
+      <div class="sub">tickets encaissés</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Panier moyen</div>
+      <div class="value">{{ "%.2f"|format(k.panier_moyen) }} <span class="unit">€</span></div>
+    </div>
+    <div class="kpi">
+      <div class="label">Produit star</div>
+      <div class="value" style="font-size:16px;">{{ k.produit_star }}</div>
+      <div class="sub">meilleur CA</div>
+    </div>
+  </div>
+
+  <!-- Charts row : top produits + répartition CA -->
+  <div class="charts-row">
+    <div class="block">
+      <h2>🏆 Top produits (CA)</h2>
+      <div class="chart-container"><canvas id="chartTopProduits"></canvas></div>
+    </div>
+    <div class="block">
+      <h2>🥧 Répartition CA</h2>
+      <div class="chart-container small"><canvas id="chartRepartition"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Évolution ventes par semaine -->
+  <div class="block">
+    <h2>📈 Évolution des ventes (par semaine)</h2>
+    <div class="chart-container"><canvas id="chartEvolution"></canvas></div>
+  </div>
+
+  <!-- Taux invendu -->
+  <div class="block">
+    <h2>♻️ Gestion des invendus par produit</h2>
+    {% if stats.invendus.produits %}
+    <table class="invendu-table">
+      <thead>
+        <tr><th>Produit</th><th style="text-align:right;">Chargé</th><th style="text-align:right;">Vendu</th><th style="text-align:right;">Invendu</th><th style="text-align:right;">Taux perte</th></tr>
+      </thead>
+      <tbody>
+        {% for p in stats.invendus.produits %}
+        <tr>
+          <td style="color:var(--text-primary); font-weight:500;">{{ p.nom }}</td>
+          <td class="num">{% if p.charge %}{{ "%.1f"|format(p.charge) }} {{ p.unite }}{% else %}—{% endif %}</td>
+          <td class="num">{{ "%.1f"|format(p.vendu) }} {{ p.unite }}</td>
+          <td class="num">{{ "%.1f"|format(p.invendu) }} {{ p.unite }}</td>
+          <td style="text-align:right;">
+            {% if p.taux_invendu == 0 %}
+              <span class="taux-badge taux-ok">0 %</span>
+            {% elif p.taux_invendu < 15 %}
+              <span class="taux-badge taux-ok">{{ p.taux_invendu }} %</span>
+            {% elif p.taux_invendu < 35 %}
+              <span class="taux-badge taux-warn">{{ p.taux_invendu }} %</span>
+            {% else %}
+              <span class="taux-badge taux-bad">{{ p.taux_invendu }} %</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div style="margin-top:10px; font-size:11.5px; color:var(--text-muted);">
+      💡 Taux de perte élevé (rouge >35 %) = produit sur-chargé ou peu demandé → ajuste ta production / ton chargement.
+    </div>
+    {% else %}
+    <p style="color:var(--text-muted); font-size:12.5px;">Pas encore de données invendus (renseigne les résidus en fin de marché).</p>
+    {% endif %}
+  </div>
+
+  {% endif %}
+</div>
+
+{% if not (k.nb_marches == 0 and k.nb_ventes == 0) %}
+<script src="/static/js/chart.umd.min.js"></script>
+<script>
+Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#9bb09f';
+Chart.defaults.borderColor = '#1c302a';
+
+const TOP = {{ stats.top_produits | tojson }};
+const EVOL = {{ stats.ventes_semaine | tojson }};
+const PALETTE = ['#2d5a3a','#4a7c5e','#86a890','#c4d4c9','#6a8070','#d4a056','#b85751','#6b8e9d','#a8c0ae','#3d6b4e'];
+
+// Top produits (bar horizontal CA)
+if (TOP.produits.length) {
+  new Chart(document.getElementById('chartTopProduits'), {
+    type: 'bar',
+    data: {
+      labels: TOP.produits.map(p => (p.emoji || '') + ' ' + p.nom),
+      datasets: [{label:'CA (€)', data: TOP.produits.map(p => p.ca), backgroundColor:'rgba(45,90,58,0.85)', borderRadius:4}]
+    },
+    options: {
+      indexAxis: 'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label: c => c.parsed.x.toLocaleString('fr-FR') + ' € · ' + TOP.produits[c.dataIndex].qte + ' ' + TOP.produits[c.dataIndex].unite}}},
+      scales:{x:{grid:{color:'#1c302a'}, ticks:{callback: v => v + ' €'}}, y:{grid:{display:false}}}
+    }
+  });
+
+  // Répartition CA (donut)
+  new Chart(document.getElementById('chartRepartition'), {
+    type: 'doughnut',
+    data: {
+      labels: TOP.produits.map(p => p.nom),
+      datasets: [{data: TOP.produits.map(p => p.ca), backgroundColor: TOP.produits.map((_,i) => PALETTE[i % PALETTE.length]), borderColor:'#0f1814', borderWidth:2}]
+    },
+    options: {responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{legend:{position:'bottom', labels:{usePointStyle:true, padding:8, font:{size:10}}}, tooltip:{callbacks:{label: c => c.label + ' : ' + c.parsed.toLocaleString('fr-FR') + ' €'}}}}
+  });
+}
+
+// Évolution par semaine (bar)
+if (EVOL.labels.length) {
+  new Chart(document.getElementById('chartEvolution'), {
+    type: 'bar',
+    data: {labels: EVOL.labels, datasets: [{label:'CA hebdo (€)', data: EVOL.data, backgroundColor:'rgba(74,124,94,0.8)', borderRadius:4}]},
+    options: {responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label: c => c.parsed.y.toLocaleString('fr-FR') + ' €'}}}, scales:{x:{grid:{display:false}}, y:{grid:{color:'#1c302a'}, ticks:{callback: v => v + ' €'}}}}
+  });
+}
+</script>
+{% endif %}
+{% endblock %}

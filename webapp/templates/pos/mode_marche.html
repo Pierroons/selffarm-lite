@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Mode marché — SelfPOS{% endblock %}
+{% block breadcrumb %}Vente · SelfPOS · Mode marché{% endblock %}
+{% block page_title %}📡 Mode marché — Connexion tel ↔ PC{% endblock %}
+
+{% block topbar_actions %}
+  <a href="/pos" class="btn-ghost">← Caisse marché</a>
+{% endblock %}
+
+{% block content %}
+<style>
+.mm-wrap {max-width:900px; margin:0 auto;}
+
+.mm-hero {
+  background:linear-gradient(180deg, var(--accent-bg-soft), var(--bg-card));
+  border:1px solid var(--accent-500); border-radius:14px;
+  padding:24px 28px; margin-bottom:20px;
+  text-align:center;
+}
+.mm-hero h2 {margin:0 0 8px 0; font-family:'Fraunces',serif; font-size:18px; color:var(--text-primary);}
+.mm-hero p {margin:0; color:var(--text-secondary); font-size:13px; line-height:1.5;}
+
+.qr-card {
+  background:var(--bg-card); border:1px solid var(--border-subtle);
+  border-radius:14px; padding:24px;
+  margin-bottom:18px;
+  display:grid; grid-template-columns:300px 1fr; gap:24px;
+  align-items:center;
+}
+@media (max-width:680px) {.qr-card {grid-template-columns:1fr;}}
+.qr-card .qr-box {
+  background:#fff; padding:16px; border-radius:10px;
+  text-align:center; min-height:280px;
+  display:flex; align-items:center; justify-content:center;
+}
+.qr-card .qr-box svg {max-width:100%; height:auto;}
+.qr-card .qr-box .placeholder {color:#666; font-size:12px;}
+.qr-card .info h3 {margin:0 0 10px 0; font-family:'Fraunces',serif; font-size:15px; color:var(--text-primary);}
+.qr-card .info p {margin:0 0 8px 0; font-size:13px; color:var(--text-secondary); line-height:1.5;}
+.qr-card .info code {background:var(--bg-elev); padding:2px 8px; border-radius:4px; font-size:12.5px; color:var(--accent-200); font-family:'JetBrains Mono', monospace;}
+.qr-card .info ol {padding-left:20px; font-size:12.5px; color:var(--text-secondary); line-height:1.6; margin:8px 0 0 0;}
+
+.ip-list {margin-top:14px; font-size:11.5px;}
+.ip-list .label {color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px; font-weight:600; font-size:10.5px; margin-bottom:6px;}
+.ip-item {display:flex; align-items:center; gap:8px; padding:4px 0;}
+.ip-item .iface {background:var(--bg-elev); padding:1px 7px; border-radius:3px; font-size:10.5px; color:var(--text-muted); font-family:monospace;}
+.ip-item .ip-val {color:var(--text-primary); font-family:monospace; font-size:12px;}
+.ip-item .ip-val.active {color:var(--accent-200); font-weight:600;}
+
+.refresh-bar {display:flex; align-items:center; gap:10px; font-size:11px; color:var(--text-muted); margin-top:14px;}
+.refresh-bar .dot {width:6px; height:6px; border-radius:50%; background:var(--accent-400); animation:pulse 1.5s infinite;}
+@keyframes pulse { 0%,100% {opacity:1;} 50% {opacity:0.3;} }
+
+.tips-card {
+  background:var(--bg-card); border:1px solid var(--border-subtle);
+  border-radius:10px; padding:18px 22px;
+}
+.tips-card h3 {margin:0 0 10px 0; font-size:13px; font-family:'Fraunces',serif; color:var(--text-primary);}
+.tips-card ul {margin:0; padding-left:18px; color:var(--text-secondary); font-size:12.5px; line-height:1.7;}
+.tips-card ul li strong {color:var(--text-primary);}
+
+.warn {background:rgba(212,160,86,0.12); border:1px solid rgba(212,160,86,0.30); border-radius:8px; padding:12px 14px; color:var(--warm-amber); font-size:12.5px;}
+</style>
+
+<div class="mm-wrap">
+
+  <div class="mm-hero">
+    <h2>Connecter ton tel à SelfFarm</h2>
+    <p>Marche dans 3 cas : box maison · PC en hotspot · tel partage 4G au PC.<br>
+    Tant que ton tel et ton PC sont sur le même réseau (peu importe lequel), scanne le QR ↓.</p>
+  </div>
+
+  <div id="cardsContainer">
+    <div class="qr-card">
+      <div class="qr-box"><span class="placeholder">Détection des connexions…</span></div>
+      <div class="info"><p>Recherche des interfaces réseau du PC…</p></div>
+    </div>
+  </div>
+
+  <div class="refresh-bar" style="justify-content:center; margin:14px 0;"><span class="dot"></span>Auto-refresh toutes les 5s</div>
+
+  <div style="background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px; padding:14px 18px; margin-bottom:18px;">
+    <p style="margin:0; font-size:12.5px; color:var(--text-secondary); line-height:1.5;">
+      <strong style="color:var(--text-primary);">Comment ça marche :</strong>
+      ouvre l'appareil photo de ton tel, vise le QR de la connexion <strong style="color:var(--accent-200);">✓ Recommandée</strong>,
+      clique le lien qui apparaît → la PWA s'ouvre. Menu Chrome ⋮ → "Ajouter à l'écran d'accueil".
+    </p>
+  </div>
+
+  <div class="tips-card">
+    <h3>💡 Astuces selon ton cas</h3>
+    <ul>
+      <li><strong>Cas 1 — Box maison classique</strong> : tel et PC sur le même WiFi domestique, ça marche direct.</li>
+      <li><strong>Cas 2 — PC fait hotspot WiFi</strong> : utile si pas d'internet du tout. Windows → Paramètres → Mobile hotspot → ON.</li>
+      <li><strong>Cas 3 — Tel partage 4G au PC</strong> (le plus courant en zone rurale) : active "Point d'accès" sur le tel, connecte le PC dessus. L'IP du PC change à chaque session — la page la détecte auto.</li>
+      <li><strong>Si tu utilises un VPN (ProtonVPN, etc.)</strong> sur le tel → désactive-le OU active le "split tunneling" pour exclure le subnet local.</li>
+    </ul>
+  </div>
+
+</div>
+
+<style>
+.badge-reco {display:inline-block; background:var(--accent-500); color:#fff; font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:11px; margin-left:8px; letter-spacing:0.3px;}
+.iface-type {font-size:11px; color:var(--text-muted); margin-bottom:4px;}
+.qr-card.reco {border-color:var(--accent-500); box-shadow:0 0 0 1px var(--accent-500);}
+.qr-card.dim {opacity:0.7;}
+</style>
+<script>
+let lastSignature = '';
+
+async function refreshHotspotStatus() {
+  try {
+    const r = await fetch('/api/pos/hotspot-status');
+    const data = await r.json();
+    const container = document.getElementById('cardsContainer');
+
+    if (!data.any_lan || !data.ips || data.ips.length === 0) {
+      container.innerHTML = `
+        <div class="qr-card">
+          <div class="qr-box"><span class="placeholder">⚠ Aucune connexion réseau détectée<br>Branche ton tel en USB, active le hotspot, ou connecte une box.</span></div>
+          <div class="info"><p>Le PC doit être sur un réseau partagé avec le tel.</p></div>
+        </div>`;
+      lastSignature = '';
+      return;
+    }
+
+    // Évite de re-render (et recharger les QR) si rien n'a changé
+    const sig = data.ips.map(i => i.interface + i.ip).join('|');
+    if (sig === lastSignature) return;
+    lastSignature = sig;
+
+    let html = '';
+    for (const ipInfo of data.ips) {
+      const isReco = ipInfo.ip === data.recommended_ip;
+      const qrResp = await fetch('/api/pos/qr-code?url=' + encodeURIComponent(ipInfo.pwa_url));
+      const qrSvg = await qrResp.text();
+      html += `
+        <div class="qr-card ${isReco ? 'reco' : 'dim'}">
+          <div class="qr-box">${qrSvg}</div>
+          <div class="info">
+            <div class="iface-type">${ipInfo.label} · <code>${ipInfo.interface}</code></div>
+            <h3>${ipInfo.stable ? 'Connexion stable' : 'Connexion WiFi'}${isReco ? '<span class="badge-reco">✓ Recommandée</span>' : ''}</h3>
+            <p>Scanne ce QR avec ton tel, ou tape l'URL dans Chrome :</p>
+            <code>${ipInfo.pwa_url}</code>
+            ${!ipInfo.stable ? '<p style="color:var(--warm-amber); font-size:11.5px; margin-top:8px;">⚠ Le WiFi hotspot peut décrocher (veille tel). Préfère le câble USB si possible.</p>' : ''}
+          </div>
+        </div>`;
+    }
+    container.innerHTML = html;
+  } catch (err) {
+    document.getElementById('cardsContainer').innerHTML =
+      '<div class="qr-card"><div class="qr-box"><span class="placeholder">Erreur : ' + err.message + '</span></div><div class="info"></div></div>';
+  }
+}
+
+refreshHotspotStatus();
+setInterval(refreshHotspotStatus, 5000);
+</script>
+{% endblock %}

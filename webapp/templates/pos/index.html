@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}Caisse marché — SelfFarm-Lite{% endblock %}
+{% block breadcrumb %}Vente · SelfPOS{% endblock %}
+{% block page_title %}Caisse marché{% endblock %}
+
+{% block topbar_actions %}
+  <a href="/pos/produits" class="btn-ghost">Catalogue produits</a>
+{% endblock %}
+
+{% block content %}
+<style>
+.pos-wrap {max-width:1100px; margin:0 auto;}
+
+.cta-card {
+  background:linear-gradient(180deg, var(--accent-bg-soft), var(--bg-card));
+  border:1px solid var(--accent-500);
+  border-radius:14px;
+  padding:24px;
+  margin-bottom:20px;
+  display:flex; justify-content:space-between; align-items:center;
+  gap:20px; flex-wrap:wrap;
+}
+.cta-card h2 {font-family:'Fraunces',serif; font-size:18px; margin:0 0 6px 0; color:var(--text-primary);}
+.cta-card p {font-size:12.5px; color:var(--text-secondary); margin:0; line-height:1.5;}
+.cta-card .info-meta {font-size:11px; color:var(--text-muted); margin-top:8px;}
+
+.btn-big {
+  padding:12px 22px; font-size:14px; font-weight:600;
+  background:linear-gradient(180deg, var(--accent-500), var(--accent-600));
+  color:var(--text-primary); border:1px solid var(--accent-600);
+  border-radius:8px; cursor:pointer; text-decoration:none;
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:inherit;
+  box-shadow:0 1px 0 rgba(255,255,255,0.06) inset, 0 2px 6px rgba(0,0,0,0.3);
+}
+.btn-big:hover {filter:brightness(1.1); color:var(--text-primary);}
+
+.form-quick {
+  background:var(--bg-card); border:1px solid var(--border-subtle);
+  border-radius:10px; padding:18px;
+  margin-bottom:20px;
+}
+.form-quick h3 {margin:0 0 12px 0; font-size:14px; font-family:'Fraunces',serif; color:var(--text-primary);}
+.form-row {display:grid; grid-template-columns:1fr 2fr auto; gap:10px; align-items:end;}
+@media (max-width:700px) {.form-row {grid-template-columns:1fr;}}
+.form-row .field {display:flex; flex-direction:column; gap:5px;}
+.form-row .field label {font-size:10.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.3px; font-weight:600;}
+.form-row input {
+  background:#0a1410; color:var(--text-primary);
+  border:1px solid var(--border-default); border-radius:6px;
+  padding:9px 11px; font-family:inherit; font-size:13px;
+}
+.form-row input:focus {outline:none; border-color:var(--accent-500); box-shadow:0 0 0 3px var(--accent-bg-soft);}
+
+.sessions-table {
+  width:100%; background:var(--bg-card); border:1px solid var(--border-subtle);
+  border-radius:10px; border-collapse:separate; border-spacing:0;
+}
+.sessions-table th {
+  text-align:left; padding:9px 12px;
+  background:var(--bg-elev); color:var(--text-muted);
+  font-size:10.5px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600;
+  border-bottom:1px solid var(--border-default);
+}
+.sessions-table td {
+  padding:11px 12px; font-size:12.5px; color:var(--text-secondary);
+  border-bottom:1px solid var(--border-subtle);
+}
+.sessions-table tr:last-child td {border-bottom:none;}
+.sessions-table tr:hover {background:var(--accent-bg-soft);}
+.sessions-table td.amount {color:var(--text-primary); font-feature-settings:'tnum'; text-align:right;}
+.sessions-table .badge {display:inline-block; padding:2px 8px; border-radius:4px; font-size:10.5px; font-weight:600;}
+.sessions-table .badge-ouverte {background:rgba(212,160,86,0.13); color:var(--warm-amber); border:1px solid rgba(212,160,86,0.30);}
+.sessions-table .badge-cloturee {background:var(--accent-bg-soft); color:var(--accent-200); border:1px solid rgba(45,90,58,0.35);}
+
+.section-title-mini {
+  font-family:'Fraunces',serif; font-size:14px; color:var(--text-primary);
+  margin:0 0 12px 0; display:flex; align-items:center; gap:8px;
+}
+.section-title-mini svg {color:var(--accent-400); width:14px; height:14px;}
+
+.empty {
+  background:var(--bg-card); border:1px dashed var(--border-default); border-radius:10px;
+  padding:32px 24px; text-align:center;
+}
+.empty svg {width:36px; height:36px; color:var(--text-muted); margin-bottom:10px; opacity:0.5;}
+.empty h3 {font-size:14px; color:var(--text-secondary); font-weight:500; margin-bottom:6px;}
+.empty p {font-size:12.5px; color:var(--text-muted); margin:0;}
+
+/* mini-stats bandeau */
+.mini-stats {display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:18px;}
+.mini-stat {background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:9px; padding:11px 14px;}
+.mini-stat .l {font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px; font-weight:600;}
+.mini-stat .v {font-size:18px; font-family:'Fraunces',serif; color:var(--text-primary); font-weight:600; margin-top:2px;}
+.mini-stat .v .u {font-size:11px; color:var(--text-muted); font-weight:400;}
+.mini-stat a {text-decoration:none;}
+.stock-alert {
+  background:rgba(212,160,86,0.12); border:1px solid rgba(212,160,86,0.30); border-radius:9px;
+  padding:11px 16px; margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+.stock-alert .txt {color:var(--warm-amber); font-size:12.5px;}
+.stock-alert a {color:var(--warm-amber); font-weight:600; font-size:12px; text-decoration:underline; white-space:nowrap;}
+</style>
+
+<div class="pos-wrap">
+
+  {% if kpis and kpis.nb_marches > 0 %}
+  <div class="mini-stats">
+    <div class="mini-stat">
+      <div class="l">CA cumulé</div>
+      <div class="v">{{ "%.0f"|format(kpis.ca_total) }} <span class="u">€</span></div>
+    </div>
+    <div class="mini-stat">
+      <div class="l">Marchés</div>
+      <div class="v">{{ kpis.nb_marches }}</div>
+    </div>
+    <div class="mini-stat">
+      <div class="l">Panier moyen</div>
+      <div class="v">{{ "%.2f"|format(kpis.panier_moyen) }} <span class="u">€</span></div>
+    </div>
+    <div class="mini-stat">
+      <div class="l">Produit star</div>
+      <div class="v" style="font-size:14px;">{{ kpis.produit_star }}</div>
+    </div>
+    <a class="mini-stat" href="/pos/stats" style="display:flex; flex-direction:column; justify-content:center; border-color:var(--accent-500);">
+      <div class="l" style="color:var(--accent-200);">📊 Voir</div>
+      <div class="v" style="font-size:13px; color:var(--accent-200);">Statistiques →</div>
+    </a>
+  </div>
+  {% endif %}
+
+  {% if nb_stock_a_reviewer and nb_stock_a_reviewer > 0 %}
+  <div class="stock-alert">
+    <span class="txt">⚠ {{ nb_stock_a_reviewer }} produit{{ 's' if nb_stock_a_reviewer != 1 else '' }} en stock résiduel à confirmer (>7 jours)</span>
+    <a href="/pos/stock-revue">Revoir le stock →</a>
+  </div>
+  {% endif %}
+
+  {% if session_ouverte %}
+  <div class="cta-card">
+    <div>
+      <h2>🛒 Marché en cours — {{ session_ouverte.lieu }}</h2>
+      <p>{{ session_ouverte.nb_ventes }} vente{{ 's' if session_ouverte.nb_ventes != 1 else '' }} · Total : <strong style="color:var(--accent-200);">{{ "%.2f"|format(session_ouverte.total_ttc) }} €</strong></p>
+      <div class="info-meta">Ouverte le {{ session_ouverte.date_marche }}</div>
+    </div>
+    <a href="/pos/sessions/{{ session_ouverte.id }}" class="btn-big">
+      Reprendre la caisse →
+    </a>
+  </div>
+  {% else %}
+  <div class="form-quick">
+    <h3>🛒 Nouveau marché</h3>
+    <form action="/pos/sessions/new" method="post">
+      <div class="form-row">
+        <div class="field">
+          <label>Date</label>
+          <input type="date" name="date_marche" value="{{ today }}" required>
+        </div>
+        <div class="field">
+          <label>Lieu</label>
+          <input type="text" name="lieu" placeholder="ex : Marché de Sainte-Foy" required>
+        </div>
+        <button type="submit" class="btn-big">Ouvrir la caisse →</button>
+      </div>
+    </form>
+    <div style="margin-top:10px; font-size:11px; color:var(--text-muted);">
+      Catalogue actif : <strong style="color:var(--text-secondary);">{{ nb_produits }}</strong> produits — <a href="/pos/produits" style="color:var(--accent-200);">gérer</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <h3 class="section-title-mini">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Sessions précédentes
+  </h3>
+
+  {% if sessions %}
+  <table class="sessions-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Lieu</th>
+        <th style="text-align:right;">Ventes</th>
+        <th style="text-align:right;">Total TTC</th>
+        <th>Statut</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in sessions %}
+      <tr>
+        <td>{{ s.date_marche }}</td>
+        <td>{{ s.lieu }}</td>
+        <td class="amount">{{ s.nb_ventes }}</td>
+        <td class="amount">{{ "%.2f"|format(s.total_ttc) }} €</td>
+        <td>
+          {% if s.statut == 'ouverte' %}
+            <span class="badge badge-ouverte">Ouverte</span>
+          {% else %}
+            <span class="badge badge-cloturee">Clôturée</span>
+          {% endif %}
+        </td>
+        <td style="text-align:right;">
+          {% if s.statut == 'ouverte' %}
+            <a href="/pos/sessions/{{ s.id }}" style="color:var(--accent-200); font-size:11.5px; font-weight:500;">Caisse →</a>
+          {% else %}
+            <a href="/pos/sessions/{{ s.id }}/recap" style="color:var(--text-secondary); font-size:11.5px;">Récap →</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+    <h3>Aucune session pour l'instant</h3>
+    <p>Ouvre ta première caisse marché ci-dessus pour commencer à encaisser.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,508 @@
+{% extends "base.html" %}
+{% block title %}{{ session.lieu }} — Caisse SelfPOS{% endblock %}
+{% block breadcrumb %}Vente · SelfPOS · {{ session.lieu }}{% endblock %}
+{% block page_title %}🛒 {{ session.lieu }} — {{ session.date_marche }}{% endblock %}
+
+{% block extra_head %}
+  <link rel="manifest" href="/static/pos/manifest.json">
+  <meta name="theme-color" content="#2d5a3a">
+{% endblock %}
+
+{% block topbar_actions %}
+  <span id="online-indicator" class="online" title="État réseau">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+    <span id="online-label">En ligne</span>
+  </span>
+  <form action="/pos/sessions/{{ session.id }}/cloturer" method="post" style="display:inline;" onsubmit="return confirm('Clôturer définitivement la session ? Une écriture compta sera créée. Cette action est irréversible.');">
+    <button type="submit" class="btn-ghost" style="color:var(--warm-amber); border-color:var(--warm-amber);">Clôturer le marché</button>
+  </form>
+{% endblock %}
+
+{% block content %}
+<style>
+.main-area {padding:0 !important;}
+.caisse-wrap {
+  display:grid; grid-template-columns:1fr 360px; gap:0;
+  height:calc(100vh - 60px);
+  background:var(--bg-base);
+}
+body.has-env-banner .caisse-wrap {height:calc(100vh - 90px);}
+@media (max-width:880px) {
+  .caisse-wrap {grid-template-columns:1fr; height:auto;}
+}
+
+/* === Online indicator topbar === */
+.online, .offline {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:4px 10px; border-radius:5px;
+  font-size:11px; font-weight:600; letter-spacing:0.2px;
+}
+.online {background:rgba(45,90,58,0.18); color:var(--accent-200); border:1px solid rgba(45,90,58,0.35);}
+.offline {background:rgba(212,160,86,0.13); color:var(--warm-amber); border:1px solid rgba(212,160,86,0.30);}
+
+/* === Grille produits (gauche) === */
+.produits-zone {
+  padding:14px 18px; overflow-y:auto;
+  border-right:1px solid var(--border-subtle);
+}
+.produits-zone .section-mini {
+  font-size:10.5px; color:var(--text-muted); text-transform:uppercase;
+  letter-spacing:0.5px; font-weight:600; margin-bottom:10px;
+}
+.produits-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(118px, 1fr));
+  gap:8px;
+}
+.produit-btn {
+  background:var(--bg-card); border:1px solid var(--border-subtle);
+  border-radius:10px; padding:14px 8px;
+  cursor:pointer; text-align:center;
+  transition:all 0.12s ease;
+  display:flex; flex-direction:column; gap:5px; align-items:center;
+  user-select:none;
+  min-height:88px;
+}
+.produit-btn:hover {border-color:var(--accent-500); background:var(--accent-bg-soft); transform:scale(0.98);}
+.produit-btn:active {background:var(--accent-500); border-color:var(--accent-400);}
+.produit-btn .emoji {font-size:24px; line-height:1;}
+.produit-btn .nom {font-size:11.5px; color:var(--text-primary); font-weight:500; line-height:1.2;}
+.produit-btn .prix {font-size:11px; color:var(--accent-200); font-feature-settings:'tnum'; font-weight:600;}
+.produit-btn .unite {font-size:10px; color:var(--text-muted);}
+
+.produits-empty {
+  background:var(--bg-card); border:1px dashed var(--border-default);
+  border-radius:10px; padding:32px; text-align:center;
+}
+.produits-empty p {color:var(--text-muted); font-size:12.5px; margin:0 0 12px 0;}
+
+/* === Panier (droite) === */
+.panier-zone {
+  background:var(--bg-card);
+  display:flex; flex-direction:column;
+}
+.panier-header {
+  padding:14px 18px;
+  border-bottom:1px solid var(--border-subtle);
+  display:flex; justify-content:space-between; align-items:center;
+}
+.panier-header h2 {
+  font-family:'Fraunces',serif; font-size:14px;
+  color:var(--text-primary); margin:0;
+}
+.panier-header .badge-count {
+  background:var(--accent-500); color:var(--text-primary);
+  font-size:11px; font-weight:600;
+  padding:1px 7px; border-radius:11px;
+}
+.panier-vide {display:none; padding:24px; text-align:center; color:var(--text-muted); font-size:12.5px;}
+.panier-vide.show {display:block;}
+.panier-vide svg {width:32px; height:32px; opacity:0.4; margin-bottom:10px;}
+
+.panier-body {flex:1; overflow-y:auto; padding:4px 0;}
+.panier-ligne {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 14px;
+  border-bottom:1px solid var(--border-subtle);
+}
+.panier-ligne .emo {font-size:18px;}
+.panier-ligne .info {flex:1; min-width:0;}
+.panier-ligne .info .nom-l {font-size:12px; color:var(--text-primary); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.panier-ligne .info .meta-l {font-size:10.5px; color:var(--text-muted); font-feature-settings:'tnum';}
+.panier-ligne .qty-ctrl {display:flex; align-items:center; gap:0; background:var(--bg-elev); border-radius:5px; overflow:hidden;}
+.panier-ligne .qty-ctrl button {
+  background:transparent; color:var(--text-secondary);
+  border:none; cursor:pointer; padding:4px 8px;
+  font-size:14px; font-family:inherit; font-weight:600;
+}
+.panier-ligne .qty-ctrl button:hover {color:var(--accent-200); background:var(--accent-bg-soft);}
+.panier-ligne .qty-ctrl .qty-val {min-width:24px; text-align:center; font-size:11.5px; color:var(--text-primary); font-weight:600;}
+.panier-ligne .ligne-total {font-size:12px; color:var(--text-primary); font-feature-settings:'tnum'; font-weight:600; min-width:54px; text-align:right;}
+.panier-ligne .remove-btn {background:none; border:none; cursor:pointer; color:var(--text-muted); padding:3px; line-height:0;}
+.panier-ligne .remove-btn:hover {color:var(--warm-terra);}
+
+.panier-footer {
+  padding:14px 18px; border-top:1px solid var(--border-default);
+  background:var(--bg-elev);
+}
+.panier-total-row {display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px;}
+.panier-total-row .label {font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;}
+.panier-total-row .val {font-family:'Fraunces',serif; font-size:24px; color:var(--accent-200); font-weight:600; font-feature-settings:'tnum';}
+.btn-encaisser {
+  width:100%; padding:14px;
+  background:linear-gradient(180deg, var(--accent-500), var(--accent-600));
+  color:var(--text-primary); border:1px solid var(--accent-600);
+  border-radius:8px; cursor:pointer;
+  font-size:14px; font-weight:700; font-family:inherit;
+  box-shadow:0 1px 0 rgba(255,255,255,0.06) inset, 0 2px 6px rgba(0,0,0,0.3);
+}
+.btn-encaisser:hover:not(:disabled) {filter:brightness(1.1);}
+.btn-encaisser:disabled {opacity:0.4; cursor:not-allowed;}
+
+/* === Stats footer === */
+.session-stats {
+  padding:10px 18px;
+  border-top:1px solid var(--border-subtle);
+  font-size:11px; color:var(--text-secondary);
+  display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+}
+.session-stats .stat strong {color:var(--text-primary);}
+
+/* === Modal encaissement === */
+.modal-overlay {
+  display:none; position:fixed; inset:0; z-index:1000;
+  background:rgba(0,0,0,0.65); backdrop-filter:blur(4px);
+  align-items:center; justify-content:center;
+}
+.modal-overlay.open {display:flex;}
+.modal {
+  background:var(--bg-card); border:1px solid var(--border-default);
+  border-radius:14px; padding:24px;
+  max-width:440px; width:90%;
+  box-shadow:0 10px 40px rgba(0,0,0,0.5);
+}
+.modal h3 {margin:0 0 6px 0; font-family:'Fraunces',serif; font-size:18px; color:var(--text-primary);}
+.modal p.sub {margin:0 0 18px 0; font-size:13px; color:var(--text-secondary);}
+.modal .total-rappel {
+  background:var(--bg-elev); border-radius:8px; padding:12px 16px;
+  margin-bottom:18px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.modal .total-rappel .lbl {font-size:11px; color:var(--text-muted); text-transform:uppercase;}
+.modal .total-rappel .val {font-family:'Fraunces',serif; font-size:22px; color:var(--accent-200); font-weight:600;}
+
+.payment-options {display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px;}
+.payment-opt {
+  padding:14px 8px; cursor:pointer;
+  background:var(--bg-elev); border:2px solid var(--border-subtle);
+  border-radius:8px; text-align:center;
+  font-size:12px; color:var(--text-primary); font-weight:500;
+  transition:all 0.12s;
+  user-select:none;
+}
+.payment-opt:hover {border-color:var(--accent-400);}
+.payment-opt.selected {border-color:var(--accent-500); background:var(--accent-bg-soft); color:var(--accent-200);}
+.payment-opt .emo-pay {font-size:22px; display:block; margin-bottom:4px;}
+
+.modal-actions {display:flex; gap:8px; justify-content:flex-end;}
+.modal-actions button {
+  padding:9px 18px; border-radius:6px; font-size:13px; font-weight:600;
+  border:1px solid; cursor:pointer; font-family:inherit;
+}
+.btn-cancel {background:transparent; border-color:var(--border-default); color:var(--text-secondary);}
+.btn-confirm {background:linear-gradient(180deg, var(--accent-500), var(--accent-600)); border-color:var(--accent-600); color:var(--text-primary);}
+.btn-confirm:disabled {opacity:0.5; cursor:not-allowed;}
+</style>
+
+<div class="caisse-wrap">
+
+  <!-- === Grille produits === -->
+  <div class="produits-zone">
+    <div class="section-mini">Catalogue ({{ produits | length }} produits actifs)</div>
+    {% if produits %}
+    <div class="produits-grid" id="produitsGrid">
+      {% for p in produits %}
+      <button class="produit-btn" type="button"
+              data-id="{{ p.id }}"
+              data-nom="{{ p.nom }}"
+              data-prix="{{ p.prix_unitaire }}"
+              data-unite="{{ p.unite }}"
+              data-emoji="{{ p.emoji or '' }}"
+              onclick="addToPanier({{ p.id }})">
+        <div class="emoji">{{ p.emoji or '🌿' }}</div>
+        <div class="nom">{{ p.nom }}</div>
+        <div class="prix">{{ "%.2f"|format(p.prix_unitaire) }} €</div>
+        <div class="unite">/ {{ p.unite }}</div>
+      </button>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="produits-empty">
+      <p>Aucun produit actif au catalogue.</p>
+      <a href="/pos/produits" class="btn-ghost" style="display:inline-block; padding:7px 14px; border:1px solid var(--accent-500); border-radius:6px; color:var(--accent-200); text-decoration:none;">+ Ajouter mes produits</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- === Panier === -->
+  <div class="panier-zone">
+    <div class="panier-header">
+      <h2>Panier <span class="badge-count" id="panierCount">0</span></h2>
+      <button type="button" id="btnReset" onclick="resetPanier()" class="btn-ghost" style="font-size:11px; padding:4px 10px;">Vider</button>
+    </div>
+
+    <div class="panier-vide show" id="panierVide">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <div>Touche un produit pour l'ajouter</div>
+    </div>
+
+    <div class="panier-body" id="panierBody"></div>
+
+    <div class="panier-footer">
+      <div class="panier-total-row">
+        <span class="label">Total à encaisser</span>
+        <span class="val" id="panierTotal">0,00 €</span>
+      </div>
+      <button class="btn-encaisser" id="btnEncaisser" type="button" disabled onclick="openModalEncaissement()">Encaisser</button>
+    </div>
+
+    <div class="session-stats">
+      <div class="stat">Session : <strong id="sessionVentes">{{ session.nb_ventes }}</strong> ventes</div>
+      <div class="stat">Total : <strong id="sessionTotal">{{ "%.2f"|format(session.total_ttc) }} €</strong></div>
+    </div>
+  </div>
+</div>
+
+<!-- === Modal encaissement === -->
+<div class="modal-overlay" id="modalEncaissement" onclick="if(event.target===this) closeModal()">
+  <div class="modal">
+    <h3>Encaisser la vente</h3>
+    <p class="sub">Choisis le mode de paiement utilisé par le client.</p>
+    <div class="total-rappel">
+      <span class="lbl">Total</span>
+      <span class="val" id="modalTotal">0,00 €</span>
+    </div>
+    <div class="payment-options">
+      <div class="payment-opt" data-mode="especes" onclick="selectPayment('especes')">
+        <span class="emo-pay">💵</span>Espèces
+      </div>
+      <div class="payment-opt" data-mode="cb" onclick="selectPayment('cb')">
+        <span class="emo-pay">💳</span>Carte
+      </div>
+      <div class="payment-opt" data-mode="cheque" onclick="selectPayment('cheque')">
+        <span class="emo-pay">🧾</span>Chèque
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn-cancel" onclick="closeModal()">Annuler</button>
+      <button type="button" class="btn-confirm" id="btnConfirmVente" onclick="confirmerVente()" disabled>Valider la vente</button>
+    </div>
+  </div>
+</div>
+
+<!-- === Form caché pour POST vente === -->
+<form id="formVente" action="/pos/sessions/{{ session.id }}/vente" method="post" style="display:none;">
+  <input type="hidden" name="lignes_json" id="lignes_json">
+  <input type="hidden" name="total_ttc" id="total_ttc">
+  <input type="hidden" name="mode_paiement" id="mode_paiement">
+  <input type="hidden" name="offline_uuid" id="offline_uuid">
+</form>
+
+<script>
+// ============ État panier ============
+const SESSION_ID = {{ session.id }};
+let panier = {}; // {produitId: {nom, prix, unite, emoji, qte}}
+let modePaiementSelected = null;
+
+function fmtEur(n) { return n.toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €'; }
+
+function addToPanier(produitId) {
+  const btn = document.querySelector(`.produit-btn[data-id="${produitId}"]`);
+  if (!btn) return;
+  if (!panier[produitId]) {
+    panier[produitId] = {
+      id: produitId,
+      nom: btn.dataset.nom,
+      prix: parseFloat(btn.dataset.prix),
+      unite: btn.dataset.unite,
+      emoji: btn.dataset.emoji,
+      qte: 0
+    };
+  }
+  panier[produitId].qte += 1;
+  renderPanier();
+}
+
+function changerQte(produitId, delta) {
+  if (!panier[produitId]) return;
+  panier[produitId].qte += delta;
+  if (panier[produitId].qte <= 0) delete panier[produitId];
+  renderPanier();
+}
+
+function removeFromPanier(produitId) {
+  delete panier[produitId];
+  renderPanier();
+}
+
+function resetPanier() {
+  panier = {};
+  renderPanier();
+}
+
+function totalPanier() {
+  return Object.values(panier).reduce((sum, l) => sum + l.prix * l.qte, 0);
+}
+
+function renderPanier() {
+  const body = document.getElementById('panierBody');
+  const vide = document.getElementById('panierVide');
+  const count = document.getElementById('panierCount');
+  const total = document.getElementById('panierTotal');
+  const btnEnc = document.getElementById('btnEncaisser');
+
+  const lignes = Object.values(panier);
+  count.textContent = lignes.length;
+
+  if (lignes.length === 0) {
+    body.innerHTML = '';
+    vide.classList.add('show');
+    total.textContent = '0,00 €';
+    btnEnc.disabled = true;
+    return;
+  }
+
+  vide.classList.remove('show');
+  body.innerHTML = lignes.map(l => `
+    <div class="panier-ligne">
+      <span class="emo">${l.emoji || '🌿'}</span>
+      <div class="info">
+        <div class="nom-l">${escapeHtml(l.nom)}</div>
+        <div class="meta-l">${fmtEur(l.prix)} / ${escapeHtml(l.unite)}</div>
+      </div>
+      <div class="qty-ctrl">
+        <button type="button" onclick="changerQte(${l.id}, -1)">−</button>
+        <span class="qty-val">${l.qte}</span>
+        <button type="button" onclick="changerQte(${l.id}, 1)">+</button>
+      </div>
+      <div class="ligne-total">${fmtEur(l.prix * l.qte)}</div>
+      <button type="button" class="remove-btn" onclick="removeFromPanier(${l.id})" title="Retirer">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  `).join('');
+
+  total.textContent = fmtEur(totalPanier());
+  btnEnc.disabled = false;
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ============ Modal encaissement ============
+function openModalEncaissement() {
+  if (Object.keys(panier).length === 0) return;
+  document.getElementById('modalTotal').textContent = fmtEur(totalPanier());
+  modePaiementSelected = null;
+  document.querySelectorAll('.payment-opt').forEach(o => o.classList.remove('selected'));
+  document.getElementById('btnConfirmVente').disabled = true;
+  document.getElementById('modalEncaissement').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalEncaissement').classList.remove('open');
+}
+
+function selectPayment(mode) {
+  modePaiementSelected = mode;
+  document.querySelectorAll('.payment-opt').forEach(o => {
+    o.classList.toggle('selected', o.dataset.mode === mode);
+  });
+  document.getElementById('btnConfirmVente').disabled = false;
+}
+
+function confirmerVente() {
+  if (!modePaiementSelected || Object.keys(panier).length === 0) return;
+  const lignes = Object.values(panier).map(l => ({
+    produit_id: l.id, nom: l.nom, emoji: l.emoji, prix: l.prix, unite: l.unite, qte: l.qte, total: l.prix * l.qte
+  }));
+  const total = totalPanier();
+  const uuid = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('pos-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+
+  document.getElementById('lignes_json').value = JSON.stringify(lignes);
+  document.getElementById('total_ttc').value = total.toFixed(2);
+  document.getElementById('mode_paiement').value = modePaiementSelected;
+  document.getElementById('offline_uuid').value = uuid;
+
+  // Si offline → push queue + UI optimiste + sync ultérieure (registered ailleurs phase 3)
+  if (!navigator.onLine) {
+    queueVenteOffline({
+      session_id: SESSION_ID, lignes, total_ttc: total,
+      mode_paiement: modePaiementSelected, offline_uuid: uuid
+    });
+    onVenteEnregistree(total, modePaiementSelected);
+    closeModal();
+    resetPanier();
+    return;
+  }
+  // En ligne : POST classique
+  document.getElementById('formVente').submit();
+}
+
+function onVenteEnregistree(total, mode) {
+  // Mise à jour optimiste affichage session
+  const vEl = document.getElementById('sessionVentes');
+  const tEl = document.getElementById('sessionTotal');
+  vEl.textContent = (parseInt(vEl.textContent) || 0) + 1;
+  tEl.textContent = fmtEur((parseFloat(tEl.textContent) || 0) + total);
+}
+
+// ============ Offline queue (Phase 3 wire) ============
+function queueVenteOffline(payload) {
+  const key = `pos-queue-${SESSION_ID}`;
+  const queue = JSON.parse(localStorage.getItem(key) || '[]');
+  queue.push(payload);
+  localStorage.setItem(key, JSON.stringify(queue));
+  console.info('[POS] Vente offline mise en queue', payload.offline_uuid);
+}
+
+async function flushOfflineQueue() {
+  const key = `pos-queue-${SESSION_ID}`;
+  const queue = JSON.parse(localStorage.getItem(key) || '[]');
+  if (queue.length === 0) return;
+  console.info(`[POS] Flush queue offline : ${queue.length} ventes`);
+  try {
+    const r = await fetch(`/api/pos/sessions/${SESSION_ID}/sync`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ventes: queue})
+    });
+    if (r.ok) {
+      localStorage.removeItem(key);
+      console.info('[POS] Queue offline vidée');
+      // Rafraîchit la page pour voir les ventes synchronisées
+      setTimeout(() => location.reload(), 800);
+    }
+  } catch (err) {
+    console.warn('[POS] Flush queue échec :', err);
+  }
+}
+
+// Online/offline indicator
+function updateOnlineState() {
+  const ind = document.getElementById('online-indicator');
+  const lbl = document.getElementById('online-label');
+  if (navigator.onLine) {
+    ind.classList.remove('offline'); ind.classList.add('online');
+    lbl.textContent = 'En ligne';
+    flushOfflineQueue();
+  } else {
+    ind.classList.remove('online'); ind.classList.add('offline');
+    lbl.textContent = 'Hors ligne';
+  }
+}
+window.addEventListener('online', updateOnlineState);
+window.addEventListener('offline', updateOnlineState);
+window.addEventListener('load', updateOnlineState);
+
+// Service worker + manifest PWA (Phase 3)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/static/pos/sw.js', {scope: '/pos/'})
+    .then((reg) => {
+      // Background sync : flush automatique au retour connexion
+      if ('sync' in reg) {
+        reg.sync.register('flush-pos').catch(() => {});
+      }
+    })
+    .catch(() => {});
+
+  // Le SW peut nous notifier de flush la queue
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'flush-queue') {
+      flushOfflineQueue();
+    }
+  });
+}
+</script>
+{% endblock %}

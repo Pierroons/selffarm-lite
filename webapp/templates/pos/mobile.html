@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
+<title>SelfPOS Mobile — Marché</title>
+<meta name="theme-color" content="#2d5a3a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/static/pos/manifest-mobile.json">
+<link rel="icon" type="image/svg+xml" href="/static/pos/icon.svg">
+<style>
+:root {
+  --bg-base:        #0a0f0d;
+  --bg-card:        #0f1814;
+  --bg-elev:        #16261e;
+  --border-subtle:  #1c302a;
+  --border-default: #2a4035;
+  --text-primary:   #e8efe9;
+  --text-secondary: #9bb09f;
+  --text-muted:     #6a8070;
+  --accent-200:     #86a890;
+  --accent-400:     #4a7c5e;
+  --accent-500:     #2d5a3a;
+  --accent-600:     #1f4e3d;
+  --accent-bg-soft: rgba(45, 90, 58, 0.14);
+  --warm-amber:     #d4a056;
+  --warm-terra:     #b85751;
+}
+* {box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html, body {margin:0; padding:0; height:100%; background:var(--bg-base); color:var(--text-primary); font-family:-apple-system,BlinkMacSystemFont,"Inter",system-ui,sans-serif; -webkit-font-smoothing:antialiased; overscroll-behavior:none;}
+button {font-family:inherit;}
+a {color:var(--accent-200); text-decoration:none;}
+
+/* === Layout app shell === */
+.app {display:flex; flex-direction:column; height:100vh; height:100dvh;}
+.topbar {
+  background:var(--bg-elev); border-bottom:1px solid var(--border-subtle);
+  padding:env(safe-area-inset-top, 12px) 14px 12px;
+  display:flex; align-items:center; gap:10px; flex-shrink:0;
+}
+.topbar h1 {margin:0; font-size:15px; flex:1; font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.topbar .status-dot {width:8px; height:8px; border-radius:50%;}
+.status-dot.online {background:var(--accent-400);}
+.status-dot.offline {background:var(--warm-amber);}
+.topbar .status-text {font-size:10.5px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.4px;}
+
+.content {flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px;}
+
+.bottom-nav {
+  background:var(--bg-elev); border-top:1px solid var(--border-subtle);
+  display:flex; flex-shrink:0;
+  padding-bottom:env(safe-area-inset-bottom, 0);
+}
+.bottom-nav .tab-btn {
+  flex:1; padding:11px 4px;
+  background:transparent; border:none; color:var(--text-muted);
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  font-size:10px; font-weight:500;
+  cursor:pointer; transition:color 0.1s;
+}
+.bottom-nav .tab-btn svg {width:20px; height:20px;}
+.bottom-nav .tab-btn.active {color:var(--accent-200);}
+
+/* === Cards / sections === */
+.card {background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:12px; padding:16px; margin-bottom:14px;}
+.card h2 {margin:0 0 10px 0; font-size:15px; font-weight:600;}
+.card p {margin:0 0 12px 0; color:var(--text-secondary); font-size:13px; line-height:1.4;}
+
+/* === Buttons === */
+.btn {display:inline-block; padding:12px 18px; border:1px solid var(--accent-600); background:linear-gradient(180deg, var(--accent-500), var(--accent-600)); color:var(--text-primary); border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; text-align:center; text-decoration:none; width:100%;}
+.btn:hover, .btn:active {filter:brightness(1.1);}
+.btn:disabled {opacity:0.4; cursor:not-allowed;}
+.btn-ghost {background:transparent; border:1px solid var(--border-default); color:var(--text-secondary);}
+.btn-ghost:hover {border-color:var(--accent-500); color:var(--accent-200);}
+.btn-warn {background:linear-gradient(180deg, var(--warm-amber), #b8884e); border-color:#b8884e; color:#1c1917;}
+
+/* === Form === */
+.field {display:flex; flex-direction:column; gap:5px; margin-bottom:12px;}
+.field label {font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px; font-weight:600;}
+.field input, .field select, .field textarea {background:#0a1410; border:1px solid var(--border-default); color:var(--text-primary); padding:11px 13px; border-radius:7px; font-size:15px; font-family:inherit;}
+.field input:focus, .field select:focus {outline:none; border-color:var(--accent-500); box-shadow:0 0 0 3px var(--accent-bg-soft);}
+
+/* === Catalog grid (caisse) === */
+.produits-grid {display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:8px;}
+.produit-btn {
+  background:var(--bg-card); border:1px solid var(--border-subtle);
+  border-radius:11px; padding:10px 6px;
+  cursor:pointer; user-select:none;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  min-height:96px;
+}
+.produit-btn:active {transform:scale(0.96); background:var(--accent-500);}
+.produit-btn .emoji {font-size:24px; line-height:1;}
+.produit-btn .nom {font-size:11.5px; font-weight:500; line-height:1.15; text-align:center;}
+.produit-btn .prix {font-size:11px; color:var(--accent-200); font-weight:600;}
+.produit-btn .stock-info {font-size:9.5px; color:var(--text-muted);}
+
+/* === Panier === */
+.panier {position:fixed; bottom:64px; left:0; right:0; background:var(--bg-elev); border-top:2px solid var(--accent-500); padding:12px 16px env(safe-area-inset-bottom, 12px); z-index:100; display:none;}
+.panier.show {display:block;}
+.panier-row {display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--border-subtle); font-size:13px;}
+.panier-row:last-of-type {border-bottom:none;}
+.panier-row .emo {font-size:18px;}
+.panier-row .info {flex:1; min-width:0;}
+.panier-row .info .nom-l {font-size:13px; color:var(--text-primary);}
+.panier-row .info .meta-l {font-size:10.5px; color:var(--text-muted);}
+.panier-row .qty-ctrl {display:flex; align-items:center; gap:0; background:var(--bg-card); border-radius:5px;}
+.panier-row .qty-ctrl button {background:transparent; color:var(--text-secondary); border:none; padding:4px 9px; font-size:16px; font-weight:600; cursor:pointer;}
+.panier-row .qty-ctrl .qty-val {min-width:26px; text-align:center; font-size:12px; font-weight:600;}
+.panier-row .total-l {min-width:60px; text-align:right; font-weight:600; font-feature-settings:'tnum';}
+
+.panier-bar {display:flex; gap:8px; margin-top:10px;}
+.panier-bar .total {flex:1; font-family:'Fraunces',serif; font-size:18px; color:var(--accent-200); font-weight:600; display:flex; align-items:center;}
+.panier-bar .btn-encaisser {flex:1; padding:13px; font-size:14px;}
+
+/* === Modal === */
+.modal {position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; display:none; align-items:flex-end; justify-content:center;}
+.modal.open {display:flex;}
+.modal-content {background:var(--bg-card); border-top:2px solid var(--accent-500); padding:18px 18px env(safe-area-inset-bottom, 24px); border-radius:14px 14px 0 0; width:100%; max-width:560px; max-height:85vh; overflow-y:auto;}
+.modal h3 {margin:0 0 6px 0; font-size:16px; font-weight:600;}
+.modal .sub {margin:0 0 14px 0; font-size:12.5px; color:var(--text-secondary);}
+.modal-actions {display:flex; gap:8px; margin-top:14px;}
+.modal-actions button {flex:1; padding:11px;}
+
+.payment-grid {display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px;}
+.payment-grid .opt {padding:14px 8px; background:var(--bg-elev); border:2px solid var(--border-subtle); border-radius:8px; text-align:center; font-size:12.5px; cursor:pointer;}
+.payment-grid .opt.selected {border-color:var(--accent-500); background:var(--accent-bg-soft); color:var(--accent-200);}
+.payment-grid .opt .emo-pay {font-size:24px; display:block; margin-bottom:4px;}
+
+/* === Empty / hint === */
+.empty {text-align:center; padding:40px 20px; color:var(--text-muted); font-size:13px;}
+.empty svg {width:42px; height:42px; opacity:0.4; margin-bottom:12px;}
+
+/* === Toast === */
+.toast {position:fixed; top:env(safe-area-inset-top, 14px); left:14px; right:14px; background:var(--bg-card); border-left:4px solid var(--accent-500); padding:12px 14px; border-radius:8px; font-size:13px; z-index:300; box-shadow:0 4px 16px rgba(0,0,0,0.4); display:none;}
+.toast.show {display:block;}
+.toast.warn {border-left-color:var(--warm-amber);}
+.toast.error {border-left-color:var(--warm-terra);}
+
+/* === Section toggle visibility produits === */
+.toggle-row {display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border-subtle);}
+.toggle-row:last-child {border-bottom:none;}
+.toggle-row .emo {font-size:22px;}
+.toggle-row .info {flex:1;}
+.toggle-row .info .nom {font-size:14px;}
+.toggle-row .info .meta {font-size:11px; color:var(--text-muted);}
+
+.switch {position:relative; width:42px; height:24px; flex-shrink:0;}
+.switch input {display:none;}
+.switch span {position:absolute; inset:0; background:var(--border-default); border-radius:12px; cursor:pointer; transition:background 0.2s;}
+.switch span::before {content:''; position:absolute; left:3px; top:3px; width:18px; height:18px; background:#fff; border-radius:50%; transition:transform 0.2s;}
+.switch input:checked + span {background:var(--accent-500);}
+.switch input:checked + span::before {transform:translateX(18px);}
+
+/* === Tableau résidus (fin de marché) === */
+.residus-table {width:100%; background:var(--bg-card); border-radius:10px; overflow:hidden;}
+.residus-table .row {display:grid; grid-template-columns:1fr auto auto; gap:8px; padding:12px; border-bottom:1px solid var(--border-subtle); align-items:center;}
+.residus-table .row:last-child {border-bottom:none;}
+.residus-table .info-prod {min-width:0;}
+.residus-table .info-prod .nom-r {font-size:14px; font-weight:500;}
+.residus-table .info-prod .meta-r {font-size:11px; color:var(--text-muted);}
+.residus-table input[type=number] {width:64px; padding:7px 8px; background:#0a1410; border:1px solid var(--border-default); color:var(--text-primary); border-radius:5px; font-size:12.5px;}
+.residus-table select {padding:7px 8px; background:#0a1410; border:1px solid var(--border-default); color:var(--text-primary); border-radius:5px; font-size:12px; font-family:inherit; max-width:130px;}
+
+/* === Sessions list === */
+.session-card {background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px; padding:12px 14px; margin-bottom:10px;}
+.session-card .head {display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
+.session-card .lieu {font-size:14px; font-weight:500;}
+.session-card .total {color:var(--accent-200); font-weight:600; font-feature-settings:'tnum';}
+.session-card .meta {font-size:11.5px; color:var(--text-muted);}
+
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <button id="pcStatusBtn" title="Statut connexion PC SelfFarm — clic pour re-checker" style="background:transparent; border:1px solid var(--border-default); padding:4px 8px; border-radius:6px; display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--text-secondary); font-size:11px;">
+      <span class="status-dot" id="pcDot" style="background:#666;"></span>
+      <span id="pcLabel">PC ?</span>
+    </button>
+    <h1 id="screenTitle">SelfPOS Mobile</h1>
+    <span class="status-text" id="netText" style="margin-left:auto;">Hors ligne</span>
+  </div>
+
+  <!-- Content (zone scrollable) -->
+  <div class="content" id="content"></div>
+
+  <!-- Panier flottant -->
+  <div class="panier" id="panier"></div>
+
+  <!-- Bottom nav -->
+  <div class="bottom-nav" id="bottomNav">
+    <button class="tab-btn active" data-screen="caisse">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <span>Caisse</span>
+    </button>
+    <button class="tab-btn" data-screen="catalogue">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      <span>Catalogue</span>
+    </button>
+    <button class="tab-btn" data-screen="sessions">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <span>Sessions</span>
+    </button>
+    <button class="tab-btn" data-screen="coffre">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <span>Coffre</span>
+    </button>
+    <button class="tab-btn" data-screen="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v10m11-11h-6M7 12H1"/></svg>
+      <span>Réglages</span>
+    </button>
+  </div>
+</div>
+
+<!-- Modal encaissement -->
+<div class="modal" id="modalPay" onclick="if(event.target===this) closeModalPay()">
+  <div class="modal-content">
+    <h3>Encaisser</h3>
+    <p class="sub">Mode de paiement utilisé</p>
+    <div style="background:var(--bg-elev); padding:12px 16px; border-radius:8px; margin-bottom:14px; display:flex; justify-content:space-between;">
+      <span style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Total</span>
+      <span id="modalPayTotal" style="font-family:'Fraunces',serif; font-size:22px; color:var(--accent-200); font-weight:600;"></span>
+    </div>
+    <div class="payment-grid">
+      <div class="opt" data-mode="especes" onclick="selectPay('especes')"><span class="emo-pay">💵</span>Espèces</div>
+      <div class="opt" data-mode="cb" onclick="selectPay('cb')"><span class="emo-pay">💳</span>Carte</div>
+      <div class="opt" data-mode="cheque" onclick="selectPay('cheque')"><span class="emo-pay">🧾</span>Chèque</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModalPay()">Annuler</button>
+      <button class="btn" id="btnConfirmPay" disabled onclick="confirmPay()">Valider</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// SelfPOS Mobile PWA — Single-page vanilla JS + IndexedDB
+// ============================================================
+
+const DB_NAME = 'selfpos-mobile';
+const DB_VERSION = 2;
+const STORES = ['catalogue', 'sessions', 'ventes', 'chargement', 'residus', 'settings', 'backups'];
+
+// ============ IndexedDB wrapper minimaliste (promises) ============
+let dbInstance = null;
+function openDB() {
+  if (dbInstance) return Promise.resolve(dbInstance);
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('catalogue'))
+        db.createObjectStore('catalogue', { keyPath: 'id' });
+      if (!db.objectStoreNames.contains('sessions'))
+        db.createObjectStore('sessions', { keyPath: 'local_id', autoIncrement: true });
+      if (!db.objectStoreNames.contains('ventes')) {
+        const s = db.createObjectStore('ventes', { keyPath: 'offline_uuid' });
+        s.createIndex('session', 'session_local_id', { unique: false });
+      }
+      if (!db.objectStoreNames.contains('chargement')) {
+        const s = db.createObjectStore('chargement', { keyPath: ['session_local_id', 'produit_id'] });
+      }
+      if (!db.objectStoreNames.contains('residus')) {
+        const s = db.createObjectStore('residus', { keyPath: ['session_local_id', 'produit_id'] });
+      }
+      if (!db.objectStoreNames.contains('settings'))
+        db.createObjectStore('settings', { keyPath: 'key' });
+      if (!db.objectStoreNames.contains('backups'))
+        db.createObjectStore('backups', { keyPath: 'sha' });
+    };
+    req.onsuccess = () => { dbInstance = req.result; resolve(dbInstance); };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbPut(storeName, value) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite');
+    const req = tx.objectStore(storeName).put(value);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbGet(storeName, key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly');
+    const req = tx.objectStore(storeName).get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbGetAll(storeName) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly');
+    const req = tx.objectStore(storeName).getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbDelete(storeName, key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite');
+    const req = tx.objectStore(storeName).delete(key);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbClear(storeName) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite');
+    const req = tx.objectStore(storeName).clear();
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// ============ App state ============
+const app = {
+  currentScreen: 'caisse',
+  catalogue: [],
+  visibility: {}, // produit_id → bool
+  currentSession: null, // session locale active
+  panier: {}, // produit_id → {qte, ...}
+  payMode: null,
+  pcUrl: '',       // URL serveur PC SelfFarm (ex: http://192.168.1.10:8003)
+  pcStatus: 'unknown' // 'unknown' | 'connected' | 'disconnected' | 'not_configured'
+};
+
+// ============ UI helpers ============
+function toast(msg, type = 'info', delay = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + (type === 'warn' ? 'warn' : type === 'error' ? 'error' : '') + ' show';
+  setTimeout(() => t.classList.remove('show'), delay);
+}
+
+function fmtEur(n) { return Number(n || 0).toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €'; }
+function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function setScreen(name) {
+  app.currentScreen = name;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.screen === name));
+  const renderers = {caisse: renderCaisse, catalogue: renderCatalogue, sessions: renderSessions, coffre: renderCoffre, settings: renderSettings};
+  if (renderers[name]) renderers[name]();
+  // Cache panier flottant si pas sur caisse
+  document.getElementById('panier').classList.toggle('show', name === 'caisse' && Object.keys(app.panier).length > 0);
+}
+
+document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => setScreen(b.dataset.screen)));
+
+// ============ Online indicator ============
+function updateNet() {
+  const txt = document.getElementById('netText');
+  if (navigator.onLine) txt.textContent = 'En ligne';
+  else txt.textContent = 'Hors ligne';
+  // Online change → recheck PC
+  checkPCConnection();
+}
+window.addEventListener('online', updateNet);
+window.addEventListener('offline', updateNet);
+
+// ============ PC SelfFarm connection check ============
+async function checkPCConnection() {
+  const dot = document.getElementById('pcDot');
+  const label = document.getElementById('pcLabel');
+  if (!app.pcUrl || !app.pcUrl.trim()) {
+    app.pcStatus = 'not_configured';
+    dot.style.background = '#666';
+    label.textContent = 'PC ?';
+    return;
+  }
+  if (!navigator.onLine) {
+    app.pcStatus = 'disconnected';
+    dot.style.background = '#d4a056';
+    label.textContent = 'PC ⚠';
+    return;
+  }
+  try {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 3000);
+    const r = await fetch(app.pcUrl.replace(/\/$/, '') + '/api/pos/health', {
+      signal: controller.signal,
+      mode: 'cors',
+      cache: 'no-store'
+    });
+    if (r.ok) {
+      const data = await r.json();
+      if (data.ok) {
+        app.pcStatus = 'connected';
+        dot.style.background = '#4a7c5e';
+        label.textContent = 'PC ✓';
+        return;
+      }
+    }
+    app.pcStatus = 'disconnected';
+    dot.style.background = '#b85751';
+    label.textContent = 'PC ✗';
+  } catch (err) {
+    app.pcStatus = 'disconnected';
+    dot.style.background = '#b85751';
+    label.textContent = 'PC ✗';
+  }
+}
+
+document.getElementById('pcStatusBtn').addEventListener('click', () => {
+  // Toast feedback puis check
+  toast('Vérification connexion PC…', 'info', 1500);
+  checkPCConnection().then(() => {
+    if (app.pcStatus === 'connected') toast('✓ PC SelfFarm joignable', 'info');
+    else if (app.pcStatus === 'not_configured') toast('Configure l\'URL du PC dans Réglages', 'warn', 3000);
+    else toast('PC injoignable — vérifie WiFi/hotspot', 'error', 3000);
+  });
+});
+
+// Polling auto toutes les 10s
+setInterval(checkPCConnection, 10000);
+
+// ============ Screen: Caisse ============
+async function renderCaisse() {
+  document.getElementById('screenTitle').textContent = app.currentSession
+    ? `Marché ${app.currentSession.lieu}`
+    : 'SelfPOS';
+
+  const content = document.getElementById('content');
+  if (!app.catalogue || app.catalogue.length === 0) {
+    content.innerHTML = `
+      <div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <p>Catalogue vide.</p>
+        <p>Va sur <strong>Réglages</strong> pour importer ton catalogue depuis SelfFarm.</p>
+      </div>`;
+    return;
+  }
+
+  if (!app.currentSession) {
+    content.innerHTML = `
+      <div class="card">
+        <h2>Nouveau marché</h2>
+        <p>Avant d'encaisser, prépare ton chargement.</p>
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="newSessDate" value="${new Date().toISOString().slice(0,10)}">
+        </div>
+        <div class="field">
+          <label>Lieu</label>
+          <input type="text" id="newSessLieu" placeholder="ex : Marché de Sainte-Foy">
+        </div>
+        <button class="btn" onclick="startNewSession()">Démarrer le marché →</button>
+      </div>`;
+    return;
+  }
+
+  // Session active → grille produits chargés + visibles
+  const charges = await dbGetAll('chargement');
+  const sessionCharges = charges.filter(c => c.session_local_id === app.currentSession.local_id);
+  const chargesMap = new Map(sessionCharges.map(c => [c.produit_id, c]));
+
+  const produitsAffiches = app.catalogue
+    .filter(p => app.visibility[p.id] !== false)
+    .filter(p => chargesMap.has(p.id));
+
+  if (produitsAffiches.length === 0) {
+    content.innerHTML = `
+      <div class="card">
+        <h2>Préparer le chargement</h2>
+        <p>Sélectionne les produits que tu emportes pour ce marché.</p>
+        <button class="btn" onclick="setScreen('catalogue')">Aller au catalogue →</button>
+      </div>`;
+    return;
+  }
+
+  // Calcul stock restant par produit (chargé - vendu en cette session)
+  const ventes = (await dbGetAll('ventes')).filter(v => v.session_local_id === app.currentSession.local_id);
+  const venduParProduit = {};
+  ventes.forEach(v => (v.lignes || []).forEach(l => {
+    venduParProduit[l.produit_id] = (venduParProduit[l.produit_id] || 0) + Number(l.qte || 0);
+  }));
+
+  content.innerHTML = `
+    <div style="margin-bottom:10px; padding:10px 14px; background:var(--bg-elev); border-radius:8px; font-size:12px; color:var(--text-secondary); display:flex; justify-content:space-between;">
+      <span>${ventes.length} vente${ventes.length>1?'s':''}</span>
+      <span style="color:var(--accent-200); font-weight:600;">${fmtEur(ventes.reduce((s, v) => s + Number(v.total_ttc || 0), 0))}</span>
+      <a href="#" onclick="event.preventDefault(); finMarche()" style="color:var(--warm-amber);">Fin de marché →</a>
+    </div>
+    <div class="produits-grid" id="grid"></div>
+  `;
+  const grid = document.getElementById('grid');
+  produitsAffiches.forEach(p => {
+    const chg = chargesMap.get(p.id);
+    const charged = chg.quantite_chargee;
+    const vendu = venduParProduit[p.id] || 0;
+    const reste = charged != null ? Math.max(0, charged - vendu) : null;
+    const btn = document.createElement('button');
+    btn.className = 'produit-btn';
+    btn.innerHTML = `
+      <div class="emoji">${p.emoji || '🌿'}</div>
+      <div class="nom">${escapeHtml(p.nom)}</div>
+      <div class="prix">${fmtEur(p.prix_unitaire)}</div>
+      ${reste !== null ? `<div class="stock-info">${reste.toFixed(1)} / ${charged} ${escapeHtml(p.unite)}</div>` : `<div class="stock-info">/ ${escapeHtml(p.unite)}</div>`}
+    `;
+    btn.addEventListener('click', () => addToPanier(p));
+    grid.appendChild(btn);
+  });
+  renderPanier();
+}
+
+function addToPanier(p) {
+  if (!app.panier[p.id]) {
+    app.panier[p.id] = {id: p.id, nom: p.nom, prix: p.prix_unitaire, unite: p.unite, emoji: p.emoji, qte: 0};
+  }
+  app.panier[p.id].qte += 1;
+  renderPanier();
+}
+
+function changerQte(produitId, delta) {
+  if (!app.panier[produitId]) return;
+  app.panier[produitId].qte += delta;
+  if (app.panier[produitId].qte <= 0) delete app.panier[produitId];
+  renderPanier();
+}
+
+function totalPanier() {
+  return Object.values(app.panier).reduce((s, l) => s + l.prix * l.qte, 0);
+}
+
+function renderPanier() {
+  const div = document.getElementById('panier');
+  const lignes = Object.values(app.panier);
+  if (lignes.length === 0) { div.classList.remove('show'); div.innerHTML = ''; return; }
+  div.classList.add('show');
+  div.innerHTML = `
+    ${lignes.map(l => `
+      <div class="panier-row">
+        <span class="emo">${l.emoji || '🌿'}</span>
+        <div class="info">
+          <div class="nom-l">${escapeHtml(l.nom)}</div>
+          <div class="meta-l">${fmtEur(l.prix)} / ${escapeHtml(l.unite)}</div>
+        </div>
+        <div class="qty-ctrl">
+          <button onclick="changerQte(${l.id}, -1)">−</button>
+          <span class="qty-val">${l.qte}</span>
+          <button onclick="changerQte(${l.id}, 1)">+</button>
+        </div>
+        <div class="total-l">${fmtEur(l.prix * l.qte)}</div>
+      </div>`).join('')}
+    <div class="panier-bar">
+      <div class="total">${fmtEur(totalPanier())}</div>
+      <button class="btn btn-encaisser" onclick="openModalPay()">Encaisser</button>
+    </div>
+  `;
+}
+
+function openModalPay() {
+  if (Object.keys(app.panier).length === 0) return;
+  app.payMode = null;
+  document.getElementById('modalPayTotal').textContent = fmtEur(totalPanier());
+  document.querySelectorAll('.payment-grid .opt').forEach(o => o.classList.remove('selected'));
+  document.getElementById('btnConfirmPay').disabled = true;
+  document.getElementById('modalPay').classList.add('open');
+}
+function closeModalPay() { document.getElementById('modalPay').classList.remove('open'); }
+function selectPay(mode) {
+  app.payMode = mode;
+  document.querySelectorAll('.payment-grid .opt').forEach(o => o.classList.toggle('selected', o.dataset.mode === mode));
+  document.getElementById('btnConfirmPay').disabled = false;
+}
+
+async function confirmPay() {
+  if (!app.payMode || Object.keys(app.panier).length === 0) return;
+  const total = totalPanier();
+  const lignes = Object.values(app.panier).map(l => ({
+    produit_id: l.id, nom: l.nom, emoji: l.emoji, prix: l.prix, unite: l.unite, qte: l.qte, total: l.prix * l.qte
+  }));
+  const uuid = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('mob-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+  const vente = {
+    offline_uuid: uuid,
+    session_local_id: app.currentSession.local_id,
+    lignes, total_ttc: total,
+    mode_paiement: app.payMode,
+    created_at: new Date().toISOString()
+  };
+  await dbPut('ventes', vente);
+  closeModalPay();
+  app.panier = {};
+  toast(`✓ Vente ${fmtEur(total)} enregistrée`, 'info');
+  renderCaisse();
+}
+
+// ============ Démarrer un marché ============
+async function startNewSession() {
+  const date = document.getElementById('newSessDate').value;
+  const lieu = document.getElementById('newSessLieu').value.trim();
+  if (!date || !lieu) { toast('Date et lieu requis', 'warn'); return; }
+  // Cherche la prochaine local_id
+  const sessions = await dbGetAll('sessions');
+  const session = {
+    date_marche: date, lieu,
+    statut: 'ouverte',
+    started_at: new Date().toISOString()
+  };
+  const newId = await dbPut('sessions', session);
+  session.local_id = newId;
+  app.currentSession = session;
+  await dbPut('settings', {key: 'current_session_local_id', value: newId});
+  toast(`Marché ${lieu} démarré`, 'info');
+  renderCaisse();
+}
+
+// ============ Screen: Catalogue ============
+async function renderCatalogue() {
+  document.getElementById('screenTitle').textContent = 'Catalogue';
+  document.getElementById('panier').classList.remove('show');
+  const content = document.getElementById('content');
+
+  if (!app.catalogue || app.catalogue.length === 0) {
+    content.innerHTML = `
+      <div class="empty">
+        <p>Aucun catalogue importé.</p>
+        <button class="btn" style="margin-top:14px;" onclick="setScreen('settings')">Importer depuis SelfFarm →</button>
+      </div>`;
+    return;
+  }
+
+  let html = '';
+
+  if (app.currentSession) {
+    const charges = (await dbGetAll('chargement')).filter(c => c.session_local_id === app.currentSession.local_id);
+    const chargesMap = new Map(charges.map(c => [c.produit_id, c]));
+    html += `<div class="card">
+      <h2>📦 Chargement — ${escapeHtml(app.currentSession.lieu)}</h2>
+      <p>Coche les produits pour ce marché. La quantité est <strong>optionnelle</strong>.</p>`;
+    for (const p of app.catalogue) {
+      const chg = chargesMap.get(p.id);
+      const checked = !!chg;
+      html += `
+        <div class="toggle-row">
+          <span class="emo">${p.emoji || '🌿'}</span>
+          <div class="info">
+            <div class="nom">${escapeHtml(p.nom)}</div>
+            <div class="meta">${fmtEur(p.prix_unitaire)} / ${escapeHtml(p.unite)}</div>
+            <input type="number" step="0.1" min="0" placeholder="qté (optionnel)" value="${chg?.quantite_chargee ?? ''}" id="qte_${p.id}" style="width:120px; margin-top:5px; padding:5px 8px; background:#0a1410; border:1px solid var(--border-default); color:var(--text-primary); border-radius:5px; font-size:12px;" onchange="updateChargementQte(${p.id})">
+            <span style="font-size:11px; color:var(--text-muted); margin-left:4px;">${escapeHtml(p.unite)}</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleChargement(${p.id}, this.checked)">
+            <span></span>
+          </label>
+        </div>`;
+    }
+    html += `</div>`;
+  } else {
+    html += `<div class="card">
+      <p style="text-align:center; color:var(--text-secondary);">Démarre un marché depuis l'onglet <strong>Caisse</strong> pour préparer le chargement.</p>
+    </div>`;
+  }
+
+  // Visibilité globale produits (toujours dispo)
+  html += `<div class="card">
+    <h2>👁 Visibilité globale</h2>
+    <p>Masque des produits que tu ne vends jamais (juste sur ce mobile, pas côté SelfFarm).</p>`;
+  for (const p of app.catalogue) {
+    const visible = app.visibility[p.id] !== false;
+    html += `
+      <div class="toggle-row">
+        <span class="emo">${p.emoji || '🌿'}</span>
+        <div class="info">
+          <div class="nom">${escapeHtml(p.nom)}</div>
+          <div class="meta">${fmtEur(p.prix_unitaire)} / ${escapeHtml(p.unite)}</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" ${visible ? 'checked' : ''} onchange="toggleVisibility(${p.id}, this.checked)">
+          <span></span>
+        </label>
+      </div>`;
+  }
+  html += `</div>`;
+
+  content.innerHTML = html;
+}
+
+async function toggleVisibility(produitId, visible) {
+  app.visibility[produitId] = visible;
+  await dbPut('settings', {key: 'visibility', value: app.visibility});
+}
+
+async function toggleChargement(produitId, checked) {
+  const p = app.catalogue.find(x => x.id === produitId);
+  if (!p || !app.currentSession) return;
+  if (checked) {
+    await dbPut('chargement', {
+      session_local_id: app.currentSession.local_id,
+      produit_id: produitId, produit_nom: p.nom, unite: p.unite,
+      quantite_chargee: null
+    });
+  } else {
+    await dbDelete('chargement', [app.currentSession.local_id, produitId]);
+  }
+}
+
+async function updateChargementQte(produitId) {
+  if (!app.currentSession) return;
+  const val = document.getElementById(`qte_${produitId}`).value;
+  const qte = val.trim() ? parseFloat(val) : null;
+  const existing = await dbGet('chargement', [app.currentSession.local_id, produitId]);
+  if (!existing) return; // pas coché, ignore
+  existing.quantite_chargee = qte;
+  await dbPut('chargement', existing);
+}
+
+// ============ Screen: Sessions (historique) ============
+async function renderSessions() {
+  document.getElementById('screenTitle').textContent = 'Mes marchés';
+  document.getElementById('panier').classList.remove('show');
+  const content = document.getElementById('content');
+  const sessions = (await dbGetAll('sessions')).sort((a, b) => (b.local_id || 0) - (a.local_id || 0));
+  if (sessions.length === 0) {
+    content.innerHTML = `<div class="empty"><p>Aucune session encore.</p></div>`;
+    return;
+  }
+  const ventes = await dbGetAll('ventes');
+  let html = '';
+  for (const s of sessions) {
+    const sVentes = ventes.filter(v => v.session_local_id === s.local_id);
+    const total = sVentes.reduce((sum, v) => sum + Number(v.total_ttc || 0), 0);
+    html += `
+      <div class="session-card">
+        <div class="head">
+          <span class="lieu">${escapeHtml(s.lieu)}</span>
+          <span class="total">${fmtEur(total)}</span>
+        </div>
+        <div class="meta">${s.date_marche} · ${sVentes.length} vente${sVentes.length>1?'s':''} · ${escapeHtml(s.statut)}</div>
+        ${s.statut === 'ouverte' ? `
+          <button class="btn" style="margin-top:10px;" onclick="reprendreSession(${s.local_id})">Reprendre</button>
+          <button class="btn btn-warn" style="margin-top:6px;" onclick="finMarcheSession(${s.local_id})">Fin de marché</button>
+        ` : `
+          <button class="btn btn-ghost" style="margin-top:10px;" onclick="exportSession(${s.local_id})">⬇ Re-télécharger fichier</button>
+        `}
+      </div>`;
+  }
+  content.innerHTML = html;
+}
+
+async function reprendreSession(localId) {
+  const s = await dbGet('sessions', localId);
+  if (!s || s.statut !== 'ouverte') return;
+  app.currentSession = s;
+  await dbPut('settings', {key: 'current_session_local_id', value: localId});
+  setScreen('caisse');
+}
+
+// ============ Fin de marché ============
+async function finMarche() {
+  if (!app.currentSession) return;
+  finMarcheSession(app.currentSession.local_id);
+}
+
+async function finMarcheSession(localId) {
+  const s = await dbGet('sessions', localId);
+  if (!s) return;
+  const charges = (await dbGetAll('chargement')).filter(c => c.session_local_id === localId);
+  const ventes = (await dbGetAll('ventes')).filter(v => v.session_local_id === localId);
+  // Calcule vendu par produit
+  const venduMap = {};
+  ventes.forEach(v => (v.lignes || []).forEach(l => {
+    venduMap[l.produit_id] = (venduMap[l.produit_id] || 0) + Number(l.qte || 0);
+  }));
+
+  const content = document.getElementById('content');
+  document.getElementById('screenTitle').textContent = `Fin — ${s.lieu}`;
+  document.getElementById('panier').classList.remove('show');
+
+  const totalSession = ventes.reduce((sum, v) => sum + Number(v.total_ttc || 0), 0);
+
+  let html = `
+    <div class="card">
+      <h2>🎉 ${escapeHtml(s.lieu)}</h2>
+      <p>${s.date_marche} · ${ventes.length} ventes · <strong style="color:var(--accent-200);">${fmtEur(totalSession)}</strong></p>
+    </div>
+
+    <div class="card">
+      <h2>📦 Résidus à classer</h2>
+      <p>Pour chaque produit chargé, choisis ce que tu fais du reste.</p>
+      <div class="residus-table">`;
+
+  if (charges.length === 0) {
+    html += `<p style="text-align:center; padding:20px; color:var(--text-muted);">Aucun produit chargé. Tu peux exporter directement.</p>`;
+  } else {
+    for (const c of charges) {
+      const vendu = venduMap[c.produit_id] || 0;
+      const reste = c.quantite_chargee != null ? Math.max(0, c.quantite_chargee - vendu) : null;
+      html += `
+        <div class="row" data-produit="${c.produit_id}">
+          <div class="info-prod">
+            <div class="nom-r">${escapeHtml(c.produit_nom)}</div>
+            <div class="meta-r">${c.quantite_chargee != null ? `Chargé ${c.quantite_chargee} · Vendu ${vendu.toFixed(1)}` : `Vendu ${vendu.toFixed(1)}`}</div>
+          </div>
+          <input type="number" step="0.1" min="0" placeholder="reste"
+                 value="${reste !== null ? reste : ''}"
+                 id="reste_${c.produit_id}">
+          <select id="status_${c.produit_id}">
+            <option value="">— action —</option>
+            <option value="invendu_poules">Invendu → poules</option>
+            <option value="invendu_compost">Invendu → compost</option>
+            <option value="invendu_don">Invendu → don</option>
+            <option value="invendu_garde_maison">Invendu → garde maison</option>
+            <option value="invendu_poubelle">Invendu → poubelle</option>
+            <option value="stock">Stock prochain marché</option>
+            <option value="consomme_hors_marche">Vendu hors marché (AMAP…)</option>
+          </select>
+        </div>`;
+    }
+  }
+  html += `</div></div>
+
+    <button class="btn" onclick="exportFichierMarche(${localId})">⬇ Exporter le fichier marché</button>
+    <button class="btn btn-ghost" style="margin-top:8px;" onclick="setScreen('sessions')">Annuler</button>
+  `;
+  content.innerHTML = html;
+}
+
+async function exportFichierMarche(localId) {
+  const s = await dbGet('sessions', localId);
+  if (!s) return;
+  const charges = (await dbGetAll('chargement')).filter(c => c.session_local_id === localId);
+  const ventes = (await dbGetAll('ventes')).filter(v => v.session_local_id === localId);
+
+  // Collecte résidus depuis le formulaire
+  const residus = [];
+  for (const c of charges) {
+    const resteInput = document.getElementById(`reste_${c.produit_id}`);
+    const statusSelect = document.getElementById(`status_${c.produit_id}`);
+    if (!resteInput || !statusSelect) continue;
+    const reste = parseFloat(resteInput.value);
+    const statusVal = statusSelect.value;
+    if (!statusVal || !reste || reste <= 0) continue;
+    let status, destination = null;
+    if (statusVal.startsWith('invendu_')) { status = 'invendu'; destination = statusVal.replace('invendu_', ''); }
+    else if (statusVal === 'stock') status = 'stock';
+    else if (statusVal === 'consomme_hors_marche') status = 'consomme_hors_marche';
+    residus.push({
+      produit_id: c.produit_id, produit_nom: c.produit_nom, unite: c.unite,
+      quantite: reste, status, destination
+    });
+  }
+
+  const exportData = {
+    format: 'selffarm-pos-marche',
+    version: '0.3.0',
+    device_uuid: await getOrCreateDeviceUUID(),
+    exported_at: new Date().toISOString(),
+    session: {
+      date_marche: s.date_marche, lieu: s.lieu,
+      started_at: s.started_at, cloture_at: new Date().toISOString(), notes: s.notes || ''
+    },
+    chargement: charges.map(c => ({
+      produit_id: c.produit_id, produit_nom: c.produit_nom,
+      unite: c.unite, quantite_chargee: c.quantite_chargee
+    })),
+    ventes: ventes.map(v => ({
+      offline_uuid: v.offline_uuid, lignes: v.lignes,
+      total_ttc: v.total_ttc, mode_paiement: v.mode_paiement,
+      client_libelle: v.client_libelle, created_at: v.created_at
+    })),
+    residus
+  };
+  // Checksum SHA-256
+  const enc = new TextEncoder();
+  const buf = enc.encode(JSON.stringify(exportData));
+  const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+  exportData.checksum_sha256 = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  // Marquer session clôturée localement
+  s.statut = 'cloturee';
+  s.cloture_at = new Date().toISOString();
+  await dbPut('sessions', s);
+  if (app.currentSession && app.currentSession.local_id === localId) {
+    app.currentSession = null;
+    await dbDelete('settings', 'current_session_local_id');
+  }
+
+  // Download du JSON
+  const filename = `marche-${s.date_marche}-${(s.lieu || 'marche').toLowerCase().replace(/[^a-z0-9]/g, '-')}.json`;
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✓ Fichier marché exporté. Transfère-le sur ton PC SelfFarm.', 'info', 4000);
+  setScreen('sessions');
+}
+
+async function exportSession(localId) {
+  // Re-export sans recalcul résidus (déjà clôturé)
+  const s = await dbGet('sessions', localId);
+  const charges = (await dbGetAll('chargement')).filter(c => c.session_local_id === localId);
+  const ventes = (await dbGetAll('ventes')).filter(v => v.session_local_id === localId);
+  const exportData = {
+    format: 'selffarm-pos-marche', version: '0.3.0',
+    device_uuid: await getOrCreateDeviceUUID(),
+    exported_at: new Date().toISOString(),
+    session: {date_marche: s.date_marche, lieu: s.lieu, started_at: s.started_at, cloture_at: s.cloture_at, notes: s.notes || ''},
+    chargement: charges.map(c => ({produit_id: c.produit_id, produit_nom: c.produit_nom, unite: c.unite, quantite_chargee: c.quantite_chargee})),
+    ventes: ventes.map(v => ({offline_uuid: v.offline_uuid, lignes: v.lignes, total_ttc: v.total_ttc, mode_paiement: v.mode_paiement, created_at: v.created_at})),
+    residus: []
+  };
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `marche-${s.date_marche}-${(s.lieu || 'marche').toLowerCase().replace(/[^a-z0-9]/g, '-')}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Fichier re-téléchargé', 'info');
+}
+
+async function getOrCreateDeviceUUID() {
+  let stored = await dbGet('settings', 'device_uuid');
+  if (stored) return stored.value;
+  const uuid = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('dev-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+  await dbPut('settings', {key: 'device_uuid', value: uuid});
+  return uuid;
+}
+
+// ============ Screen: Settings ============
+// ============ Coffre de sauvegarde (Lot D / E) ============
+async function syncBackup(manual) {
+  const vault = await dbGet('settings', 'vault');
+  if (!vault || !vault.value) { if (manual) toast('Coffre non appairé', 'warn'); return; }
+  const base = app.pcUrl || location.origin;
+  try {
+    const m = await fetch(base + '/api/pos/backup/manifest').then(r => r.json());
+    if (!m.available) { if (manual) toast('Rien à sauvegarder côté PC', 'warn'); return; }
+    if (await dbGet('backups', m.sha256)) { if (manual) toast('Déjà à jour ✓', 'info'); return; }
+    const resp = await fetch(base + '/api/pos/backup/download');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const buf = await resp.arrayBuffer();
+    const name = resp.headers.get('X-Backup-Name') || 'selffarm-backup.zip.vault';
+    const sha = resp.headers.get('X-Backup-Sha') || m.sha256;
+    await dbPut('backups', {sha, name, date: new Date().toISOString(), size: buf.byteLength, blob: buf});
+    const all = (await dbGetAll('backups')).sort((a, b) => a.date < b.date ? 1 : -1);
+    for (const old of all.slice(30)) await dbDelete('backups', old.sha); // rétention 30
+    toast('🔐 Sauvegarde déposée sur le coffre', 'info', 2500);
+    if (app.currentScreen === 'coffre') renderCoffre();
+  } catch (e) { if (manual) toast('Sauvegarde échouée : ' + e.message, 'error'); }
+}
+
+async function restorePush(sha) {
+  if (!confirm('Restaurer ce backup sur le PC connecté ? Les données actuelles du PC seront remplacées.')) return;
+  const b = await dbGet('backups', sha);
+  if (!b) { toast('Sauvegarde introuvable', 'error'); return; }
+  const vault = await dbGet('settings', 'vault');
+  const base = app.pcUrl || location.origin;
+  const hdr = {
+    'Content-Type': 'application/octet-stream',
+    'X-Device-Id': (vault && vault.value && vault.value.device_id) || '',
+    'X-Vault-Key': (vault && vault.value && vault.value.vault_key) || '',
+    'X-Backup-Name': b.name
+  };
+  try {
+    let resp = await fetch(base + '/api/pos/backup/restore-push', {method: 'POST', headers: hdr, body: b.blob});
+    if (resp.status === 409) {
+      const info = await resp.json();
+      if (!confirm('Ce backup est plus ANCIEN que les données du PC (sauvegarde ' + info.gen_backup + ' < PC ' + info.gen_base + '). La compta du PC sera préservée, mais son état métier reculera. Confirmer ?')) {
+        toast('Restauration annulée', 'warn'); return;
+      }
+      hdr['X-Confirm-Rollback'] = '1';
+      resp = await fetch(base + '/api/pos/backup/restore-push', {method: 'POST', headers: hdr, body: b.blob});
+    }
+    if (!resp.ok) throw new Error('HTTP ' + resp.status + ' ' + (await resp.text()));
+    toast('✓ Backup restauré sur le PC', 'info', 3000);
+  } catch (e) { toast('Restauration échouée : ' + e.message, 'error', 4000); }
+}
+
+async function renderCoffre() {
+  document.getElementById('screenTitle').textContent = 'Coffre';
+  document.getElementById('panier').classList.remove('show');
+  const content = document.getElementById('content');
+  const vault = await dbGet('settings', 'vault');
+  if (!vault || !vault.value) {
+    content.innerHTML = `<div class="card"><h2>🔐 Coffre de sauvegarde</h2>
+      <p>Ce téléphone n'est pas encore appairé. Sur le PC : <strong>Sauvegardes → Appairer un coffre mobile</strong>, puis scanne le QR affiché.</p></div>`;
+    return;
+  }
+  const backups = (await dbGetAll('backups')).sort((a, b) => a.date < b.date ? 1 : -1);
+  content.innerHTML = `
+    <div class="card">
+      <h2>🔐 Coffre de sauvegarde</h2>
+      <p>Ce téléphone garde <strong>${backups.length}</strong> sauvegarde(s) chiffrée(s) de ton SelfFarm. Illisibles sans le PC. Tu peux les rendre à un PC à tout moment.</p>
+      <button class="btn" onclick="syncBackup(true)">⟳ Sauvegarder maintenant</button>
+    </div>
+    ${backups.length === 0 ? '<div class="card"><p style="color:var(--text-muted);">Aucune sauvegarde encore. Connecte-toi au PC puis touche « Sauvegarder maintenant ».</p></div>' : ''}
+    ${backups.map(b => `
+      <div class="card" style="padding:12px 14px;">
+        <div style="font-size:11.5px; font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(b.name)}</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:3px;">${new Date(b.date).toLocaleString('fr-FR')} · ${(b.size / 1024).toFixed(1)} Ko</div>
+        <button class="btn btn-ghost" style="margin-top:8px; font-size:12px;" onclick="restorePush('${b.sha}')">↑ Restaurer ce backup sur le PC connecté</button>
+      </div>`).join('')}
+  `;
+}
+
+function renderSettings() {
+  document.getElementById('screenTitle').textContent = 'Réglages';
+  document.getElementById('panier').classList.remove('show');
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="card">
+      <h2>🖥 Connexion PC SelfFarm</h2>
+      <p>URL du PC sur ton réseau local. Le voyant en haut devient vert quand le PC répond.</p>
+      <div class="field">
+        <label>URL PC (ex: http://192.168.1.10:8003)</label>
+        <input type="url" id="pcUrlInput" placeholder="http://..." value="${escapeHtml(app.pcUrl)}">
+      </div>
+      <button class="btn" onclick="savePCUrl()">Enregistrer + tester</button>
+      <button class="btn btn-ghost" style="margin-top:6px;" onclick="checkPCConnection().then(() => toast('Test connexion lancé', 'info', 1500))">Re-tester</button>
+    </div>
+
+    <div class="card">
+      <h2>📥 Importer catalogue</h2>
+      <p>Fichier <strong>selffarm-catalogue.json</strong> exporté depuis ton SelfFarm Windows.</p>
+      <input type="file" accept=".json,application/json" id="fileCatalog" style="display:none;" onchange="handleCatalogImport(this)">
+      <button class="btn" onclick="document.getElementById('fileCatalog').click()">Choisir un fichier</button>
+    </div>
+
+    <div class="card">
+      <h2>📊 Statistiques locales</h2>
+      <div id="statsBox" style="font-size:13px; color:var(--text-secondary); line-height:1.8;"></div>
+    </div>
+
+    <div class="card">
+      <h2>⚠ Reset</h2>
+      <p>Supprime <strong>toutes les données locales</strong> (catalogue, sessions, ventes, paramètres). Action irréversible — à faire seulement si tu as exporté tous tes fichiers marchés.</p>
+      <button class="btn btn-warn" onclick="resetAll()">Tout effacer</button>
+    </div>
+
+    <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:11px;">
+      SelfPOS Mobile · PWA AGPL-3.0 · v{{ version }}
+    </div>
+  `;
+  renderStats();
+}
+
+async function renderStats() {
+  const sessions = await dbGetAll('sessions');
+  const ventes = await dbGetAll('ventes');
+  const totalTtc = ventes.reduce((s, v) => s + Number(v.total_ttc || 0), 0);
+  document.getElementById('statsBox').innerHTML = `
+    <div>Catalogue : <strong>${app.catalogue.length}</strong> produits</div>
+    <div>Sessions : <strong>${sessions.length}</strong></div>
+    <div>Ventes totales : <strong>${ventes.length}</strong></div>
+    <div>Cumul TTC : <strong style="color:var(--accent-200);">${fmtEur(totalTtc)}</strong></div>
+  `;
+}
+
+async function savePCUrl() {
+  const v = document.getElementById('pcUrlInput').value.trim();
+  app.pcUrl = v;
+  await dbPut('settings', {key: 'pc_url', value: v});
+  toast('URL PC enregistrée — test en cours…', 'info', 1500);
+  await checkPCConnection();
+  if (app.pcStatus === 'connected') toast('✓ PC SelfFarm joignable', 'info');
+  else if (app.pcStatus !== 'not_configured') toast('PC injoignable — vérifie WiFi/URL', 'error', 3000);
+}
+
+async function handleCatalogImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (data.format !== 'selffarm-pos-catalogue') {
+      toast('Format invalide (selffarm-pos-catalogue attendu)', 'error', 4000);
+      return;
+    }
+    await dbClear('catalogue');
+    for (const p of data.produits) {
+      await dbPut('catalogue', p);
+    }
+    app.catalogue = data.produits;
+    toast(`✓ ${data.produits.length} produits importés`, 'info');
+    renderStats();
+  } catch (e) {
+    toast('Erreur lecture fichier : ' + e.message, 'error', 4000);
+  }
+}
+
+async function resetAll() {
+  if (!confirm('Tout effacer ? Toutes les données locales seront perdues.')) return;
+  for (const s of STORES) await dbClear(s);
+  app.catalogue = [];
+  app.visibility = {};
+  app.currentSession = null;
+  app.panier = {};
+  toast('Données effacées', 'warn');
+  setScreen('caisse');
+}
+
+// ============ Boot ============
+// ============ Appairage coffre de sauvegarde (Lot C) ============
+async function tryPairing() {
+  const token = new URLSearchParams(location.search).get('pair');
+  if (!token) return;
+  try {
+    const base = app.pcUrl || location.origin;
+    const r = await fetch(base + '/api/pos/pair', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({token, label: navigator.userAgent.includes('Android') ? 'Android' : 'Téléphone'})
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    await dbPut('settings', {key: 'vault', value: {
+      device_id: data.device_id, vault_key: data.vault_key, server_url: data.server_url
+    }});
+    if (data.server_url) {
+      app.pcUrl = data.server_url;
+      await dbPut('settings', {key: 'pc_url', value: app.pcUrl});
+    }
+    toast('🔐 Coffre de sauvegarde appairé', 'info', 3000);
+  } catch (e) {
+    toast('Appairage échoué : ' + e.message, 'error', 3500);
+  } finally {
+    history.replaceState(null, '', location.pathname); // jeton one-time → on nettoie l'URL
+  }
+}
+
+(async function init() {
+  await openDB();
+  app.catalogue = await dbGetAll('catalogue');
+  const vis = await dbGet('settings', 'visibility');
+  app.visibility = vis ? vis.value : {};
+  const csid = await dbGet('settings', 'current_session_local_id');
+  if (csid) {
+    const s = await dbGet('sessions', csid.value);
+    if (s && s.statut === 'ouverte') app.currentSession = s;
+  }
+
+  // URL PC : charge depuis settings, ou auto-détecte l'origine actuelle si même-host
+  const pcUrlStored = await dbGet('settings', 'pc_url');
+  if (pcUrlStored && pcUrlStored.value) {
+    app.pcUrl = pcUrlStored.value;
+  } else if (location.origin && location.protocol.startsWith('http')) {
+    // PWA chargée depuis le PC en LAN → même origin = même PC
+    app.pcUrl = location.origin;
+    await dbPut('settings', {key: 'pc_url', value: app.pcUrl});
+  }
+
+  // Appairage du coffre si le QR portait ?pair=<jeton>, puis dépôt auto best-effort
+  await tryPairing();
+
+  updateNet();
+  setScreen('caisse');
+  checkPCConnection();
+  syncBackup(false); // dépôt auto si coffre appairé + nouveau backup dispo
+
+  // Service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/static/pos/sw-mobile.js', {scope: '/pos/'}).catch(() => {});
+  }
+})();
+
+</script>
+</body>
+</html>

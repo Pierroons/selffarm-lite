@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Import retour marché — SelfPOS{% endblock %}
+{% block breadcrumb %}Vente · SelfPOS · Import retour marché{% endblock %}
+{% block page_title %}🚜 Import retour marché{% endblock %}
+
+{% block topbar_actions %}
+  <a href="/pos" class="btn-ghost">← Caisse marché</a>
+{% endblock %}
+
+{% block content %}
+<style>
+.import-wrap {max-width:760px; margin:0 auto;}
+.import-card {
+  background:var(--bg-card); border:1px solid var(--border-subtle);
+  border-radius:14px; padding:28px;
+  text-align:center;
+}
+.import-card h2 {font-family:'Fraunces',serif; font-size:18px; color:var(--text-primary); margin:0 0 8px 0;}
+.import-card .sub {color:var(--text-secondary); font-size:13px; margin:0 0 22px 0; line-height:1.5;}
+
+.drop-zone {
+  border:2px dashed var(--border-default);
+  border-radius:12px;
+  padding:36px 24px;
+  background:var(--bg-elev);
+  transition:all 0.18s;
+  cursor:pointer;
+}
+.drop-zone:hover, .drop-zone.dragover {border-color:var(--accent-500); background:var(--accent-bg-soft);}
+.drop-zone svg {width:42px; height:42px; color:var(--accent-400); margin-bottom:10px;}
+.drop-zone .label {font-size:13px; color:var(--text-primary); font-weight:500;}
+.drop-zone .hint {font-size:11px; color:var(--text-muted); margin-top:6px;}
+.drop-zone input[type=file] {display:none;}
+.file-info {margin-top:16px; font-size:12.5px; color:var(--accent-200);}
+
+.btn-submit {
+  margin-top:18px;
+  padding:11px 22px;
+  background:linear-gradient(180deg, var(--accent-500), var(--accent-600));
+  color:var(--text-primary); border:1px solid var(--accent-600);
+  border-radius:8px; font-size:13.5px; font-weight:700; cursor:pointer; font-family:inherit;
+}
+.btn-submit:disabled {opacity:0.4; cursor:not-allowed;}
+
+.steps {
+  margin-top:24px; padding:18px 22px;
+  background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px;
+}
+.steps h3 {margin:0 0 10px 0; font-size:13px; font-family:'Fraunces',serif; color:var(--text-primary);}
+.steps ol {margin:0; padding-left:20px; color:var(--text-secondary); font-size:12.5px; line-height:1.7;}
+</style>
+
+<div class="import-wrap">
+  <div class="import-card">
+    <h2>📁 Importer un fichier marché</h2>
+    <p class="sub">Sélectionne le fichier <strong>marche-XXXX.json</strong> exporté depuis ta PWA SelfPOS mobile.</p>
+
+    <form action="/pos/import-marche" method="post" enctype="multipart/form-data" id="formImport">
+      <label class="drop-zone" id="dropZone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <div class="label">Glisse le fichier ici ou clique pour parcourir</div>
+        <div class="hint">format .json — exporté depuis "Fin de marché" sur le mobile</div>
+        <input type="file" name="file" id="fileInput" accept=".json,application/json" required>
+        <div class="file-info" id="fileInfo"></div>
+      </label>
+      <button type="submit" class="btn-submit" id="btnSubmit" disabled>Importer</button>
+    </form>
+  </div>
+
+  <div class="steps">
+    <h3>📝 Que se passe-t-il à l'import ?</h3>
+    <ol>
+      <li>Création de la session marché (date, lieu, statut clôturé)</li>
+      <li>Toutes les ventes individuelles importées (dédup auto si déjà importées)</li>
+      <li>Le chargement camion enregistré</li>
+      <li>Les résidus (stock / invendus) tracés pour suivi</li>
+      <li><strong>1 écriture comptable agrégée créée automatiquement</strong> (411/701)</li>
+      <li>Tu reçois un récap clair sur la page suivante</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const fileInfo = document.getElementById('fileInfo');
+const btnSubmit = document.getElementById('btnSubmit');
+
+['dragover','dragenter'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('dragover'); }));
+['dragleave','drop'].forEach(ev => dropZone.addEventListener(ev, () => dropZone.classList.remove('dragover')));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  if (e.dataTransfer.files.length) {
+    fileInput.files = e.dataTransfer.files;
+    updateInfo();
+  }
+});
+fileInput.addEventListener('change', updateInfo);
+function updateInfo() {
+  if (fileInput.files.length) {
+    const f = fileInput.files[0];
+    fileInfo.textContent = `✓ ${f.name} (${(f.size/1024).toFixed(1)} Ko)`;
+    btnSubmit.disabled = false;
+  } else {
+    fileInfo.textContent = '';
+    btnSubmit.disabled = true;
+  }
+}
+</script>
+{% endblock %}

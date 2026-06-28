@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Récap {{ session.lieu }} — SelfPOS{% endblock %}
+{% block breadcrumb %}Vente · SelfPOS · Récap {{ session.lieu }}{% endblock %}
+{% block page_title %}🧾 Récap marché — {{ session.lieu }}{% endblock %}
+
+{% block topbar_actions %}
+  <a href="/pos" class="btn-ghost">← Toutes les sessions</a>
+{% endblock %}
+
+{% block content %}
+<style>
+.recap-wrap {max-width:900px; margin:0 auto;}
+.recap-hero {
+  background:linear-gradient(180deg, var(--accent-bg-soft), var(--bg-card));
+  border:1px solid var(--accent-500); border-radius:14px;
+  padding:24px 28px; margin-bottom:20px;
+  display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:center;
+}
+@media (max-width:700px) {.recap-hero {grid-template-columns:1fr;}}
+.recap-hero .left .greeting {font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; font-weight:600;}
+.recap-hero .left h2 {font-family:'Fraunces',serif; font-size:24px; margin:6px 0; color:var(--text-primary);}
+.recap-hero .left p {font-size:12.5px; color:var(--text-secondary); margin:0;}
+.recap-hero .right {text-align:right;}
+.recap-hero .right .lbl {font-size:11px; color:var(--text-muted); text-transform:uppercase;}
+.recap-hero .right .val {font-family:'Fraunces',serif; font-size:44px; line-height:1; color:var(--accent-200); font-weight:700; font-feature-settings:'tnum';}
+.recap-hero .right .sub {font-size:12px; color:var(--text-secondary); margin-top:6px;}
+
+.modes-grid {display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:20px;}
+@media (max-width:700px) {.modes-grid {grid-template-columns:1fr;}}
+.mode-card {background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px; padding:14px 16px;}
+.mode-card .emo {font-size:22px;}
+.mode-card .lbl {font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.3px; margin:6px 0;}
+.mode-card .val {font-family:'Fraunces',serif; font-size:20px; color:var(--text-primary); font-weight:600; font-feature-settings:'tnum';}
+
+.ecriture-card {
+  background:var(--bg-card); border:1px solid var(--border-subtle);
+  border-radius:10px; padding:16px 20px; margin-bottom:20px;
+}
+.ecriture-card .h {font-size:13px; font-family:'Fraunces',serif; color:var(--text-primary); margin:0 0 8px 0;}
+.ecriture-card .row {display:flex; justify-content:space-between; padding:4px 0; font-size:12.5px;}
+.ecriture-card .row .lbl {color:var(--text-muted);}
+.ecriture-card .row .val {color:var(--text-primary); font-feature-settings:'tnum';}
+
+h3.list-title {font-family:'Fraunces',serif; font-size:14px; color:var(--text-primary); margin:0 0 12px 0;}
+
+.ventes-table {width:100%; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px; border-collapse:separate; border-spacing:0;}
+.ventes-table th {text-align:left; padding:9px 12px; background:var(--bg-elev); color:var(--text-muted); font-size:10.5px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600;}
+.ventes-table td {padding:9px 12px; font-size:12.5px; color:var(--text-secondary); border-top:1px solid var(--border-subtle);}
+.ventes-table td.amount {color:var(--text-primary); font-feature-settings:'tnum'; text-align:right;}
+.ventes-table tr:hover {background:var(--accent-bg-soft);}
+.ventes-table .lignes-summary {font-size:11px; color:var(--text-muted);}
+</style>
+
+<div class="recap-wrap">
+
+  <!-- Hero récap -->
+  <div class="recap-hero">
+    <div class="left">
+      <div class="greeting">{% if session.statut == 'cloturee' %}Marché clôturé le {{ session.cloture_at[:10] }}{% else %}Session en cours{% endif %}</div>
+      <h2>{{ session.lieu }}</h2>
+      <p>{{ session.date_marche }} · {{ session.nb_ventes }} vente{{ 's' if session.nb_ventes != 1 else '' }}</p>
+    </div>
+    <div class="right">
+      <div class="lbl">Total encaissé</div>
+      <div class="val">{{ "%.2f"|format(session.total_ttc) }} €</div>
+      <div class="sub">{{ session.nb_ventes }} ticket{{ 's' if session.nb_ventes != 1 else '' }}</div>
+    </div>
+  </div>
+
+  <!-- Modes paiement breakdown -->
+  <div class="modes-grid">
+    <div class="mode-card">
+      <span class="emo">💵</span>
+      <div class="lbl">Espèces</div>
+      <div class="val">{{ "%.2f"|format(session.total_especes) }} €</div>
+    </div>
+    <div class="mode-card">
+      <span class="emo">💳</span>
+      <div class="lbl">Carte bancaire</div>
+      <div class="val">{{ "%.2f"|format(session.total_cb) }} €</div>
+    </div>
+    <div class="mode-card">
+      <span class="emo">🧾</span>
+      <div class="lbl">Chèques</div>
+      <div class="val">{{ "%.2f"|format(session.total_cheque) }} €</div>
+    </div>
+  </div>
+
+  <!-- Écriture compta liée -->
+  {% if session.ecriture_id %}
+  <div class="ecriture-card">
+    <h4 class="h">📒 Écriture comptable générée</h4>
+    <div class="row">
+      <span class="lbl">Numéro de pièce</span>
+      <span class="val">POS-{{ "%04d"|format(session.id) }}</span>
+    </div>
+    <div class="row">
+      <span class="lbl">Journal</span>
+      <span class="val">VTE — Ventes</span>
+    </div>
+    <div class="row">
+      <span class="lbl">Comptes</span>
+      <span class="val">411 / 701 (clients divers / ventes)</span>
+    </div>
+    <div class="row">
+      <span class="lbl">Référence écriture</span>
+      <a href="/compta" class="val" style="color:var(--accent-200); text-decoration:none;">Écriture #{{ session.ecriture_id }} →</a>
+    </div>
+  </div>
+  {% elif session.statut == 'cloturee' %}
+  <div class="ecriture-card" style="border-color:rgba(212,160,86,0.30);">
+    <h4 class="h" style="color:var(--warm-amber);">⚠ Aucune écriture compta</h4>
+    <p style="font-size:12px; color:var(--text-secondary); margin:0;">Session clôturée sans vente — aucun mouvement comptable à enregistrer.</p>
+  </div>
+  {% endif %}
+
+  <!-- Liste des ventes -->
+  {% if ventes %}
+  <h3 class="list-title">Détail des {{ ventes | length }} vente{{ 's' if ventes|length != 1 else '' }}</h3>
+  <table class="ventes-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Heure</th>
+        <th>Lignes</th>
+        <th>Paiement</th>
+        <th style="text-align:right;">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in ventes %}
+      <tr>
+        <td>{{ v.id }}</td>
+        <td>{{ v.created_at[11:16] if v.created_at and v.created_at|length > 11 else '—' }}</td>
+        <td>
+          <div class="lignes-summary">
+            {% for l in v.lignes %}{{ l.emoji or '·' }} {{ l.nom }} × {{ l.qte }}{% if not loop.last %} · {% endif %}{% endfor %}
+          </div>
+        </td>
+        <td>
+          {% if v.mode_paiement == 'especes' %}💵 Espèces
+          {% elif v.mode_paiement == 'cb' %}💳 Carte
+          {% elif v.mode_paiement == 'cheque' %}🧾 Chèque
+          {% else %}{{ v.mode_paiement }}{% endif %}
+        </td>
+        <td class="amount">{{ "%.2f"|format(v.total_ttc) }} €</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <!-- Chargement (ce qui a été emporté) -->
+  {% if chargement %}
+  <h3 class="list-title" style="margin-top:24px;">📦 Chargement du marché</h3>
+  <table class="ventes-table">
+    <thead>
+      <tr><th>Produit</th><th style="text-align:right;">Quantité chargée</th></tr>
+    </thead>
+    <tbody>
+      {% for c in chargement %}
+      <tr>
+        <td>{{ c.produit_nom }}</td>
+        <td class="amount">{% if c.quantite_chargee is not none %}{{ "%.1f"|format(c.quantite_chargee) }} {{ c.unite }}{% else %}<span style="color:var(--text-muted);">non comptée</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <!-- Résidus (stock / invendu / hors-marché) -->
+  {% if residus %}
+  <h3 class="list-title" style="margin-top:24px;">♻️ Résidus du marché</h3>
+  <table class="ventes-table">
+    <thead>
+      <tr><th>Produit</th><th style="text-align:right;">Quantité</th><th>Devenir</th></tr>
+    </thead>
+    <tbody>
+      {% for r in residus %}
+      <tr>
+        <td>{{ r.produit_nom }}</td>
+        <td class="amount">{{ "%.1f"|format(r.quantite) }} {{ r.unite }}</td>
+        <td>
+          {% if r.status == 'stock' %}
+            <span style="color:#6b8e9d;">📦 Stock prochain marché</span>
+          {% elif r.status == 'invendu' %}
+            <span style="color:var(--warm-amber);">🚫 Invendu{% if r.destination %} → {{ r.destination|replace('_', ' ') }}{% endif %}</span>
+          {% elif r.status == 'transfere' %}
+            <span style="color:var(--accent-200);">➡️ Transféré (marché suivant)</span>
+          {% elif r.status == 'consomme_hors_marche' %}
+            <span style="color:var(--accent-200);">🤝 Vendu hors marché</span>
+          {% else %}{{ r.status }}{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div style="margin-top:10px; font-size:11.5px; color:var(--text-muted);">
+    Les lignes en <strong style="color:#6b8e9d;">stock</strong> apparaîtront dans <a href="/pos/stock-revue" style="color:var(--accent-200);">Stock résiduel</a> pour suivi (rappel si oubliées &gt;7 jours).
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

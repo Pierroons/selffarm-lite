@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Exporter catalogue pour mobile — SelfPOS{% endblock %}
+{% block breadcrumb %}Vente · SelfPOS · Catalogue{% endblock %}
+{% block page_title %}Exporter catalogue pour mobile{% endblock %}
+
+{% block topbar_actions %}
+  <a href="/pos/produits" class="btn-ghost">← Catalogue</a>
+{% endblock %}
+
+{% block content %}
+<style>
+.export-wrap {max-width:760px; margin:0 auto;}
+.export-card {
+  background:linear-gradient(180deg, var(--accent-bg-soft), var(--bg-card));
+  border:1px solid var(--accent-500); border-radius:14px;
+  padding:24px 28px; margin-bottom:20px; text-align:center;
+}
+.export-card h2 {font-family:'Fraunces',serif; font-size:18px; color:var(--text-primary); margin:0 0 8px 0;}
+.export-card .sub {color:var(--text-secondary); font-size:13px; margin:0 0 18px 0; line-height:1.5;}
+.export-card .stat-line {font-size:11px; color:var(--text-muted); margin-bottom:18px;}
+.btn-export {
+  display:inline-block; padding:14px 28px;
+  background:linear-gradient(180deg, var(--accent-500), var(--accent-600));
+  color:var(--text-primary); text-decoration:none;
+  border-radius:8px; font-size:14px; font-weight:700;
+  box-shadow:0 2px 8px rgba(0,0,0,0.3);
+}
+.btn-export:hover {filter:brightness(1.1); color:var(--text-primary);}
+
+.instructions {
+  background:var(--bg-card); border:1px solid var(--border-subtle);
+  border-radius:10px; padding:18px 22px;
+}
+.instructions h3 {margin:0 0 10px 0; font-size:13px; font-family:'Fraunces',serif; color:var(--text-primary);}
+.instructions ol {margin:0; padding-left:20px; color:var(--text-secondary); font-size:12.5px; line-height:1.7;}
+.instructions ol code {background:var(--bg-elev); padding:1px 6px; border-radius:3px; font-size:11.5px; color:var(--accent-200);}
+</style>
+
+<div class="export-wrap">
+  <div class="export-card">
+    <h2>📦 Catalogue prêt pour ton mobile</h2>
+    <div class="sub">
+      Télécharge ce fichier puis transfère-le sur ton téléphone/tablette.<br>
+      Au 1ᵉʳ lancement de la PWA SelfPOS mobile, importe-le.
+    </div>
+    <div class="stat-line">{{ produits | length }} produits actifs au catalogue</div>
+    <a href="/api/pos/catalogue-export" class="btn-export" download="selffarm-catalogue.json">
+      ⬇ Télécharger catalogue.json
+    </a>
+  </div>
+
+  <div class="instructions">
+    <h3>Comment l'utiliser</h3>
+    <ol>
+      <li>Sur ton tel/tablette, ouvre <code>http://&lt;ip-de-ton-pc&gt;:8003/pos/mobile</code> dans Chrome</li>
+      <li>Menu Chrome → <strong>"Ajouter à l'écran d'accueil"</strong> ou <strong>"Installer l'application"</strong></li>
+      <li>Clique sur <code>⬇ Télécharger catalogue.json</code> ci-dessus, transfère le fichier sur ton tel (USB / email / AirDrop / SD)</li>
+      <li>Dans la PWA SelfPOS mobile, va sur <strong>Réglages → Importer catalogue</strong> → choisis le fichier</li>
+      <li>Tu peux ré-exporter à tout moment si tu modifies tes prix ou ajoutes des produits</li>
+    </ol>
+  </div>
+</div>
+{% endblock %}

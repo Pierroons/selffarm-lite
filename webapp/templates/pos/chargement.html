@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Chargement — Session #{{ session.id }}{% endblock %}
+{% block breadcrumb %}Vente · {% if session.type_vente == 'point_vente_collectif' %}Collectif · Dépôt{% else %}Caisse marché · Chargement{% endif %}{% endblock %}
+{% block page_title %}
+  {% if session.type_vente == 'point_vente_collectif' %}🏪 Dépôt — {{ session.lieu }}{% else %}🚜 Chargement camion — {{ session.lieu }}{% endif %}
+{% endblock %}
+
+{% block topbar_actions %}
+  {% if session.type_vente == 'point_vente_collectif' %}
+    <a href="/pos/collectifs" class="btn-ghost">← Collectifs</a>
+  {% else %}
+    <a href="/pos" class="btn-ghost">← Caisse marché</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<style>
+.charg-wrap {max-width:900px; margin:0 auto;}
+.session-info {
+  background:linear-gradient(180deg, var(--accent-bg-soft), var(--bg-card));
+  border:1px solid var(--accent-500); border-radius:10px;
+  padding:14px 18px; margin-bottom:18px;
+  font-size:13px; color:var(--text-secondary);
+}
+.session-info strong {color:var(--text-primary); font-family:'Fraunces',serif;}
+.help-card {
+  background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px;
+  padding:14px 18px; margin-bottom:18px; font-size:12.5px; color:var(--text-secondary); line-height:1.5;
+}
+.help-card strong {color:var(--text-primary);}
+.charg-table {width:100%; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px; border-collapse:separate; border-spacing:0;}
+.charg-table th {text-align:left; padding:9px 12px; background:var(--bg-elev); color:var(--text-muted); font-size:10.5px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600;}
+.charg-table td {padding:9px 12px; font-size:13px; color:var(--text-primary); border-top:1px solid var(--border-subtle);}
+.charg-table .emo {font-size:18px; text-align:center; width:36px;}
+.charg-table .check-cell {width:40px; text-align:center;}
+.charg-table .check-cell input[type=checkbox] {width:18px; height:18px; cursor:pointer; accent-color:var(--accent-500);}
+.charg-table .qte-cell {width:130px;}
+.charg-table .qte-cell input {width:80px; padding:6px 8px; background:#0a1410; color:var(--text-primary); border:1px solid var(--border-default); border-radius:5px; font-size:12.5px; font-family:inherit;}
+.charg-table .qte-cell .unite-suffix {margin-left:6px; font-size:11px; color:var(--text-muted);}
+.charg-table tr.unchecked td {opacity:0.5;}
+.charg-table tr:hover:not(.unchecked) {background:var(--accent-bg-soft);}
+.form-actions {display:flex; gap:8px; justify-content:flex-end; margin-top:18px;}
+.btn-primary {padding:10px 22px; border-radius:6px; background:linear-gradient(180deg, var(--accent-500), var(--accent-600)); color:var(--text-primary); border:1px solid var(--accent-600); font-size:13.5px; font-weight:600; cursor:pointer; font-family:inherit;}
+.btn-primary:hover {filter:brightness(1.1);}
+</style>
+
+<div class="charg-wrap">
+  <div class="session-info">
+    <strong>{{ session.lieu }}</strong> · {{ session.date_marche }}
+    {% if session.type_vente == 'point_vente_collectif' %}
+      · <em>Dépôt collectif</em>
+    {% endif %}
+  </div>
+
+  <div class="help-card">
+    Coche les produits que tu {% if session.type_vente == 'point_vente_collectif' %}déposes au magasin{% else %}charges pour ce marché{% endif %}.
+    La <strong>quantité est optionnelle</strong> (utile pour le calcul auto des invendus à fin marché).
+  </div>
+
+  <form action="/pos/sessions/{{ session.id }}/chargement" method="post">
+    {% set chargement_map = {} %}
+    {% for c in chargement %}
+      {% set _ = chargement_map.update({c.produit_id: c}) %}
+    {% endfor %}
+
+    <table class="charg-table">
+      <thead>
+        <tr>
+          <th class="check-cell">✓</th>
+          <th></th>
+          <th>Produit</th>
+          <th>Prix unit.</th>
+          <th class="qte-cell">Quantité (optionnel)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in produits %}
+          {% set existing = chargement_map.get(p.id) %}
+          {% set is_checked = existing is not none %}
+          <tr id="row-{{ p.id }}" class="{% if not is_checked %}unchecked{% endif %}">
+            <td class="check-cell">
+              <input type="checkbox"
+                     name="produit_{{ p.id }}_charged"
+                     value="1"
+                     {% if is_checked %}checked{% endif %}
+                     onchange="document.getElementById('row-{{ p.id }}').classList.toggle('unchecked', !this.checked)">
+            </td>
+            <td class="emo">{{ p.emoji or '🌿' }}</td>
+            <td>{{ p.nom }}</td>
+            <td style="color:var(--text-secondary);">{{ "%.2f"|format(p.prix_unitaire) }} € / {{ p.unite }}</td>
+            <td class="qte-cell">
+              <input type="number"
+                     name="produit_{{ p.id }}_qte"
+                     step="0.01" min="0"
+                     value="{% if existing and existing.quantite_chargee %}{{ existing.quantite_chargee }}{% endif %}"
+                     placeholder="optionnel">
+              <span class="unite-suffix">{{ p.unite }}</span>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="form-actions">
+      <button type="submit" class="btn-primary">Enregistrer le chargement</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
