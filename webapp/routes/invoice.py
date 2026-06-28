@@ -32,6 +32,57 @@ try:
 except ImportError:
     compta_save_ecriture = None
 
+# Barème TVA agricole — source de vérité unique : self_factur_x_agri.models
+# (dé-doublonnage : plus de taux codés en dur dans le formulaire).
+try:
+    from self_factur_x_agri.models import (
+        TVA_BRUTS_55,
+        TVA_TRANSFORMES_10,
+        TVA_STANDARD_20,
+        LIBELLES_UOM_AGRI,
+        NATURES_VENTE_AGRI,
+    )
+    TAUX_TVA = [
+        {"pct": str(t.taux_pct), "libelle": t.libelle, "article_cgi": t.article_cgi}
+        for t in (TVA_BRUTS_55, TVA_TRANSFORMES_10, TVA_STANDARD_20)
+    ]
+    # Unités UN/ECE Rec. 20 sourcées du module agri (code, libellé long dropdown, symbole court PDF).
+    UNITES_AGRI = [
+        {"code": str(uom), "libelle": long, "symbole": court}
+        for uom, (long, court) in LIBELLES_UOM_AGRI.items()
+    ]
+    # Natures de vente → ventilation comptable PCG (7011 végétal / 7012 animal / 7013 service).
+    NATURES_VENTE = [
+        {"code": str(n), "libelle": lib, "compte_pcg": cpt}
+        for n, (lib, cpt) in NATURES_VENTE_AGRI.items()
+    ]
+except ImportError:  # fallback si le module agri n'est pas disponible
+    TAUX_TVA = [
+        {"pct": "5.5", "libelle": "Produits agricoles bruts et denrées alimentaires", "article_cgi": "278-0 bis CGI"},
+        {"pct": "10", "libelle": "Produits transformés / usage professionnel", "article_cgi": "278 bis CGI"},
+        {"pct": "20", "libelle": "TVA normale (services, intrants hors chaîne alim.)", "article_cgi": "278 CGI"},
+    ]
+    UNITES_AGRI = [
+        {"code": "C62", "libelle": "Unité", "symbole": "u"},
+        {"code": "KGM", "libelle": "Kilogramme", "symbole": "kg"},
+        {"code": "TNE", "libelle": "Tonne", "symbole": "t"},
+        {"code": "LTR", "libelle": "Litre", "symbole": "L"},
+        {"code": "HAR", "libelle": "Hectare", "symbole": "ha"},
+        {"code": "MTK", "libelle": "Mètre carré", "symbole": "m²"},
+        {"code": "BX", "libelle": "Botte / box", "symbole": "botte"},
+        {"code": "HEA", "libelle": "Tête (animal)", "symbole": "tête"},
+        {"code": "NAR", "libelle": "Nombre d'animaux", "symbole": "u"},
+    ]
+    NATURES_VENTE = [
+        {"code": "vegetal", "libelle": "Produits végétaux (récoltes)", "compte_pcg": "7011"},
+        {"code": "animal", "libelle": "Produits animaux / animaux", "compte_pcg": "7012"},
+        {"code": "service", "libelle": "Prestations de services", "compte_pcg": "7013"},
+    ]
+
+# Maps code → valeur, réutilisés par les routes creer/démo + le hook compta.
+SYMBOLE_UOM = {u["code"]: u["symbole"] for u in UNITES_AGRI}
+COMPTE_PCG_PAR_NATURE = {n["code"]: n["compte_pcg"] for n in NATURES_VENTE}
+
 router = APIRouter(prefix="/invoice", tags=["invoice"])
 
 TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
@@ -130,6 +181,14 @@ REGIMES = {
         "abattement_73b": False,
         "force_tva_pct": None,  # TVA normale gardée
     },
+    "298-bis-agri": {
+        "slug": "298-bis-agri",
+        "label": "Régime forfaitaire agricole (Art. 298 bis CGI)",
+        "badge": "Forfaitaire agricole · non-assujetti TVA",
+        "abattement_73b": False,
+        "force_tva_pct": Decimal("0"),  # non-assujetti → TVA non applicable
+        "mention_tva": "TVA non applicable — régime forfaitaire agricole, art. 298 bis du CGI",
+    },
     "reel": {
         "slug": "reel",
         "label": "Régime réel (simplifié ou normal)",
@@ -160,6 +219,9 @@ def _generer_facture_data(regime_key: str | None = None) -> dict:
             "nom": p["nom"],
             "detail": p["detail"],
             "qte": qte,
+            "unite_symbole": p.get("unite", ""),
+            "nature": p.get("nature", "vegetal"),
+            "compte_pcg": COMPTE_PCG_PAR_NATURE.get(p.get("nature", "vegetal"), "701"),
             "pu_ht": p["pu_ht"],
             "tva_pct": tva_pct,
             "total_ht": total_ht,
@@ -255,30 +317,73 @@ def _hook_compta_vente(data: dict, pdf_bytes: bytes | None = None) -> tuple[int 
     try:
         import hashlib
         regime_slug = data["regime"]["slug"]
-        libelle = f"Vente — {data['client']['nom']} ({data['vendeur']['nom_commercial']})"
+        numero = data["facture"]["numero"]
+        client_nom = data["client"]["nom"]
+        nom_commercial = data["vendeur"]["nom_commercial"]
         hash_pdf = hashlib.sha256(pdf_bytes).hexdigest() if pdf_bytes else None
-        eid, created = compta_save_ecriture(
-            date_operation=date.today(),
-            journal="VEN",
-            numero_piece=data["facture"]["numero"],
-            libelle=libelle,
-            compte_debit="411",       # Clients
-            compte_credit="701",      # Ventes produits finis
-            montant_ttc=data["totaux"]["total_ttc"],
-            montant_ht=data["totaux"]["total_ht"],
-            montant_tva=data["totaux"]["total_tva"],
-            source_module="self_invoice",
-            source_id=data["facture"]["numero"],
-            hash_pdf=hash_pdf,
-            locked=True,  # Conformité PAF : facture émise = immédiatement verrouillée
-            metadata_json=json.dumps({
-                "regime": regime_slug,
-                "facturx_profile": data["facture"]["facturx_profile"],
-                "nb_lignes": len(data["lignes"]),
-                "client": data["client"]["nom"],
-            }),
-        )
-        return eid, created
+
+        # Archivage du PDF émis (conformité conservation 10 ans + inclus au backup).
+        # Ne JAMAIS écraser un PDF déjà archivé → préserve le document original signé.
+        if pdf_bytes and numero:
+            try:
+                import os
+                from pathlib import Path
+                data_dir = os.environ.get("SELFFARM_DATA_DIR", str(Path.home() / ".selffarm"))
+                fdir = Path(data_dir) / "factures"
+                fdir.mkdir(parents=True, exist_ok=True)
+                safe = "".join(c if c.isalnum() or c in "-_." else "_" for c in str(numero))
+                fpath = fdir / f"{safe}.pdf"
+                if not fpath.exists():
+                    fpath.write_bytes(pdf_bytes)
+            except Exception:
+                import logging
+                logging.getLogger("selffarm.invoice").warning(
+                    "Archivage PDF facture %s échoué — non bloquant", numero, exc_info=True
+                )
+
+        # Ventilation par nature de vente : un compte PCG produit par groupe
+        # (7011 végétal / 7012 animal / 7013 service). self_agri_book stocke une
+        # écriture mono-compte → une écriture par compte crédit, source_id suffixé
+        # du compte pour préserver la dédup (CGI art. 289-VII).
+        groupes: dict[str, dict] = {}
+        for l in data["lignes"]:
+            compte = l.get("compte_pcg", "701")
+            g = groupes.setdefault(compte, {"ht": Decimal("0"), "tva": Decimal("0")})
+            g["ht"] += l["total_ht"]
+            g["tva"] += (l["total_ht"] * l["tva_pct"] / Decimal("100")).quantize(Decimal("0.01"))
+
+        first_eid: int | None = None
+        created_any = False
+        for compte, g in groupes.items():
+            ht = g["ht"]
+            tva = g["tva"] if regime_slug != "franchise" else Decimal("0")
+            ttc = (ht + tva).quantize(Decimal("0.01"))
+            libelle = f"Vente {compte} — {client_nom} ({nom_commercial})"
+            eid, created = compta_save_ecriture(
+                date_operation=date.today(),
+                journal="VEN",
+                numero_piece=numero,
+                libelle=libelle,
+                compte_debit="411",       # Clients
+                compte_credit=compte,     # 7011/7012/7013 selon la nature
+                montant_ttc=ttc,
+                montant_ht=ht,
+                montant_tva=tva,
+                source_module="self_invoice",
+                source_id=f"{numero}#{compte}",
+                hash_pdf=hash_pdf,
+                locked=True,  # Conformité PAF : facture émise = immédiatement verrouillée
+                metadata_json=json.dumps({
+                    "regime": regime_slug,
+                    "facturx_profile": data["facture"]["facturx_profile"],
+                    "compte_pcg": compte,
+                    "client": client_nom,
+                }),
+            )
+            if first_eid is None:
+                first_eid = eid
+            created_any = created_any or created
+        return first_eid, created_any
     except Exception as e:  # pragma: no cover
         import logging
         logging.getLogger("selffarm-webapp").warning("Hook compta vente KO : %s", e)
@@ -305,6 +410,9 @@ async def invoice_nouvelle_form(request: Request):
             "today": today.isoformat(),
             "echeance_default": (today + timedelta(days=30)).isoformat(),
             "regimes": REGIMES,
+            "taux_tva": TAUX_TVA,
+            "unites_agri": UNITES_AGRI,
+            "natures_vente": NATURES_VENTE,
             "next_numero": next_numero,
         },
     )
@@ -361,10 +469,16 @@ async def invoice_creer(request: Request):
         if regime["force_tva_pct"] is not None:
             tva_pct = regime["force_tva_pct"]
         total_ht = (pu_ht * qte).quantize(Decimal("0.01"))
+        unite_code = (form.get(f"ligne_{i}_unite", "C62") or "C62").strip()
+        nature = (form.get(f"ligne_{i}_nature", "vegetal") or "vegetal").strip()
         lignes.append({
             "nom": nom,
             "detail": form.get(f"ligne_{i}_detail", "") or "",
             "qte": qte,
+            "unite_code": unite_code,
+            "unite_symbole": SYMBOLE_UOM.get(unite_code, ""),
+            "nature": nature,
+            "compte_pcg": COMPTE_PCG_PAR_NATURE.get(nature, "701"),
             "pu_ht": pu_ht,
             "tva_pct": tva_pct,
             "total_ht": total_ht,

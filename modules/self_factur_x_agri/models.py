@@ -30,6 +30,37 @@ class UomAgri(StrEnum):
     UNIT = "C62"  # unité générique si rien ne matche
 
 
+# Libellés FR pour les UOM agricoles : (libellé long pour le dropdown, symbole court pour le PDF).
+# Source de vérité unique consommée par SelfInvoice (dé-doublonnage : pas d'unités codées en dur côté webapp).
+LIBELLES_UOM_AGRI: dict[UomAgri, tuple[str, str]] = {
+    UomAgri.UNIT: ("Unité", "u"),
+    UomAgri.KILOGRAMME: ("Kilogramme", "kg"),
+    UomAgri.TONNE: ("Tonne", "t"),
+    UomAgri.LITRE: ("Litre", "L"),
+    UomAgri.HECTARE: ("Hectare", "ha"),
+    UomAgri.METRE_CARRE: ("Mètre carré", "m²"),
+    UomAgri.BOTTE: ("Botte / box", "botte"),
+    UomAgri.TETE: ("Tête (animal)", "tête"),
+    UomAgri.NOMBRE_ANIMAUX: ("Nombre d'animaux", "u"),
+}
+
+
+class NatureVenteAgri(StrEnum):
+    """Nature d'une vente agricole → ventilation comptable PCG agricole (classe 70)."""
+
+    VEGETAL = "vegetal"
+    ANIMAL = "animal"
+    SERVICE = "service"
+
+
+# Nature → (libellé dropdown, compte PCG agricole de produit). Source de vérité de la ventilation.
+NATURES_VENTE_AGRI: dict[NatureVenteAgri, tuple[str, str]] = {
+    NatureVenteAgri.VEGETAL: ("Produits végétaux (récoltes)", "7011"),
+    NatureVenteAgri.ANIMAL: ("Produits animaux / animaux", "7012"),
+    NatureVenteAgri.SERVICE: ("Prestations de services", "7013"),
+}
+
+
 class CategorieTvaAgri(StrEnum):
     """Catégories TVA agricoles (fondées sur UNTDID 5305 + spécificités FR).
 

@@ -102,7 +102,7 @@
     <div class="party-legal">
       <strong>SIRET :</strong> {{ vendeur.siret }} <em style="color:#888">(fictif — démo)</em><br>
       <strong>Code APE :</strong> {{ vendeur.ape }}<br>
-      {% if regime.slug != 'franchise' %}
+      {% if regime.force_tva_pct != 0 %}
       <strong>TVA intra. :</strong> {{ vendeur.tva }}
       {% else %}
       <em style="color:#92400e">Franchise en base de TVA — Art. 293 B CGI</em>
@@ -139,9 +139,9 @@
         <strong>{{ ligne.nom }}</strong>
         {% if ligne.detail %}<br><small style="color:#666">{{ ligne.detail }}</small>{% endif %}
       </td>
-      <td class="num">{{ ligne.qte }}</td>
+      <td class="num">{{ ligne.qte }}{% if ligne.unite_symbole %} {{ ligne.unite_symbole }}{% endif %}</td>
       <td class="num">{{ "%.2f"|format(ligne.pu_ht) }} €</td>
-      <td class="num">{% if regime.slug == 'franchise' %}—{% else %}{{ "%.1f"|format(ligne.tva_pct) }} %{% endif %}</td>
+      <td class="num">{% if regime.force_tva_pct == 0 %}—{% else %}{{ "%.1f"|format(ligne.tva_pct) }} %{% endif %}</td>
       <td class="num">{{ "%.2f"|format(ligne.total_ht) }} €</td>
     </tr>
     {% endfor %}
@@ -151,7 +151,7 @@
 <div class="footer-block">
 <div class="totals">
   <div class="row"><span class="label">Total HT</span><span class="value">{{ "%.2f"|format(totaux.total_ht) }} €</span></div>
-  {% if regime.slug != 'franchise' %}
+  {% if regime.force_tva_pct != 0 %}
     {% for taux, montant in totaux.tva_par_taux.items() %}
     <div class="row"><span class="label">TVA {{ taux }} %</span><span class="value">{{ "%.2f"|format(montant) }} €</span></div>
     {% endfor %}
@@ -165,6 +165,12 @@
 <div class="franchise-mention">
   <strong>TVA non applicable, Article 293 B du CGI.</strong>
   {{ vendeur.nom_commercial }} bénéficie du régime de la franchise en base de TVA.
+</div>
+{% endif %}
+
+{% if regime.slug == '298-bis-agri' %}
+<div class="franchise-mention">
+  <strong>{{ regime.mention_tva }}</strong>
 </div>
 {% endif %}
 
