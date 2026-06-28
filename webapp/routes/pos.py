@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -73,6 +74,11 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 @router.get("/pos", response_class=HTMLResponse)
 async def pos_index(request: Request):
     """Liste sessions historiques + mini-stats + accès rapide session ouverte."""
+    # En démo publique, toute arrivée sur SelfPOS montre directement la vitrine
+    # split PC+mobile. L'iframe interne de la vitrine appelle /pos?embed=1 pour
+    # afficher la vraie caisse sans reboucler sur la redirection.
+    if os.environ.get("SELFFARM_ENV", "prod") == "demo" and request.query_params.get("embed") != "1":
+        return RedirectResponse("/pos/demo", status_code=302)
     seed_if_empty()  # idempotent — première visite seed le catalogue
     from self_pos.stats import stats_globales_pos
     from self_agri_book.exploitation import get_exploitation
