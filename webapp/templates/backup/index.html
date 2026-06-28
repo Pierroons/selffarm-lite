@@ -59,35 +59,207 @@
 
   <!-- TÉLÉCHARGER -->
   <div class="card" style="padding: 18px;">
-    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">Télécharger une sauvegarde</h2>
+    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">📦 Créer une sauvegarde</h2>
     <p style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 14px;">
-      Génère un fichier <code style="font-size: 11px;">.zip</code> contenant ta DB compta + un manifest signé SHA256 + une notice de restauration. Portable entre OS et entre versions.
+      Crée un fichier <code style="font-size: 11px;">.zip</code> de toutes tes données (base + factures + manifest signé SHA256) que ton navigateur télécharge. <strong style="color: var(--text-primary);">À déposer ailleurs que sur ce PC</strong> — Proton Drive, un autre ordi, un mail à toi-même : c'est ta copie <strong>hors-site</strong> (vol / incendie) et ton fichier de <strong>migration</strong> vers une nouvelle install.
     </p>
-    {% if db_exists and stats.nb_ecritures > 0 %}
-    <a href="/backup/download" class="btn" style="display: block; text-align: center; font-size: 13.5px; padding: 11px 18px;">↓ Télécharger le ZIP</a>
+    {% if db_exists %}
+    <a href="/backup/download" class="btn" style="display: block; text-align: center; font-size: 13.5px; padding: 11px 18px;">↓ Créer et télécharger ma sauvegarde</a>
     <div style="margin-top: 10px; font-size: 11px; color: var(--text-muted); text-align: center;">
       Format : <code style="font-size: 10.5px;">selffarm-backup-AAAAMMJJ-HHMMSS-Necr.zip</code>
     </div>
     {% else %}
-    <button disabled class="btn" style="width: 100%; opacity: 0.5; cursor: not-allowed; font-size: 13.5px; padding: 11px 18px;">↓ Télécharger le ZIP</button>
+    <button disabled class="btn" style="width: 100%; opacity: 0.5; cursor: not-allowed; font-size: 13.5px; padding: 11px 18px;">↓ Créer et télécharger ma sauvegarde</button>
     <div style="margin-top: 10px; font-size: 11px; color: var(--text-muted); text-align: center;">
-      Aucune écriture encore — saisis au moins une facture / vente avant de sauvegarder.
+      Base pas encore créée — renseigne ton profil / une parcelle avant de sauvegarder.
     </div>
     {% endif %}
   </div>
 
   <!-- RESTAURER -->
   <div class="card" style="padding: 18px;">
-    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">Restaurer depuis un fichier</h2>
+    <h2 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">♻️ Restaurer (réinjecter)</h2>
     <p style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 14px;">
-      Charge un ZIP précédemment exporté. <strong style="color: #f4c47a;">L'ancienne DB est sauvegardée</strong> en <code style="font-size: 10.5px;">compta.db.bak-AAAAMMJJ-HHMMSS</code> avant remplacement.
+      <strong style="color: var(--text-primary);">Sens inverse :</strong> recharge un <code style="font-size: 11px;">.zip</code> de sauvegarde pour <strong style="color: #f4c47a;">remplacer tes données actuelles</strong> par celles de l'archive. L'ancienne base est gardée en <code style="font-size: 10.5px;">compta.db.bak-…</code> au cas où.
     </p>
     <form action="/backup/restore" method="post" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 10px;">
       <input type="file" name="archive" accept=".zip" required style="font-size: 12px; padding: 8px;">
+      <label style="font-size:11px; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
+        <input type="checkbox" name="confirm_rollback"> Autoriser un retour en arrière (si le backup est plus ancien — compta préservée)
+      </label>
       <button type="submit" class="btn btn-ghost" style="font-size: 13px;" onclick="return confirm('Restaurer cette archive ? L\\'ancienne DB sera renommée .bak.');">↑ Restaurer</button>
     </form>
+    <div style="margin-top:12px; padding-top:10px; border-top:1px solid var(--border-subtle);">
+      <a href="/backup/restaurer" style="font-size:11.5px; color:var(--accent-200);">💾 Ou restaurer depuis un disque externe branché (PC neuf) →</a>
+    </div>
   </div>
 
+</div>
+
+<!-- SNAPSHOTS AUTO (B2) -->
+<div class="card" style="margin-top: 14px; padding: 14px 16px;">
+  <h3 style="font-size: 12.5px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">🛟 Snapshots automatiques (local)</h3>
+  <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.55; margin: 0;">
+    L'app crée seule un instantané à chaque démarrage (1/jour max), conservés dans
+    <code style="font-size:10.5px;">backups/</code> à côté de ta base.
+    {% if nb_snapshots %}<strong style="color: var(--text-primary);">{{ nb_snapshots }}</strong> snapshot(s) en réserve{% if last_snapshot_age_h is not none %}, dernier il y a {{ "%.0f"|format(last_snapshot_age_h) }} h{% endif %}.{% else %}Aucun pour l'instant.{% endif %}
+    <span style="color: var(--text-muted);">Protège des fausses manips — mais reste sur ce PC.</span>
+  </p>
+</div>
+
+<!-- DISQUE EXTERNE (B3a) -->
+<div class="card" style="margin-top: 14px; padding: 16px;">
+  <h3 style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">💾 Sauvegarde sur disque externe</h3>
+  <p style="font-size: 12px; color: #f4c47a; line-height: 1.5; margin-bottom: 12px;">
+    ⚠️ SelfFarm est <strong>100 % local</strong>. Sans copie sur un support externe, une panne de ce PC = <strong>perte totale</strong>. Branche un disque externe et sauvegarde dessus régulièrement.
+  </p>
+
+  {% if request.query_params.get('ext_ok') %}<div style="font-size:11.5px; color:var(--accent-200); margin-bottom:10px;">✓ Sauvegarde externe effectuée.</div>{% endif %}
+  {% if request.query_params.get('ext_err') %}<div style="font-size:11.5px; color:var(--warm-terra); margin-bottom:10px;">✗ Échec : le disque est-il toujours branché ?</div>{% endif %}
+
+  {% if ext_config.last_external_backup_utc %}
+  <div style="font-size: 11.5px; color: var(--accent-200); margin-bottom: 12px;">
+    ✓ Dernière sauvegarde externe : <strong>{{ ext_config.last_external_backup_utc[:16]|replace('T',' ') }}</strong> UTC{% if ext_config.disk_label %} sur <code style="font-size:10.5px;">{{ ext_config.disk_label }}</code>{% endif %}
+  </div>
+  {% endif %}
+
+  {% if external_mounts %}
+    {% for m in external_mounts %}
+    <div style="display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--border-subtle); border-radius:8px; margin-bottom:8px;">
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:12.5px; font-weight:600; color:var(--text-primary);">{{ m.label }}</div>
+        <div style="font-size:10.5px; color:var(--text-muted);">{{ m.path }} · {{ "%.1f"|format(m.free_bytes/1e9) }} Go libres{% if not m.writable %} · <span style="color:var(--warm-terra); font-weight:600;">⚠ lecture seule</span>{% endif %}</div>
+      </div>
+      {% if m.writable %}
+      <form method="post" action="/backup/externe" style="margin:0;">
+        <input type="hidden" name="mount_path" value="{{ m.path }}">
+        <button type="submit" class="btn" style="font-size:12.5px; padding:8px 14px; white-space:nowrap;">↓ Sauvegarder dessus</button>
+      </form>
+      {% else %}
+      <span style="font-size:10.5px; color:var(--text-muted); text-align:right; max-width:170px; line-height:1.4;">Disque non inscriptible.<br>Formate-le en <strong>exFAT</strong> pour t'en servir.</span>
+      {% endif %}
+    </div>
+    {% endfor %}
+  {% else %}
+    <div style="font-size:12px; color:var(--text-muted); padding:12px; border:1px dashed var(--border-default); border-radius:8px; text-align:center;">
+      Aucun disque externe détecté. Branche une clé USB ou un disque, puis rafraîchis cette page.
+    </div>
+  {% endif %}
+
+  <!-- Sauvegarde auto programmée (B3b) -->
+  <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border-subtle);">
+    <div style="font-size:12px; font-weight:600; color:var(--text-primary); margin-bottom:6px;">⏰ Sauvegarde automatique programmée</div>
+    {% if request.query_params.get('cron_ok') %}<div style="font-size:11px; color:var(--accent-200); margin-bottom:6px;">✓ Programmation enregistrée.</div>{% endif %}
+    {% if request.query_params.get('cron_err') %}<div style="font-size:11px; color:var(--warm-terra); margin-bottom:6px;">✗ Échec (crontab indisponible ?).</div>{% endif %}
+    {% set jours = {'*':'tous les jours','1':'le lundi','2':'le mardi','3':'le mercredi','4':'le jeudi','5':'le vendredi','6':'le samedi','0':'le dimanche'} %}
+    {% if cron_schedule and cron_schedule.hour is defined %}
+      <div style="font-size:11.5px; color:var(--accent-200); margin-bottom:8px;">
+        ✓ Active : <strong>{{ jours.get(cron_schedule.dow, cron_schedule.dow) }} à {{ "%02d"|format(cron_schedule.hour) }}h{{ "%02d"|format(cron_schedule.minute) }}</strong> → vers ton disque externe (s'il est branché).
+      </div>
+      <form method="post" action="/backup/deplanifier" style="margin:0;">
+        <button type="submit" class="btn-ghost" style="font-size:11.5px;">Désactiver la sauvegarde auto</button>
+      </form>
+    {% else %}
+      <p style="font-size:11.5px; color:var(--text-secondary); margin-bottom:8px; line-height:1.5;">
+        Sauvegarde le disque externe à l'heure que tu choisis. S'il n'est pas branché à ce moment, tu seras rappelé (et l'app retentera au prochain branchement).
+      </p>
+      <form method="post" action="/backup/planifier" style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+        <label style="font-size:11px; color:var(--text-muted);">Quand
+          <select name="dow" style="display:block; margin-top:3px;">
+            <option value="*">Tous les jours</option>
+            <option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option>
+            <option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option>
+          </select>
+        </label>
+        <label style="font-size:11px; color:var(--text-muted);">À (heure)
+          <input type="number" name="hour" min="0" max="23" value="20" style="display:block; margin-top:3px; width:72px;">
+        </label>
+        <button type="submit" class="btn" style="font-size:12px; padding:8px 14px;">Activer</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <div style="margin-top:12px; font-size:10.5px; color:var(--text-muted);">
+    Écrit dans <code style="font-size:10px;">&lt;disque&gt;/SelfFarm-Backups/</code> · 30 dernières conservées.
+  </div>
+</div>
+
+<!-- SAUVEGARDE DISTANTE SFTP CHIFFRÉE (B4) -->
+<div class="card" style="margin-top: 14px; padding: 16px;">
+  <h3 style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">☁️ Sauvegarde distante chiffrée (SSH / SFTP)</h3>
+  <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px;">
+    Pousse une copie <strong style="color:var(--text-primary);">chiffrée</strong> (GPG, ta clé) vers ton propre serveur — NAS, VPS, Raspberry… Le serveur distant ne stocke que de l'<strong>illisible</strong> : toi seul peux déchiffrer. Ta copie <strong>hors-site</strong>, automatisable.
+  </p>
+
+  {% if request.query_params.get('sftp_ok') %}<div style="font-size:11.5px; color:var(--accent-200); margin-bottom:10px;">✓ Sauvegarde distante chiffrée envoyée.</div>{% endif %}
+  {% if request.query_params.get('sftp_err') %}<div style="font-size:11.5px; color:var(--warm-terra); margin-bottom:10px;">✗ Échec de l'envoi — voir le détail ci-dessous.</div>{% endif %}
+
+  {% if sftp_config.last_sftp_backup_utc %}
+  <div style="font-size:11.5px; color:var(--accent-200); margin-bottom:8px;">
+    ✓ Dernière sauvegarde distante : <strong>{{ sftp_config.last_sftp_backup_utc[:16]|replace('T',' ') }}</strong> UTC → <code style="font-size:10.5px;">{{ sftp_config.username }}@{{ sftp_config.host }}</code>
+  </div>
+  {% endif %}
+
+  {% if sftp_config.last_test %}
+  <div style="font-size:11px; margin-bottom:10px; padding:8px 10px; border-radius:6px; border:1px solid var(--border-subtle); color:{{ 'var(--accent-200)' if sftp_config.last_test.ok else 'var(--warm-terra)' }};">
+    {{ '✓' if sftp_config.last_test.ok else '✗' }} {{ sftp_config.last_test.message }}
+  </div>
+  {% endif %}
+
+  <form method="post" action="/backup/distant/config" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+    <label style="font-size:11px; color:var(--text-muted); grid-column:span 2;">Hôte (IP ou domaine)
+      <input type="text" name="host" value="{{ sftp_config.host or '' }}" placeholder="192.168.1.50 ou nas.local" required style="display:block; margin-top:3px; width:100%;">
+    </label>
+    <label style="font-size:11px; color:var(--text-muted);">Utilisateur SSH
+      <input type="text" name="username" value="{{ sftp_config.username or '' }}" placeholder="backup" required style="display:block; margin-top:3px; width:100%;">
+    </label>
+    <label style="font-size:11px; color:var(--text-muted);">Port
+      <input type="number" name="port" value="{{ sftp_config.port or 22 }}" min="1" max="65535" style="display:block; margin-top:3px; width:100%;">
+    </label>
+    <label style="font-size:11px; color:var(--text-muted); grid-column:span 2;">Clé SSH privée (chemin)
+      <input type="text" name="key_path" value="{{ sftp_config.key_path or '' }}" placeholder="~/.ssh/id_ed25519" required style="display:block; margin-top:3px; width:100%;">
+    </label>
+    <label style="font-size:11px; color:var(--text-muted); grid-column:span 2;">Dossier distant
+      <input type="text" name="remote_dir" value="{{ sftp_config.remote_dir or '' }}" placeholder="/home/user/SelfFarm-Backups" required style="display:block; margin-top:3px; width:100%;">
+    </label>
+    <label style="font-size:11px; color:var(--text-muted);">Clé GPG (chiffrement)
+      <input type="text" name="gpg_recipient" value="{{ sftp_config.gpg_recipient or '' }}" placeholder="982E03D6 / email" required style="display:block; margin-top:3px; width:100%;">
+    </label>
+    <label style="font-size:11px; color:var(--text-muted);">Copies conservées
+      <input type="number" name="retention" value="{{ sftp_config.retention or 30 }}" min="1" max="365" style="display:block; margin-top:3px; width:100%;">
+    </label>
+    <label style="font-size:11.5px; color:var(--text-secondary); grid-column:span 2; display:flex; align-items:center; gap:8px; margin-top:2px;">
+      <input type="checkbox" name="enabled" {% if sftp_config.enabled %}checked{% endif %}> Inclure dans la sauvegarde automatique (cron)
+    </label>
+    <button type="submit" class="btn" style="font-size:12px; padding:8px 14px; grid-column:span 2;">Enregistrer la configuration</button>
+  </form>
+
+  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+    <form method="post" action="/backup/distant/test" style="margin:0;">
+      <button type="submit" class="btn-ghost" style="font-size:12px;">Tester la connexion</button>
+    </form>
+    <form method="post" action="/backup/distant/maintenant" style="margin:0;">
+      <button type="submit" class="btn" style="font-size:12px;">↑ Sauvegarder maintenant</button>
+    </form>
+    {% if sftp_config.enabled %}
+    <form method="post" action="/backup/distant/desactiver" style="margin:0;">
+      <button type="submit" class="btn-ghost" style="font-size:12px;">Désactiver l'auto</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <div style="margin-top:12px; font-size:10.5px; color:var(--text-muted); line-height:1.5;">
+    🔑 Restauration : récupère le <code style="font-size:10px;">.zip.gpg</code> sur ton serveur → <code style="font-size:10px;">gpg -d fichier.zip.gpg &gt; backup.zip</code> → restaure via le bloc ♻️ plus haut. Sans ta clé privée GPG, le fichier est inexploitable (c'est le but).
+  </div>
+</div>
+
+<!-- COFFRE MOBILE (Partie D) -->
+<div class="card" style="margin-top: 14px; padding: 16px;">
+  <h3 style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">📱 Coffre mobile</h3>
+  <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px;">
+    Transforme un téléphone en support de sauvegarde : il reçoit des copies <strong>chiffrées</strong> (illisibles sans ce PC) et peut les rendre en cas de pépin. Aucune clé à gérer — tout passe par un scan de QR.
+  </p>
+  <a href="/pos/coffre/appairer" class="btn" style="display:inline-block; font-size:12.5px; padding:8px 14px; text-decoration:none;">Appairer un téléphone →</a>
 </div>
 
 <!-- DETAILS TECHNIQUES -->
