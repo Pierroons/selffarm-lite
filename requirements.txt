@@ -1,0 +1,29 @@
+# ===== SelfFarm-Lite — dépendances Python =====
+# Python 3.13+ — installer : .venv/bin/pip install -r requirements.txt
+
+# --- Web framework + serveur ASGI ---
+fastapi==0.136.0
+uvicorn[standard]==0.45.0      # inclut uvloop, httptools, watchfiles, websockets
+python-multipart==0.0.26       # upload de fichiers (import retour marché, etc.)
+itsdangerous==2.2.0            # SessionMiddleware Starlette (wizard onboarding)
+
+# --- Templates ---
+Jinja2==3.1.6
+
+# --- Données / configuration ---
+PyYAML==6.0.3                  # catalogues cultures + aides publiques
+python-dotenv==1.2.2           # chargement config .env
+
+# --- Génération de documents ---
+weasyprint==68.1               # HTML → PDF (factures Factur-X, devis)
+reportlab==4.4.10              # PDF bas niveau
+openpyxl==3.1.5                # export / import XLS (Batigest, etc.)
+pdfplumber==0.11.9             # parsing relevés bancaires PDF (self_banking)
+
+# --- SelfPOS V0.3 (caisse marché) ---
+segno==1.6.6                   # génération QR codes (connexion tel ↔ PC)
+psutil==7.2.2                  # détection interfaces réseau (page Mode marché)
+
+# --- Développement / tests (optionnel en prod) ---
+pytest==9.0.3
+httpx==0.28.1                  # client HTTP pour les tests
