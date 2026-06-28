@@ -86,7 +86,16 @@ def apply_mode_preset(mode: str) -> None:
 
 # ── Navigation : déterminer le contexte actif depuis l'URL ───────────────────
 def active_module_id(path: str) -> str | None:
-    """Id du module dont un item matche le path (match le plus long gagne)."""
+    """Id du module actif d'après l'URL.
+
+    Page « bientôt » d'un module (/m/{id}/bientot) : on déduit le module de
+    l'id présent dans l'URL (ces modules n'ont pas d'items à matcher).
+    Sinon : module dont un item matche le path (match le plus long gagne).
+    """
+    if path.startswith("/m/"):
+        parts = path.split("/")
+        if len(parts) > 2 and cat.module_by_id(parts[2]):
+            return parts[2]
     best, best_len = None, -1
     for m in cat.all_modules():
         for it in m.items:
