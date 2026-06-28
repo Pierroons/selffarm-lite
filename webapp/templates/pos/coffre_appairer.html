@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Appairer un coffre mobile{% endblock %}
+{% block content %}
+
+<div class="card" style="padding:18px; margin-bottom:14px;">
+  <h2 style="font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:6px;">📱 Appairer un coffre de sauvegarde</h2>
+  <p style="font-size:12.5px; color:var(--text-secondary); line-height:1.55; margin:0;">
+    Scanne ce QR avec le téléphone (sur le <strong style="color:var(--text-primary);">même réseau WiFi</strong>). Le tel devient un <strong style="color:var(--text-primary);">coffre</strong> : il recevra des sauvegardes chiffrées que lui seul pourra rendre à un PC. Aucune clé à retenir — tout est géré automatiquement.
+  </p>
+</div>
+
+<div class="card" style="padding:18px; text-align:center;">
+  <img src="/api/pos/qr-code?url={{ pair_url | urlencode }}" alt="QR d'appairage"
+       style="width:240px; height:240px; background:#fff; border-radius:10px; padding:8px;">
+  <div style="margin-top:12px; font-size:11px; color:var(--text-muted); word-break:break-all;">{{ pair_url }}</div>
+  <div style="margin-top:6px; font-size:11px; color:var(--warm-amber);">⏱ Valable 5 minutes — recharge la page pour un nouveau QR.</div>
+</div>
+
+{% if devices %}
+<div class="card" style="padding:16px; margin-top:14px;">
+  <h3 style="font-size:12.5px; font-weight:600; color:var(--text-primary); margin-bottom:10px;">Appareils appairés</h3>
+  {% for id, d in devices.items() %}
+  <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border-subtle); font-size:12px; color:var(--text-primary);">
+    <span>📱</span>
+    <span style="flex:1;">{{ d.label }}</span>
+    <span style="font-size:10.5px; color:var(--text-muted);">appairé {{ d.paired_at[:10] }}{% if d.last_seen %} · vu {{ d.last_seen[:16]|replace('T',' ') }}{% endif %}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div style="margin-top:12px;">
+  <a href="/backup" style="font-size:12px; color:var(--text-muted);">← Retour aux sauvegardes</a>
+</div>
+
+{% endblock %}

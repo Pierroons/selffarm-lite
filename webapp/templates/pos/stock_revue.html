@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Revue stock résiduel — SelfPOS{% endblock %}
+{% block breadcrumb %}Vente · SelfPOS · Stock résiduel{% endblock %}
+{% block page_title %}📦 Revue du stock résiduel{% endblock %}
+
+{% block topbar_actions %}
+  <a href="/pos" class="btn-ghost">← Caisse marché</a>
+{% endblock %}
+
+{% block content %}
+<style>
+.revue-wrap {max-width:980px; margin:0 auto;}
+.alert-banner {
+  background:rgba(212,160,86,0.13); border:1px solid rgba(212,160,86,0.30);
+  border-radius:10px; padding:14px 18px; margin-bottom:18px;
+  color:var(--warm-amber); font-size:13px;
+}
+.alert-banner strong {color:var(--text-primary);}
+.section-mini {font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; font-weight:600; margin:18px 0 10px 0;}
+.revue-table {width:100%; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px; border-collapse:separate; border-spacing:0;}
+.revue-table th {text-align:left; padding:9px 12px; background:var(--bg-elev); color:var(--text-muted); font-size:10.5px; text-transform:uppercase; letter-spacing:0.5px; font-weight:600;}
+.revue-table td {padding:11px 12px; font-size:12.5px; color:var(--text-secondary); border-top:1px solid var(--border-subtle);}
+.revue-table td.qte {color:var(--text-primary); font-feature-settings:'tnum'; font-weight:500;}
+.revue-table .age {color:var(--warm-amber); font-size:11px; font-weight:600;}
+.action-cell {display:flex; gap:6px; flex-wrap:wrap;}
+.action-cell button, .action-cell .btn-link {
+  font-size:11px; padding:5px 10px; border-radius:5px;
+  border:1px solid var(--border-default); background:transparent; color:var(--text-secondary);
+  cursor:pointer; font-family:inherit;
+}
+.action-cell button:hover, .action-cell .btn-link:hover {border-color:var(--accent-500); color:var(--accent-200);}
+.action-cell .btn-confirm {color:var(--accent-200); border-color:var(--accent-500);}
+.action-cell details {position:relative;}
+.action-cell details summary {
+  list-style:none; cursor:pointer;
+  padding:5px 10px; font-size:11px;
+  border:1px solid var(--border-default); border-radius:5px; color:var(--text-secondary);
+}
+.action-cell details summary::-webkit-details-marker {display:none;}
+.action-cell details[open] summary {background:var(--accent-bg-soft); color:var(--accent-200); border-color:var(--accent-500);}
+.dest-popover {
+  position:absolute; top:100%; right:0; z-index:10;
+  background:var(--bg-card); border:1px solid var(--border-default); border-radius:6px;
+  padding:10px; margin-top:4px; min-width:200px;
+  box-shadow:0 6px 16px rgba(0,0,0,0.4);
+}
+.dest-popover label {display:block; font-size:11px; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;}
+.dest-popover select {width:100%; padding:6px 8px; background:#0a1410; border:1px solid var(--border-default); color:var(--text-primary); border-radius:4px; font-size:12px; font-family:inherit;}
+.dest-popover button {margin-top:8px; width:100%;}
+.empty {background:var(--bg-card); border:1px dashed var(--border-default); border-radius:10px; padding:32px; text-align:center; color:var(--text-muted); font-size:13px;}
+</style>
+
+<div class="revue-wrap">
+  {% if a_reviewer %}
+  <div class="alert-banner">
+    ⚠ <strong>{{ a_reviewer | length }}</strong> ligne{{ 's' if a_reviewer|length != 1 else '' }} de stock à revoir (>{{ seuil_jours }} jours sans confirmation).
+    Tu peux confirmer qu'elles sont toujours en stock, OU les reclasser en invendu.
+  </div>
+
+  <div class="section-mini">🔔 À reviewer ({{ a_reviewer | length }})</div>
+  <table class="revue-table">
+    <thead>
+      <tr><th>Produit</th><th>Quantité</th><th>Dernière revue</th><th>Notes</th><th style="text-align:right;">Action</th></tr>
+    </thead>
+    <tbody>
+      {% for r in a_reviewer %}
+      <tr>
+        <td style="color:var(--text-primary); font-weight:500;">{{ r.produit_nom }}</td>
+        <td class="qte">{{ "%.1f"|format(r.quantite) }} {{ r.unite }}</td>
+        <td><span class="age">{{ r.derniere_revue_at[:10] }}</span></td>
+        <td>{{ r.notes or '—' }}</td>
+        <td>
+          <div class="action-cell" style="justify-content:flex-end;">
+            <form action="/pos/residus/{{ r.id }}/confirm-stock" method="post" style="display:inline;">
+              <button type="submit" class="btn-confirm">Toujours OK</button>
+            </form>
+            <details>
+              <summary>Reclasser ▾</summary>
+              <div class="dest-popover">
+                <form action="/pos/residus/{{ r.id }}/reclasser" method="post">
+                  <label>Nouveau statut</label>
+                  <select name="new_status">
+                    <option value="invendu">Invendu</option>
+                    <option value="consomme_hors_marche">Vendu hors marché</option>
+                  </select>
+                  <label style="margin-top:8px;">Destination (si invendu)</label>
+                  <select name="destination">
+                    <option value="">—</option>
+                    <option value="poules">Poules</option>
+                    <option value="compost">Compost</option>
+                    <option value="don">Don</option>
+                    <option value="poubelle">Poubelle</option>
+                    <option value="garde_maison">Garde maison</option>
+                    <option value="autre">Autre</option>
+                  </select>
+                  <button type="submit" class="btn-confirm">Valider</button>
+                </form>
+              </div>
+            </details>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <div class="section-mini">📦 Tout le stock actif ({{ all_stock | length }} ligne{{ 's' if all_stock|length != 1 else '' }})</div>
+  {% if all_stock %}
+  <table class="revue-table">
+    <thead>
+      <tr><th>Produit</th><th>Quantité</th><th>Depuis</th><th>Marché</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      {% for r in all_stock %}
+      <tr>
+        <td style="color:var(--text-primary); font-weight:500;">{{ r.produit_nom }}</td>
+        <td class="qte">{{ "%.1f"|format(r.quantite) }} {{ r.unite }}</td>
+        <td>{{ r.derniere_revue_at[:10] }}</td>
+        <td><a href="/pos/sessions/{{ r.session_id }}/recap" style="color:var(--accent-200);">Session #{{ r.session_id }} →</a></td>
+        <td>{{ r.notes or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    Aucune ligne en stock résiduel. Tout a été clôturé.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
