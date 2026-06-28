@@ -50,3 +50,4 @@ scripts/tailwindcss
 *.key
 vault.key
 *.pem
+examples/_perso/
