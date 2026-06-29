@@ -28,6 +28,29 @@ def render_pdf(result: PrevisionnelDnja, out_path: Path) -> Path:
     )
     template = env.get_template("dossier-dnja.html.j2")
     payload = result.model_dump(mode="json")
+
+    # Annexe interne « capacité & réserve » : écart capacité de production − quantité
+    # déclarée vendue, valorisé au prix de vente. Affiché seulement si le flag est ON.
+    reserves = []
+    for a in payload["hypotheses"]["activites"]:
+        cap = a.get("capacite_annuelle")
+        if cap is None or a.get("quantite_annuelle") is None:
+            continue
+        cap_f = float(cap)
+        vendu_f = float(a["quantite_annuelle"])
+        if cap_f <= vendu_f:
+            continue
+        reserve_qte = cap_f - vendu_f
+        reserves.append({
+            "nom": a["nom"],
+            "unite": a["unite_vente"],
+            "capacite": cap_f,
+            "vendu": vendu_f,
+            "reserve_qte": reserve_qte,
+            "prix": float(a["prix_vente_ht"]),
+            "valeur_reserve": reserve_qte * float(a["prix_vente_ht"]),
+        })
+
     html_str = template.render(
         hypotheses=payload["hypotheses"],
         lignes=payload["lignes"],

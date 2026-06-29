@@ -46,6 +46,11 @@ class Activite(BaseModel):
     quantite_annuelle: Decimal | None = Field(
         default=None, ge=0, description="Quantité vendable annuelle (unité). Prio sur rendement×surface."
     )
+    capacite_annuelle: Decimal | None = Field(
+        default=None, ge=0,
+        description="Capacité de production annuelle réelle (≥ quantité déclarée vendue). "
+                    "L'écart capacité − vendu = stock de réserve non engagé. Annexe interne de pilotage.",
+    )
     bio: bool = False
     annee_pleine_production: int = Field(
         ge=1, le=10, description="À partir de quelle année le plein régime est atteint"
@@ -157,7 +162,7 @@ class Hypotheses(BaseModel):
 
     candidat: str = Field(description="Nom du candidat (ex: 'Pierroons')")
     date_installation: date
-    adresse_exploitation: str | None = Field(default=None, description="Ex: '3, [adresse]'")
+    adresse_exploitation: str | None = Field(default=None, description="Ex: '12 rue des Champs'")
     code_postal: str | None = Field(default=None, description="Ex: '33220'")
     commune: str
     departement: str
@@ -241,6 +246,11 @@ class Hypotheses(BaseModel):
     afficher_memos_pedagogiques: bool = Field(
         default=True,
         description="Afficher l'annexe finale « Mémos de lecture » (formules CAF, marge brute, tréso) — off pour version Chambre",
+    )
+    afficher_reserve_production: bool = Field(
+        default=False,
+        description="Affiche l'annexe « Capacité de production & stock de réserve » (écart capacité − vendu). "
+                    "⚠️ Pilotage interne uniquement — laisser False pour la version remise à la DDT.",
     )
 
     # --- Modalités versement DJA (titre principal vs installation progressive) ---

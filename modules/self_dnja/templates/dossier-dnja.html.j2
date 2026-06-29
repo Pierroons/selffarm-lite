@@ -755,13 +755,37 @@ Barème dégressif d'exonération JA appliqué :</p>
 </table>
 {% endif %}
 
+{% if hypotheses.afficher_reserve_production and reserves %}
+<div style="page-break-before: always;"></div>
+<h2>Annexe interne — Capacité de production &amp; stock de réserve</h2>
+<p style="font-size:0.85em;color:#555;">⚠️ <strong>Pilotage interne uniquement.</strong> Écart entre la capacité de production et la quantité déclarée vendue = stock de réserve conservable, non engagé dans le prévisionnel (les produits — isolat/distillat — se conservent). <strong>À retirer de la version remise à la DDT.</strong></p>
+<table>
+<thead><tr>
+<th>Filière</th><th>Capacité / an</th><th>Vendu déclaré / an</th><th>Réserve / an</th><th>Valeur réserve (prix de vente)</th>
+</tr></thead>
+<tbody>
+{% for r in reserves %}
+<tr>
+  <td>{{ r.nom }}</td>
+  <td>{{ "%.0f"|format(r.capacite) }} {{ r.unite }}</td>
+  <td>{{ "%.0f"|format(r.vendu) }} {{ r.unite }}</td>
+  <td>{{ "%.0f"|format(r.reserve_qte) }} {{ r.unite }}</td>
+  <td>{{ "%.0f"|format(r.valeur_reserve) }} €</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+
 <div class="footer-note">
 <strong>Note méthodologique.</strong> Ce dossier est produit par l'outil <code>self-dnja</code>
 (SelfFarm-Lite, AGPL-3.0-or-later) à partir d'un YAML d'hypothèses structurées.
 Les montants d'aides sont à jour au {{ genere_le }}, à reconfirmer en séance CDOA.
-Les seuils EBE/UTH s'appuient sur le barème 2026 Nouvelle-Aquitaine zone défavorisée
-(22 000 € cible N+4). L'impôt sur le revenu est estimé avec l'abattement JA art. 73 B CGI
-(−50 % sur 5 premières années) et le barème IR par part 2026 (célibataire sans enfant).
+Le critère retenu est le RDA (net des cotisations MSA exploitant) comparé au seuil
+appliqué par la Chambre ({{ ebe_uth_seuil }} € en année cible, à confirmer par le texte
+officiel CdC DNJA V3 / Région concernée). L'impôt sur le revenu est estimé avec
+l'abattement JA art. 73 B CGI (−50 % sur 5 premières années) et le barème IR par part 2026
+(célibataire sans enfant).
 Ce document est un support de réflexion : il ne se substitue pas à l'étude économique
 officielle AITA qui devra être validée par une structure agréée.
 </div>
