@@ -37,14 +37,16 @@ getcontext().prec = 18
 
 log = logging.getLogger("self-dnja")
 
-# Seuil officiel EBE/UTH DNJA Nouvelle-Aquitaine 2026 (≈ SMIC annuel net).
-# À recalibrer annuellement depuis https://les-aides.nouvelle-aquitaine.fr/
-# SMIC annuel brut 2026 (référence RDA DNJA)
-# SMIC mensuel brut 2026 (1er janvier) : 1 801,80 € × 12 = 21 621,60 €
+# SMIC annuel brut 2026 (1 801,80 €/mois × 12) — conservé pour information.
 SMIC_ANNUEL_BRUT_2026 = Decimal("21621.60")
 
-# Alias maintenu pour compat rétro : seuil EBE/UTH = 1 SMIC arrondi
-EBE_UTH_SEUIL_DNJA_NA_2026 = SMIC_ANNUEL_BRUT_2026
+# Seuil RDA DNJA appliqué pour l'instruction (Revenu Disponible Agricole, année cible).
+# Source : valeur (17 717 €/an, année cible) communiquée pour un dossier par une
+# Chambre d'agriculture via une étude PROAGRI. Cas particulier, NON généralisable
+# (peut varier selon département / région) et non vérifié au texte officiel.
+# ⚠️ À CONFIRMER (CdC DNJA V3 / Région concernée) avant tout usage normatif.
+# NB : ce seuil s'applique au RDA *après* cotisations sociales exploitant (méthode PROAGRI).
+EBE_UTH_SEUIL_DNJA_NA_2026 = Decimal("17717")
 
 # Barème IR 2026 par part (simplifié, célibataire, sans réduction spécifique)
 IR_TRANCHES_2026 = [
@@ -160,11 +162,16 @@ def calculer(h: Hypotheses, include_enrichissements: bool = True) -> Previsionne
 
         # --- RDA (Revenu Disponible Agricole) — Annexe 4 CdC DNJA V3 ---
         # RDA = EBE + produits fin CT − annuités emprunts LT/MT − frais fin dettes CT
+        #       − cotisations sociales exploitant (MSA)
+        # Les cotisations MSA de l'exploitant sont déduites pour obtenir le revenu
+        # réellement disponible — conforme à la présentation PROAGRI/CER de la Chambre
+        # (leur EBE est net de MSA exploitant).
         rda = (
             ebe
             + h.produits_financiers_ct_annuels
             - h.annuites_emprunts_annuelles
             - h.frais_financiers_ct_annuels
+            - social
         ).quantize(Decimal("0.01"))
 
         # --- IR JA art 73 B (50 % abattement 5 premières années) ---
@@ -200,10 +207,10 @@ def calculer(h: Hypotheses, include_enrichissements: bool = True) -> Previsionne
     # En société RDA se divise par nombre d'associés exploitants ; ici UTH=1 => RDA tel quel
     rda_cible = lignes[-1].rda
     ebe_uth = (rda_cible / h.uth).quantize(Decimal("0.01"))
-    atteint = ebe_uth >= SMIC_ANNUEL_BRUT_2026
+    atteint = ebe_uth >= EBE_UTH_SEUIL_DNJA_NA_2026
 
-    log.info("RDA année %d / UTH = %s € (seuil 1 SMIC brut 2026 = %s €) → %s",
-             annee_cible, ebe_uth, SMIC_ANNUEL_BRUT_2026,
+    log.info("RDA année %d / UTH = %s € (seuil DNJA NA 2026 = %s €) → %s",
+             annee_cible, ebe_uth, EBE_UTH_SEUIL_DNJA_NA_2026,
              "OK" if atteint else "INSUFFISANT")
 
     previ = PrevisionnelDnja(
