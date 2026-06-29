@@ -55,16 +55,29 @@ le bilan, le compte de résultat et le FEC DGFIP.
 
 ## Aperçu visuel
 
-![Dashboard SelfFarm-Lite](docs/screenshots/selffarm-home.png)
+![Tableau de bord SelfFarm-Lite](docs/screenshots/dashboard.png)
 
-*Dashboard dark theme — 6 modules accessibles en 1 clic*
+*Tableau de bord — vue d'ensemble de l'exploitation : résultat, aides éligibles, écritures compta, cultures.*
 
-![Catalogue aides](docs/screenshots/selffarm-aides-catalogue.png)
+![SelfPOS — caisse de marché PC + mobile](docs/screenshots/pos-caisse-marche.png)
 
-*Catalogue des aides agricoles 2026 sourcées officiellement, filtrable HTMX*
+*SelfPOS — la même caisse sur PC (gestion à la ferme) et sur mobile (encaissement au marché, hors-ligne). Vente à l'unité ou au poids.*
 
-Plus de captures : `docs/screenshots/selffarm-dnja-simulateur.png`,
-`selffarm-dnja-compare.png`, `selffarm-dnja-editor.png`, `selffarm-parcelles-carto.png`.
+![SelfAgriBook — hub compta](docs/screenshots/compta-hub.png)
+
+*SelfAgriBook — le hub compta : journal alimenté en temps réel par tous les modules (factures, ventes, achats), zéro double saisie. Les ventes SelfPOS y remontent automatiquement.*
+
+![Sauvegarde & restauration](docs/screenshots/backup.png)
+
+*Sauvegarde & restauration — export ZIP portable signé SHA256, 100 % local, aucun cloud.*
+
+### Première installation (onboarding)
+
+![Onboarding — exploitation](docs/screenshots/onboarding-exploitation.png)
+![Onboarding — régime fiscal](docs/screenshots/onboarding-fiscal.png)
+![Onboarding — productions](docs/screenshots/onboarding-productions.png)
+
+*Parcours guidé : statut (JA / NA / AGRI / PME), régime fiscal et TVA, productions de la ferme.*
 
 ## Quickstart
 
