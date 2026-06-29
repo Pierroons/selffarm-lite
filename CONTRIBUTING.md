@@ -32,6 +32,22 @@ sudo apt install gitleaks      # une fois
   **refuse le merge** en cas de fuite — la barrière s'applique à tout le monde.
 - Règles dans `.gitleaks.toml` ; faux positifs connus dans `.gitleaksignore`.
 
+## 🧱 Architecture — noyau agnostique du métier
+
+SelfFarm vise « **core + verticales** » : un noyau réutilisable (compta, Factur-X,
+caisse, backup) + des verticales métier (agriculture aujourd'hui ; d'autres demain).
+Pour préserver cette portabilité :
+
+- **Le noyau ne connaît pas le métier.** Aucun vocabulaire ni concept agricole en dur
+  dans `self_agri_book` (hub compta), `self_invoice`, `self_backup`, `self_pos` — le hub
+  agrège des écritures `701/706…` sans savoir d'où elles viennent.
+- Le métier vit dans les **verticales** (`self_dnja`, `self_aid`, `self_culture`…) et le
+  **front**, jamais dans le moteur. On parle d'« établissement », pas d'« exploitation ».
+- Les **référentiels** (plan comptable, aides) sont des **données** chargées depuis un
+  chemin configurable, pas du code.
+- Avant d'ajouter au noyau : « un autre métier l'utiliserait-il tel quel ? ». Si non →
+  c'est une verticale ou du front.
+
 ## 🚀 Déploiement
 
 Le déploiement en production est réservé au mainteneur (`scripts/deploy.sh`, audit OPSEC
