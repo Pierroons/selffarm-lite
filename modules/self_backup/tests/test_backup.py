@@ -98,11 +98,12 @@ def test_restore_creates_backup_of_old_db(isolated_db, tmp_path):
         source_id="F-NEW",
     )
 
-    result = restore_from_bytes(zip_bytes)
+    # Restore d'un backup antérieur à la modif = rétrogradage volontaire → on confirme.
+    result = restore_from_bytes(zip_bytes, confirm_rollback=True)
     assert result["old_backup_path"] is not None
     from pathlib import Path
     assert Path(result["old_backup_path"]).exists()
-    assert ".bak-" in result["old_backup_path"]
+    assert ".prediff-" in result["old_backup_path"]
 
 
 def test_restore_rejects_invalid_archive(isolated_db):
@@ -148,12 +149,14 @@ def test_roundtrip_backup_restore_preserves_data(isolated_db):
         source_module="self_achats",
         source_id="A-X",
     )
-    # Maintenant 1 écriture (parasite). Restore va l'écraser.
+    # Maintenant 1 écriture (parasite). Restore va l'écraser (rétrogradage confirmé).
 
-    restore_from_bytes(zip_bytes)
+    restore_from_bytes(zip_bytes, confirm_rollback=True)
 
     rows = storage.list_ecritures()
-    # Le parasite ne doit plus exister, on retrouve les 5 originaux
-    assert len(rows) == 5
-    numeros = sorted(r["numero_piece"] for r in rows)
-    assert numeros == ["F-0", "F-1", "F-2", "F-3", "F-4"]
+    numeros = {r["numero_piece"] for r in rows}
+    # Restore = UNION : les 5 originaux du backup sont restaurés ET la compta
+    # locale (le parasite) n'est jamais perdue → 6 écritures au total.
+    assert {"F-0", "F-1", "F-2", "F-3", "F-4"}.issubset(numeros)
+    assert "A-X" in numeros
+    assert len(rows) == 6
