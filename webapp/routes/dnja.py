@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 
@@ -22,10 +23,31 @@ EXAMPLES_DIR = Path(__file__).parent.parent.parent / "examples"
 
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
+# ── OPSEC : les scénarios nominatifs portent l'identité civile dans le YAML.
+# Ils ne doivent JAMAIS être listés ni chargés hors de la machine perso, même
+# si un fichier traîne sur le serveur (rsync accidentel). Barrière applicative
+# indépendante du .gitignore : on n'expose les scénarios « pierroons/perso »
+# que si SELFFARM_ENV=perso.
+_PRIVATE_SCENARIO_PATTERNS = ("pierroons", "perso")
+_SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+
+
+def _perso_env() -> bool:
+    return os.environ.get("SELFFARM_ENV", "prod").lower() == "perso"
+
+
+def _is_private_scenario(slug: str) -> bool:
+    s = slug.lower()
+    return any(p in s for p in _PRIVATE_SCENARIO_PATTERNS)
+
 
 def _list_examples() -> list[dict]:
-    """Scanne le dossier examples/ et retourne les YAML dispos avec metadata."""
+    """Scanne le dossier examples/ et retourne les YAML dispos avec metadata.
+
+    Hors machine perso, les scénarios nominatifs sont filtrés (OPSEC).
+    """
     out = []
+    show_private = _perso_env()
     labels = {
         "hypotheses-pierroons-chambre": ("Prévisionnel CHAMBRE 🏛️",
                                           "Version officielle CDOA — matériel neuf, charges valorisées"),
@@ -42,12 +64,17 @@ def _list_examples() -> list[dict]:
     }
     for path in sorted(EXAMPLES_DIR.glob("hypotheses-*.yaml")):
         slug = path.stem
+        if not show_private and _is_private_scenario(slug):
+            continue
         label, desc = labels.get(slug, (slug, ""))
         out.append({"slug": slug, "label": label, "desc": desc, "path": path})
     return out
 
 
 def _load_example(slug: str) -> Hypotheses:
+    # Garde-fou anti-traversal + OPSEC : pas de scénario nominatif hors perso.
+    if not _SLUG_RE.match(slug) or (not _perso_env() and _is_private_scenario(slug)):
+        raise HTTPException(404, f"Scénario introuvable : {slug}")
     path = EXAMPLES_DIR / f"{slug}.yaml"
     if not path.exists():
         raise HTTPException(404, f"Scénario introuvable : {slug}")
