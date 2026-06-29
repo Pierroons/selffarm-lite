@@ -21,7 +21,7 @@ from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from self_agri_book.cultures import (
+from self_culture.cultures import (
     delete_parcelle,
     delete_plan_culture,
     get_varietes_for_datalist,
