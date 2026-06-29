@@ -7,14 +7,16 @@ applicatif qui repose sur les 3 piliers » (identité / droit / sécurité).
 
 ## Modules publiés
 
-| Module | Objet | État v0.2 |
+| Module | Objet | État |
 |---|---|:---:|
 | [`self-agri-book`](modules/self_agri_book) | **Hub compta central** — journal + bilan + résultat + export FEC | ✅ **live** |
+| [`self-pos`](webapp/routes/pos.py) | **SelfPOS** — caisse de marché PC + app mobile (PWA hors-ligne), vente à l'unité ou au poids, remontée auto au hub compta | ✅ **live** |
 | [`self-invoice`](webapp/routes/invoice.py) | Factur-X natif 3 régimes (franchise / micro-BA / réel) | ✅ live |
 | [`self-dnja`](modules/self_dnja) | Prévisionnel DNJA 4 ans + dossier PDF CDOA | ✅ live |
 | [`self-aid`](modules/self_aid) | Catalogue aides publiques sourcées officiellement | ✅ live (V1 JA, V2 NA/AGRI/PME à venir) |
 | [`self-banking`](modules/self_banking) | Parser PDF relevés bancaires (fake-first, SG OK) | ✅ live |
-| [`self-parcelles`](docs/demo-carto.html) | Cartographie IGN Géoportail (parcellaire cadastre) | ✅ live (multi-commune V0.4) |
+| [`self-culture`](modules/self_culture) | Parcellaire + cultures — cartographie IGN Géoportail (cadastre multi-commune) | ✅ live |
+| [`self-backup`](modules/self_backup) | Sauvegarde & restauration — export ZIP signé SHA256, snapshots locaux, 100 % local | ✅ live |
 | [`self-factur-x-agri`](modules/self_factur_x_agri) | TVA agricole + UOM HAR/TNE (à fusionner avec self_invoice) | 🏗️ à fusionner |
 
 Ces modules sont utilisables **seuls ou combinés**, ils n'exigent aucun
@@ -93,21 +95,23 @@ uvicorn webapp.main:app --reload --port 8001
 # → http://localhost:8001
 
 # CLI DNJA
-python -m self_dnja.cli calcul examples/hypotheses-pierroons-realiste.yaml
-python -m self_dnja.cli pdf examples/hypotheses-pierroons-realiste.yaml -o dossier.pdf
+python -m self_dnja.cli calcul examples/hypotheses-demo-publique.yaml
+python -m self_dnja.cli pdf examples/hypotheses-demo-publique.yaml -o dossier.pdf
 
 # CLI Aides
 python -m self_aid.cli list
 python -m self_aid.cli search --statut ja-installation
-python -m self_aid.cli search --bio --zone le departement
+python -m self_aid.cli search --bio --zone Dordogne
 ```
 
 ## Routes webapp live
 
 | Route | Rôle |
 |-------|------|
-| `/` | Dashboard 5 cards (DNJA / Aides / Parcelles / Invoice / Compta) |
-| `/dnja` | Simulateur prévisionnel + 3 scénarios + éditeur + compare + PDF CDOA |
+| `/` | Tableau de bord — Production / Vente / Gestion, accès à tous les modules |
+| `/onboarding` | Parcours de première installation (exploitation, régime fiscal, productions) |
+| `/pos` | **SelfPOS** — caisse de marché (PC), app mobile PWA sur `/pos/mobile` |
+| `/dnja` | Simulateur prévisionnel + scénarios + éditeur + compare + PDF CDOA |
 | `/aides` | Catalogue d'aides filtrable HTMX |
 | `/parcelles` | Cartographie IGN + recherche parcelles cadastre |
 | `/invoice` | Générateur Factur-X démo live (3 régimes) |
@@ -116,6 +120,7 @@ python -m self_aid.cli search --bio --zone le departement
 | `/compta/bilan` | Bilan comptable — actif ↔ passif équilibré |
 | `/compta/export-fec` | Export FEC DGFIP conforme (18 colonnes) |
 | `/compta/facture-du-journal` | PDF Factur-X consolidé depuis les ventes 411/701 du journal |
+| `/backup` | Sauvegarde & restauration ZIP (local, disque externe, planifiée) |
 | `/docs` | Swagger UI auto-généré (21+ endpoints documentés) |
 
 ## Philosophie
