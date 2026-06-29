@@ -17,14 +17,14 @@ tags = ["opsec", "identity"]
 
 [[rules]]
 id = "myself-code-postal-local"
-description = "Code postal localisant l'auteur (le departement)"
-regex = '''\b23\d{3}\b'''
+description = "Code postal localisant l'auteur (le departement) — en contexte d'adresse (suivi d'une commune), pas un montant"
+regex = '''\b23\d{3}\s+[A-ZÀ-Ÿ][a-zà-ÿ]'''
 tags = ["opsec", "geo"]
 
 [[rules]]
 id = "myself-ip-lan"
-description = "IP LAN d'infra perso (RFC1918)"
-regex = '''\b(10|192\.168|172\.(1[6-9]|2\d|3[01]))(\.\d{1,3}){1,3}\b'''
+description = "IP LAN d'infra perso (RFC1918) — IP complète (4 octets), pas un montant type 10.50"
+regex = '''\b(10(\.\d{1,3}){3}|192\.168(\.\d{1,3}){2}|172\.(1[6-9]|2\d|3[01])(\.\d{1,3}){2})\b'''
 tags = ["opsec", "infra"]
 
 [[rules]]
@@ -59,6 +59,11 @@ paths = [
   '''(^|/)\.gitleaks\.toml$''',
   '''(^|/)\.gitleaksignore$''',
   '''(^|/)CONTRIBUTING\.md$''',
+  # Scénarios DNJA perso (identité civile voulue) : gitignorés + exclus du déploiement.
+  '''examples/hypotheses-pierroons''',
+  '''examples/hypotheses-perso''',
+  # Script de déploiement local (gitignoré, contient l'infra interne par nature).
+  '''(^|/)scripts/deploy\.sh$''',
 ]
 regexes = [
   '''FR76 0000''',
@@ -66,5 +71,9 @@ regexes = [
   '''contact@my-self\.fr''',
   '''/home/user\b''',
   '''192\.168\.1\.(0|10|50)\b''',
+  # Adresses-réseau génériques RFC1918 (définitions universelles, pas l'infra perso).
+  '''10\.0\.0\.0''',
+  '''172\.16\.0\.0''',
+  '''192\.168\.0\.0''',
   '''correct horse battery staple''',
 ]
