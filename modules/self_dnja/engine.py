@@ -490,10 +490,12 @@ def _calculer_bilan_n4(h: Hypotheses, lignes: list[LigneResultat]) -> BilanSimpl
                       Decimal("0")).quantize(Decimal("0.01"))
     total_actif = (immos_nettes + stocks + creances + tresorerie).quantize(Decimal("0.01"))
 
-    # Passif
-    capital_exploitant = (total_actif - Decimal("3000")).quantize(Decimal("0.01"))
+    # Passif — le capital exploitant est la variable d'ajustement : il absorbe
+    # ce qui n'est ni dette ni subvention, pour que le bilan balance par
+    # construction (capitaux propres = actif − dettes − subventions étalées).
     subventions_etalees = (immos_brutes * Decimal("0.35")).quantize(Decimal("0.01"))
     dettes = Decimal("3000")
+    capital_exploitant = (total_actif - dettes - subventions_etalees).quantize(Decimal("0.01"))
     total_passif = (capital_exploitant + subventions_etalees + dettes).quantize(Decimal("0.01"))
 
     return BilanSimplifie(
