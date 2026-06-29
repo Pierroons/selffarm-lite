@@ -156,10 +156,14 @@ python -m self_aid.cli search --bio --zone Dordogne
 
 ## Dossiers importants
 
+- `modules/self_agri_book/` — hub compta SQLite + bilan/résultat/FEC
+- `modules/self_pos/` — SelfPOS : caisse marché PC + mobile (PWA), ventes → hub compta
 - `modules/self_dnja/` — moteur prévisionnel + PDF + 16 tests
 - `modules/self_aid/` — catalogue aides + CLI + 13 tests
-- `modules/self_agri_book/` — hub compta SQLite + bilan/résultat/FEC
 - `modules/self_banking/` — parsers PDF relevés (SG fait, CA/CM à venir)
+- `modules/self_culture/` — parcellaire + cultures (cartographie IGN cadastre)
+- `modules/self_backup/` — sauvegarde / restauration ZIP signée SHA256
+- `modules/self_factur_x_agri/` — Factur-X agricole (TVA, UOM HAR/TNE)
 - `modules/self_aid/data/aides-agri-2026.yaml` — aides JA 2026
   sourcées officiellement avec date de vérification
 - `modules/self_agri_book/data/pcg-agricole-2026.yaml` — **Plan comptable
@@ -202,15 +206,19 @@ FranceAgriMer, Légifrance, MSA, portails régionaux).
 
 ## Intégration écosystème MySelf
 
-SelfFarm-Lite est **l'étage applicatif** qui repose sur les 3 piliers MySelf :
+SelfFarm-Lite est l'**étage applicatif agricole** de l'écosystème
+[MySelf](https://my-self.fr). Autonome par défaut, il est conçu pour s'appuyer
+sur les 3 piliers MySelf — intégrations à des stades divers (de l'opérationnel
+à la R&D), pas toutes câblées à ce jour :
 
-- **Bi-Self** (identité sociale) : SelfRecover pour authentifier les
-  écritures signées, SelfModerate pour communauté contributeurs Lexicon
-- **Self-Right** (droit & action) : SelfJustice pour les litiges agri
-  (prud'hommes, commission mixte bailleur/preneur), SelfAct pour les
-  CERFA (déclarations PAC, etc.)
-- **Self-Security** (protection) : SelfGuard pour les secrets critiques
-  (mots de passe bancaires), SelfKeyGuard pour 2FA matériel tracteur/serres
+- **Bi-Self** (identité & social) :
+  - *SelfRecover* — récupérer l'accès à son instance sans email ni cloud (protocole de recovery souverain)
+  - *SelfModerate* — modération par raisonnement social des données partagées (catalogue variétés, retours terrain collaboratifs)
+- **Self-Right** (droit & action) :
+  - *SelfJustice* — directives juridiques pour les litiges agricoles (bail rural, commission mixte bailleur/preneur)
+  - *SelfAct* — rédaction de courriers et formulaires CERFA (déclarations PAC, MSA…)
+- **Self-Security** (protection) :
+  - *SelfDataGuard* — chiffrement enveloppé (2FA) des données comptables sensibles au repos
 
 ## Licence
 
