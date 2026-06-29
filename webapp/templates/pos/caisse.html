@@ -296,20 +296,53 @@ let modePaiementSelected = null;
 
 function fmtEur(n) { return n.toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €'; }
 
+// Unités vendues AU POIDS → saisie décimale au clavier (balance, précision 0,001).
+// Les autres (pièce, botte, douzaine, pot…) → incrément +1.
+const UNITES_POIDS = ['kg', 'g', 'kilo', 'kilos', 'gramme', 'grammes', 'l', 'litre', 'litres'];
+function estAuPoids(unite) {
+  return UNITES_POIDS.includes((unite || '').toLowerCase().trim());
+}
+
+function demanderPoids(unite, nom, valeurActuelle) {
+  const def = valeurActuelle ? String(valeurActuelle).replace('.', ',') : '';
+  const raw = prompt(`Poids en ${unite} — ${nom}\n(décimales acceptées, ex : 1,250)`, def);
+  if (raw === null) return null;
+  const v = parseFloat(String(raw).replace(',', '.'));
+  if (isNaN(v) || v < 0) { alert('Poids invalide.'); return null; }
+  return Math.round(v * 1000) / 1000; // précision 0,001
+}
+
 function addToPanier(produitId) {
   const btn = document.querySelector(`.produit-btn[data-id="${produitId}"]`);
   if (!btn) return;
+  const unite = btn.dataset.unite;
   if (!panier[produitId]) {
     panier[produitId] = {
       id: produitId,
       nom: btn.dataset.nom,
       prix: parseFloat(btn.dataset.prix),
-      unite: btn.dataset.unite,
+      unite: unite,
       emoji: btn.dataset.emoji,
       qte: 0
     };
   }
-  panier[produitId].qte += 1;
+  if (estAuPoids(unite)) {
+    const v = demanderPoids(unite, panier[produitId].nom);
+    if (v === null) { if (panier[produitId].qte === 0) delete panier[produitId]; renderPanier(); return; }
+    panier[produitId].qte = Math.round((panier[produitId].qte + v) * 1000) / 1000; // cumul des pesées
+    if (panier[produitId].qte <= 0) delete panier[produitId];
+  } else {
+    panier[produitId].qte += 1;
+  }
+  renderPanier();
+}
+
+function editPoids(produitId) {
+  const l = panier[produitId];
+  if (!l) return;
+  const v = demanderPoids(l.unite, l.nom, l.qte);
+  if (v === null) return;
+  if (v <= 0) delete panier[produitId]; else l.qte = v;
   renderPanier();
 }
 
@@ -332,6 +365,14 @@ function resetPanier() {
 
 function totalPanier() {
   return Object.values(panier).reduce((sum, l) => sum + l.prix * l.qte, 0);
+}
+
+function qtyCtrlHtml(l) {
+  if (estAuPoids(l.unite)) {
+    const poids = l.qte.toLocaleString('fr-FR', {minimumFractionDigits: 3, maximumFractionDigits: 3});
+    return `<button type="button" onclick="editPoids(${l.id})" title="Modifier le poids" style="background:transparent;border:1px dashed var(--accent-500);color:var(--text-primary);padding:4px 9px;border-radius:5px;cursor:pointer;font-size:12px;white-space:nowrap;">${poids} ${escapeHtml(l.unite)} ✎</button>`;
+  }
+  return `<button type="button" onclick="changerQte(${l.id}, -1)">−</button><span class="qty-val">${l.qte}</span><button type="button" onclick="changerQte(${l.id}, 1)">+</button>`;
 }
 
 function renderPanier() {
@@ -360,11 +401,7 @@ function renderPanier() {
         <div class="nom-l">${escapeHtml(l.nom)}</div>
         <div class="meta-l">${fmtEur(l.prix)} / ${escapeHtml(l.unite)}</div>
       </div>
-      <div class="qty-ctrl">
-        <button type="button" onclick="changerQte(${l.id}, -1)">−</button>
-        <span class="qty-val">${l.qte}</span>
-        <button type="button" onclick="changerQte(${l.id}, 1)">+</button>
-      </div>
+      <div class="qty-ctrl">${qtyCtrlHtml(l)}</div>
       <div class="ligne-total">${fmtEur(l.prix * l.qte)}</div>
       <button type="button" class="remove-btn" onclick="removeFromPanier(${l.id})" title="Retirer">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>

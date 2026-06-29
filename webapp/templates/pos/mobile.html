@@ -123,6 +123,15 @@ a {color:var(--accent-200); text-decoration:none;}
 .modal-actions {display:flex; gap:8px; margin-top:14px;}
 .modal-actions button {flex:1; padding:11px;}
 
+/* === Pavé de pesée === */
+.pesee-display {display:flex; justify-content:space-between; align-items:baseline; background:var(--bg-elev); padding:14px 16px; border-radius:8px; margin-bottom:14px;}
+.pesee-display .pesee-aff {font-family:'Fraunces',serif; font-size:26px; color:var(--text-primary); font-weight:600;}
+.pesee-display .pesee-sous {font-size:15px; color:var(--accent-200); font-weight:600;}
+.keypad {display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+.keypad button {padding:16px 0; font-size:20px; font-weight:600; background:var(--bg-elev); border:1px solid var(--border-subtle); border-radius:8px; color:var(--text-primary); cursor:pointer; font-family:inherit;}
+.keypad button:active {background:var(--accent-500);}
+.keypad button.kp-back {color:var(--text-secondary);}
+
 .payment-grid {display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px;}
 .payment-grid .opt {padding:14px 8px; background:var(--bg-elev); border:2px solid var(--border-subtle); border-radius:8px; text-align:center; font-size:12.5px; cursor:pointer;}
 .payment-grid .opt.selected {border-color:var(--accent-500); background:var(--accent-bg-soft); color:var(--accent-200);}
@@ -234,6 +243,36 @@ a {color:var(--accent-200); text-decoration:none;}
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModalPay()">Annuler</button>
       <button class="btn" id="btnConfirmPay" disabled onclick="confirmPay()">Valider</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pavé de pesée (saisie du poids in-app, comme une vraie caisse mobile) -->
+<div class="modal" id="modalPesee" onclick="if(event.target===this) peseeAnnuler()">
+  <div class="modal-content">
+    <h3 id="peseeNom">Pesée</h3>
+    <p class="sub">Saisis le poids lu sur la balance</p>
+    <div class="pesee-display">
+      <span class="pesee-aff" id="peseeAff">0 kg</span>
+      <span class="pesee-sous" id="peseeSous">0,00 €</span>
+    </div>
+    <div class="keypad">
+      <button onclick="peseeKey('7')">7</button>
+      <button onclick="peseeKey('8')">8</button>
+      <button onclick="peseeKey('9')">9</button>
+      <button onclick="peseeKey('4')">4</button>
+      <button onclick="peseeKey('5')">5</button>
+      <button onclick="peseeKey('6')">6</button>
+      <button onclick="peseeKey('1')">1</button>
+      <button onclick="peseeKey('2')">2</button>
+      <button onclick="peseeKey('3')">3</button>
+      <button onclick="peseeKey(',')">,</button>
+      <button onclick="peseeKey('0')">0</button>
+      <button class="kp-back" onclick="peseeBackspace()">⌫</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="peseeAnnuler()">Annuler</button>
+      <button class="btn" onclick="peseeValider()">Valider</button>
     </div>
   </div>
 </div>
@@ -522,12 +561,84 @@ async function renderCaisse() {
   renderPanier();
 }
 
-function addToPanier(p) {
-  if (!app.panier[p.id]) {
-    app.panier[p.id] = {id: p.id, nom: p.nom, prix: p.prix_unitaire, unite: p.unite, emoji: p.emoji, qte: 0};
+// Unités au POIDS → pavé numérique intégré (balance, précision 0,001). Autres → +1.
+const UNITES_POIDS = ['kg', 'g', 'kilo', 'kilos', 'gramme', 'grammes', 'l', 'litre', 'litres'];
+function estAuPoids(unite) {
+  return UNITES_POIDS.includes((unite || '').toLowerCase().trim());
+}
+
+// ── Pavé de pesée (modal in-app, comme sur une vraie caisse mobile) ──────────
+let _peseeBuf = '';          // chiffres tapés (point décimal interne)
+let _peseeOnValide = null;   // callback(poids) à la validation
+let _peseePrix = 0, _peseeUnite = 'kg';
+
+function ouvrirPesee(produit, valeurInit, onValide) {
+  _peseeOnValide = onValide;
+  _peseeBuf = (valeurInit != null && valeurInit > 0) ? String(valeurInit) : '';
+  _peseePrix = produit.prix != null ? produit.prix : produit.prix_unitaire;
+  _peseeUnite = produit.unite || 'kg';
+  document.getElementById('peseeNom').textContent = `${produit.emoji || '🌿'} ${produit.nom || ''}`;
+  peseeRender();
+  document.getElementById('modalPesee').classList.add('open');
+}
+function peseeRender() {
+  const disp = _peseeBuf === '' ? '0' : _peseeBuf.replace('.', ',');
+  document.getElementById('peseeAff').textContent = `${disp} ${_peseeUnite}`;
+  const v = parseFloat(_peseeBuf.replace(',', '.')) || 0;
+  document.getElementById('peseeSous').textContent =
+    (v * _peseePrix).toLocaleString('fr-FR', {style: 'currency', currency: 'EUR'});
+}
+function peseeKey(ch) {
+  if (ch === ',') {
+    if (_peseeBuf.includes('.')) return;
+    _peseeBuf = (_peseeBuf === '' ? '0' : _peseeBuf) + '.';
+  } else {
+    const dec = _peseeBuf.split('.')[1];
+    if (dec && dec.length >= 3) return;            // 3 décimales max (le gramme)
+    if (_peseeBuf === '0') _peseeBuf = '';         // pas de zéro initial inutile
+    _peseeBuf += ch;
   }
-  app.panier[p.id].qte += 1;
-  renderPanier();
+  peseeRender();
+}
+function peseeBackspace() { _peseeBuf = _peseeBuf.slice(0, -1); peseeRender(); }
+function peseeAnnuler() {
+  document.getElementById('modalPesee').classList.remove('open');
+  _peseeOnValide = null;
+}
+function peseeValider() {
+  const v = Math.round((parseFloat(_peseeBuf.replace(',', '.')) || 0) * 1000) / 1000;
+  const cb = _peseeOnValide;
+  peseeAnnuler();
+  if (cb) cb(v);
+}
+
+function editPoids(produitId) {
+  const l = app.panier[produitId];
+  if (!l) return;
+  ouvrirPesee(l, l.qte, (v) => {              // edit = remplace le poids total
+    if (v <= 0) delete app.panier[produitId]; else l.qte = v;
+    renderPanier();
+  });
+}
+
+function addToPanier(p) {
+  if (estAuPoids(p.unite)) {
+    ouvrirPesee(p, null, (v) => {             // ajout = cumule la pesée
+      if (v <= 0) return;
+      if (!app.panier[p.id]) {
+        app.panier[p.id] = {id: p.id, nom: p.nom, prix: p.prix_unitaire, unite: p.unite, emoji: p.emoji, qte: 0};
+      }
+      app.panier[p.id].qte = Math.round((app.panier[p.id].qte + v) * 1000) / 1000;
+      if (app.panier[p.id].qte <= 0) delete app.panier[p.id];
+      renderPanier();
+    });
+  } else {
+    if (!app.panier[p.id]) {
+      app.panier[p.id] = {id: p.id, nom: p.nom, prix: p.prix_unitaire, unite: p.unite, emoji: p.emoji, qte: 0};
+    }
+    app.panier[p.id].qte += 1;
+    renderPanier();
+  }
 }
 
 function changerQte(produitId, delta) {
@@ -539,6 +650,14 @@ function changerQte(produitId, delta) {
 
 function totalPanier() {
   return Object.values(app.panier).reduce((s, l) => s + l.prix * l.qte, 0);
+}
+
+function qtyCtrlHtml(l) {
+  if (estAuPoids(l.unite)) {
+    const poids = l.qte.toLocaleString('fr-FR', {minimumFractionDigits: 3, maximumFractionDigits: 3});
+    return `<button onclick="editPoids(${l.id})" title="Modifier le poids" style="background:transparent;border:1px dashed var(--accent-500);color:var(--text-primary);padding:4px 9px;border-radius:5px;font-size:12px;white-space:nowrap;">${poids} ${escapeHtml(l.unite)} ✎</button>`;
+  }
+  return `<button onclick="changerQte(${l.id}, -1)">−</button><span class="qty-val">${l.qte}</span><button onclick="changerQte(${l.id}, 1)">+</button>`;
 }
 
 function renderPanier() {
@@ -554,11 +673,7 @@ function renderPanier() {
           <div class="nom-l">${escapeHtml(l.nom)}</div>
           <div class="meta-l">${fmtEur(l.prix)} / ${escapeHtml(l.unite)}</div>
         </div>
-        <div class="qty-ctrl">
-          <button onclick="changerQte(${l.id}, -1)">−</button>
-          <span class="qty-val">${l.qte}</span>
-          <button onclick="changerQte(${l.id}, 1)">+</button>
-        </div>
+        <div class="qty-ctrl">${qtyCtrlHtml(l)}</div>
         <div class="total-l">${fmtEur(l.prix * l.qte)}</div>
       </div>`).join('')}
     <div class="panier-bar">
@@ -647,7 +762,7 @@ async function renderCatalogue() {
     html += `<div class="card">
       <h2>📦 Chargement — ${escapeHtml(app.currentSession.lieu)}</h2>
       <p>Coche les produits pour ce marché. La quantité est <strong>optionnelle</strong>.</p>`;
-    for (const p of app.catalogue) {
+    for (const p of app.catalogue.filter(p => app.visibility[p.id] !== false || chargesMap.has(p.id))) {
       const chg = chargesMap.get(p.id);
       const checked = !!chg;
       html += `
