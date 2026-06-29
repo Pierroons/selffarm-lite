@@ -263,3 +263,19 @@ def test_version_dans_resultat():
     r = calculer(_minimal_hyp())
     assert r.version
     assert r.genere_le == date.today()
+
+
+def test_bilan_n4_equilibre():
+    """Invariant comptable fondamental : le bilan doit balancer (Actif = Passif)."""
+    bilan = calculer(_minimal_hyp()).bilan_n4
+    assert bilan is not None
+    assert bilan.total_actif == bilan.total_passif, (
+        f"Bilan déséquilibré : actif {bilan.total_actif} ≠ passif {bilan.total_passif}"
+    )
+    # Cohérence des sous-totaux avec leurs postes.
+    assert bilan.total_actif == (
+        bilan.immobilisations_nettes + bilan.stocks + bilan.creances + bilan.tresorerie
+    )
+    assert bilan.total_passif == (
+        bilan.capital_exploitant + bilan.subventions_etalees + bilan.dettes
+    )
