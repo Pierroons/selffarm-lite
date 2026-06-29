@@ -2,7 +2,7 @@
 Agrégation des stats pour le tableau de bord home (KPI + 4 charts + dernières écritures).
 
 Lecture seule, branche directement les tables SQLite :
-- `parcelle`, `plan_culture` (via self_agri_book.cultures)
+- `parcelle`, `plan_culture` (via self_culture.cultures)
 - `ecritures_comptables` (via self_agri_book.storage)
 
 V1 stub : plafonds aides hardcodés (cohérents profil JA bio).
@@ -15,7 +15,7 @@ import logging
 from datetime import date
 from typing import Any
 
-from self_agri_book.cultures import list_plan_culture, stats_parcelles_saison
+from self_culture.cultures import list_plan_culture, stats_parcelles_saison
 from self_agri_book.exploitation import get_exploitation
 from self_agri_book.storage import _conn, init_db
 
