@@ -201,8 +201,9 @@ MySelf.
 
 ## Auteur
 
-[Pierroons](https://github.com/Pierroons) — paysan, développeur d'outils libres
-pour une agriculture souveraine.
+[Pierroons](https://github.com/Pierroons) — mainteneur.
+Bricole des outils libres pour l'agriculture, pour que les données poussent pas dans le cloud.
+Contact : contact@my-self.fr
 
 Co-écrit avec **Claude** (Anthropic) — voir [MySelf README](https://github.com/Pierroons/my-self)
 pour le « Self pact » humain–IA sous-jacent.
