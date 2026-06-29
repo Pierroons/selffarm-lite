@@ -43,7 +43,7 @@ from self_pos.residus import (
     replace_residus,
     update_residu_status,
 )
-from self_pos.seed import seed_if_empty
+from self_pos.seed import seed_demo_if_needed, seed_if_empty
 from self_pos.services import cloture_session
 from self_pos.storage import (
     create_session,
@@ -74,17 +74,22 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 @router.get("/pos", response_class=HTMLResponse)
 async def pos_index(request: Request):
     """Liste sessions historiques + mini-stats + accès rapide session ouverte."""
-    # En démo publique, toute arrivée sur SelfPOS montre directement la vitrine
-    # split PC+mobile. L'iframe interne de la vitrine appelle /pos?embed=1 pour
-    # afficher la vraie caisse sans reboucler sur la redirection.
-    if os.environ.get("SELFFARM_ENV", "prod") == "demo" and request.query_params.get("embed") != "1":
+    # En démo publique, toute arrivée sur SelfPOS montre la vitrine split PC+mobile.
+    # Le mode "embed" (iframe de la vitrine) est rendu STICKY via cookie : une fois
+    # dans l'iframe, la navigation interne reste en mode caisse et ne reboucle plus
+    # vers /pos/demo (sinon le split se ré-affiche dans l'iframe → récursion).
+    embed = (
+        request.query_params.get("embed") == "1"
+        or request.cookies.get("pos_embed") == "1"
+    )
+    if os.environ.get("SELFFARM_ENV", "prod") == "demo" and not embed:
         return RedirectResponse("/pos/demo", status_code=302)
     seed_if_empty()  # idempotent — première visite seed le catalogue
     from self_pos.stats import stats_globales_pos
     from self_agri_book.exploitation import get_exploitation
     exp = get_exploitation()
     seuil_jours = int(exp.get("stock_revue_jours", 7)) if exp else 7
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         "pos/index.html",
         {
             "request": request,
@@ -97,6 +102,10 @@ async def pos_index(request: Request):
             "nb_stock_a_reviewer": len(list_stock_a_reviewer(seuil_jours)),
         },
     )
+    if request.query_params.get("embed") == "1":
+        # Pose le cookie sticky uniquement à l'entrée de l'iframe (caisse PC).
+        response.set_cookie("pos_embed", "1", max_age=3600, samesite="lax")
+    return response
 
 
 # ============================================================
@@ -107,10 +116,19 @@ async def pos_index(request: Request):
 async def pos_demo_split(request: Request):
     """Vitrine : la caisse PC (/pos) et l'app mobile (/pos/mobile) affichées
     côte à côte en iframes live (même origine). Montre que SelfPOS = les deux."""
+    seed_demo_if_needed()
     return templates.TemplateResponse(
         "pos/demo_split.html",
         {"request": request, "version": __version__},
     )
+
+
+@router.post("/pos/demo/reset")
+async def pos_demo_reset():
+    """Bac à sable : remet la démo à zéro (mode démo strict, no-op sinon)."""
+    from self_pos.seed import reset_demo_activity
+    reset_demo_activity()
+    return RedirectResponse("/pos/demo", status_code=303)
 
 
 # ============================================================
@@ -453,6 +471,7 @@ async def pos_import_marche(request: Request):
 @router.get("/pos/stock-revue", response_class=HTMLResponse)
 async def pos_stock_revue(request: Request):
     """Page de revue du stock résiduel des marchés précédents."""
+    seed_demo_if_needed()
     from self_agri_book.exploitation import get_exploitation
     exp = get_exploitation()
     seuil_jours = int(exp.get("stock_revue_jours", 7)) if exp else 7
@@ -592,6 +611,7 @@ async def pos_mobile(request: Request):
 @router.get("/pos/stats", response_class=HTMLResponse)
 async def pos_stats(request: Request):
     """Statistiques produits : top vendus, CA, évolution, taux invendu."""
+    seed_demo_if_needed()
     from self_pos.stats import get_all_stats
     return templates.TemplateResponse(
         "pos/stats.html",

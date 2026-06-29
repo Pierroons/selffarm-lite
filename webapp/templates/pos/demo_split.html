@@ -88,9 +88,15 @@
   <header>
     <div>
       <div class="title">SelfPOS — la même caisse, <span>sur PC et sur mobile</span></div>
-      <div class="sub">Catalogue, ventes et stock partagés. Le téléphone sert de caisse au marché, le PC à l'atelier.</div>
+      <div class="sub">Catalogue, ventes et stock partagés. Le téléphone sert de caisse au marché, le PC à la ferme. <strong>👉 Démo interactive : clique, vends, encaisse — rien n'est réel.</strong></div>
     </div>
-    <a class="back" href="/">← Accueil SelfFarm</a>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <form method="post" action="/pos/demo/reset" style="margin:0;"
+            onsubmit="return confirm('Réinitialiser la démo ? Tes ventes seront effacées et remplacées par les marchés d\'exemple.');">
+        <button type="submit" class="back" style="cursor:pointer; border:0; font:inherit;">↻ Réinitialiser</button>
+      </form>
+      <a class="back" href="/">← Accueil SelfFarm</a>
+    </div>
   </header>
 
   <div class="stage">
@@ -103,7 +109,7 @@
         </div>
         <iframe src="/pos?embed=1" title="Caisse SelfPOS sur PC" loading="lazy"></iframe>
       </div>
-      <div class="cap"><strong>💻 Caisse PC</strong> — gestion à l'atelier (sessions, catalogue, clôture)</div>
+      <div class="cap"><strong>💻 Caisse PC</strong> — gestion à la ferme (sessions, catalogue, clôture)</div>
     </div>
 
     <!-- Téléphone -->
