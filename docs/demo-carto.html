@@ -162,9 +162,9 @@ html, body { margin: 0; padding: 0; height: 100%; font-family: system-ui, sans-s
 <!-- Panneau droit : recherche parcelle -->
 <div class="controls">
   <h3>🔍 Recherche parcelle</h3>
-  <input id="commune" placeholder="Code INSEE (ex: 75056)" value="">
-  <input id="section" placeholder="Section (ex: 0E)" value="0E">
-  <input id="numero" placeholder="Numéro (ex: 1871)" value="1871">
+  <input id="commune" placeholder="Code INSEE (ex: 75056)" value="36229">
+  <input id="section" placeholder="Section (ex: ZT)" value="ZT">
+  <input id="numero" placeholder="Numéro (ex: 0010)" value="0010">
   <button onclick="chercherParcelle()">Afficher la parcelle</button>
   <button onclick="effacerParcelles()" class="amber" style="margin-top: 6px;">
     🧹 Effacer la sélection
@@ -499,7 +499,7 @@ function escapeHtml(s) {
   return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-// Chargement initial : parcelle 0E1871 Sainte-Foy (vraie géométrie depuis IGN)
+// Chargement initial : parcelle ZT0010 Val-Fouzon (Indre) — commune de démo neutre (vraie géométrie IGN)
 chercherParcelle();
 </script>
 </body>
