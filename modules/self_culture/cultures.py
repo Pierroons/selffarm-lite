@@ -16,20 +16,18 @@ API :
 - save_plan_culture(data) → dict
 - delete_plan_culture(plan_id) → bool
 
-Catalogue :
-- load_varietes_catalog() → list[dict] (38 variétés avec id, nom, famille, categorie)
+Catalogue (couche typée self_culture.catalog, loader Pydantic unique) :
 - get_varietes_for_datalist() → list[dict] (format optimisé pour <datalist>)
 """
 
 from __future__ import annotations
 
-import json
 import logging
-from functools import lru_cache
-from pathlib import Path
 from typing import Any
 
 from self_agri_book.storage import _conn, init_db
+from self_culture.catalog import load_catalog
+from self_culture.models import ModeProduction
 
 log = logging.getLogger(__name__)
 
@@ -50,60 +48,10 @@ PLAN_CULTURE_FIELDS = (
 
 
 # ============================================================
-# Catalogue variétés (YAML self_culture)
+# Catalogue variétés — couche typée self_culture.catalog
 # ============================================================
-
-_YAML_PATH = Path(__file__).parent / "data" / "varietes-references.yaml"
-
-
-@lru_cache(maxsize=1)
-def load_varietes_catalog() -> list[dict[str, Any]]:
-    """Charge le catalogue YAML des variétés de référence (cache LRU).
-
-    Format de retour :
-        [
-            {
-                "id": "tomate-marmande-ab",
-                "nom_commun": "Tomate Marmande",
-                "famille": "Solanaceae",
-                "categorie": "legume",
-                "mode_production": "ab",
-                "semis_mois": "3-4",
-                "recolte_mois": "7-10",
-                ...
-            },
-            ...
-        ]
-    """
-    try:
-        import yaml
-    except ImportError:
-        log.warning("pyyaml non installé — catalogue variétés indisponible")
-        return []
-
-    if not _YAML_PATH.exists():
-        log.warning("Catalogue YAML introuvable : %s", _YAML_PATH)
-        return []
-
-    with _YAML_PATH.open(encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-
-    varietes = []
-    for v in data.get("varietes", []):
-        cal = v.get("calendrier", {})
-        varietes.append({
-            "id": v.get("id"),
-            "nom_commun": v.get("nom_commun"),
-            "nom_botanique": v.get("nom_botanique"),
-            "famille": v.get("famille"),
-            "categorie": v.get("categorie"),
-            "mode_production": v.get("mode_production_principal", "ab"),
-            "semis_mois_min": cal.get("semis_mois_min"),
-            "semis_mois_max": cal.get("semis_mois_max"),
-            "recolte_mois_min": cal.get("recolte_mois_min"),
-            "recolte_mois_max": cal.get("recolte_mois_max"),
-        })
-    return varietes
+# Source de vérité = data/varietes-references.yaml, chargé et validé en objets
+# Pydantic `Variete` par catalog.load_catalog(). Un seul loader pour tout le module.
 
 
 # Émojis indicatifs par famille botanique (visuel datalist)
@@ -133,15 +81,16 @@ def get_varietes_for_datalist() -> list[dict[str, str]]:
     - `slug` : id technique (slug catalog, pour ref backend)
     """
     out = []
-    for v in load_varietes_catalog():
-        emoji = FAMILLE_EMOJI.get(v["famille"], "•")
-        mode_suffix = f" ({v['mode_production'].upper()})" if v.get("mode_production") == "ab" else ""
+    for v in load_catalog():
+        emoji = FAMILLE_EMOJI.get(v.famille.value, "•")
+        mode_suffix = " (AB)" if v.mode_production_principal == ModeProduction.AB else ""
+        cal = v.calendrier
         out.append({
-            "value": f"{emoji} {v['nom_commun']}{mode_suffix}",
-            "label_attr": f"{v['famille']} · semis {v['semis_mois_min']}-{v['semis_mois_max']} · récolte {v['recolte_mois_min']}-{v['recolte_mois_max']}",
-            "slug": v["id"],
-            "famille": v["famille"],
-            "categorie": v["categorie"],
+            "value": f"{emoji} {v.nom_commun}{mode_suffix}",
+            "label_attr": f"{v.famille.value} · semis {cal.semis_mois_min}-{cal.semis_mois_max} · récolte {cal.recolte_mois_min}-{cal.recolte_mois_max}",
+            "slug": v.id,
+            "famille": v.famille.value,
+            "categorie": v.categorie.value,
         })
     # Tri par catégorie puis nom (regroupement visuel naturel)
     out.sort(key=lambda x: (x["categorie"], x["value"]))
