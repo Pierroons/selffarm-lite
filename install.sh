@@ -55,6 +55,15 @@ else
     exit 1
 fi
 
+# 4b. Smoke-test webapp (détecte une dépendance webapp manquante)
+echo "▶ Vérification de l'import de la webapp…"
+if PYTHONPATH=modules .venv/bin/python -c "from webapp.main import app" 2>/dev/null; then
+    echo "  ✓ webapp importable"
+else
+    echo "  ✗ La webapp ne s'importe pas — dépendance manquante ?"
+    exit 1
+fi
+
 # 5. Vérification des CLI
 echo "▶ Vérification des CLI…"
 PYTHONPATH=modules .venv/bin/python -m self_dnja.cli --version
@@ -68,6 +77,10 @@ echo
 echo "  Pour utiliser les commandes (depuis ce dossier) :"
 echo "    PYTHONPATH=modules .venv/bin/python -m self_dnja.cli --help"
 echo "    PYTHONPATH=modules .venv/bin/python -m self_aid.cli --help"
+echo
+echo "  Pour lancer l'interface web (dashboard, SelfPOS, compta) :"
+echo "    PYTHONPATH=modules .venv/bin/uvicorn webapp.main:app --port 8001"
+echo "    → http://localhost:8001"
 echo
 echo "  Ou active le venv :"
 echo "    source .venv/bin/activate"
