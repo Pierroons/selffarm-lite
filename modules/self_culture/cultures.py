@@ -1,10 +1,11 @@
 """
 self_culture.cultures — CRUD parcelle + plan_culture + catalogue variétés.
 
-Verticale agricole : utilise la base du hub `self_agri_book` (tables `parcelle`
-+ `plan_culture`, migrations 5+6). Déplacé hors du hub le 29/06/2026 (noyau agnostique).
+Verticale agricole : les tables `parcelle` + `plan_culture` sont PORTÉES par ce
+module (CULTURE_MIGRATIONS, namespace "self_culture"), créées paresseusement sur
+la base partagée du hub `self_agri_book`. Le noyau compta reste agnostique du métier.
 Catalogue variétés : YAML `modules/self_culture/data/varietes-references.yaml`
-                     (38 variétés AB courantes + chanvre + engrais verts).
+                     (variétés AB courantes + chanvre + engrais verts).
 
 API :
 - list_parcelles() → list[dict]
@@ -25,11 +26,88 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from self_agri_book.storage import _conn, init_db
+from self_agri_book.storage import _conn, apply_module_migrations
 from self_culture.catalog import load_catalog
 from self_culture.models import ModeProduction
 
 log = logging.getLogger(__name__)
+
+# ============================================================
+# Schéma porté par la verticale (hors du noyau compta agnostique)
+# ============================================================
+# Les tables parcelle/plan_culture sont du vocabulaire agricole : elles vivent
+# dans cette verticale, pas dans le noyau self_agri_book. Versionnées à partir de 1
+# sous le namespace "self_culture" (cf. _schema_migrations clé composite).
+CULTURE_MIGRATIONS: list[tuple[int, str, str]] = [
+    (1, "create_parcelle", """
+        -- Parcelles déclarées de l'exploitation.
+        CREATE TABLE IF NOT EXISTS parcelle (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nom TEXT NOT NULL,                       -- libellé court (ex: "Champ du haut")
+            ref_cadastrale TEXT,                     -- ex: "ZA 0042" (optionnel)
+            commune TEXT NOT NULL,
+            code_postal TEXT,
+            surface_ha REAL NOT NULL CHECK (surface_ha > 0),
+            statut TEXT NOT NULL DEFAULT 'bio' CHECK (statut IN ('bio','conversion','conventionnel')),
+            date_acquisition TEXT,                   -- ISO YYYY-MM-DD (optionnel)
+            notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_parcelle_commune ON parcelle(commune);
+        CREATE INDEX IF NOT EXISTS idx_parcelle_statut ON parcelle(statut);
+        CREATE TRIGGER IF NOT EXISTS trg_parcelle_updated_at
+            AFTER UPDATE ON parcelle
+            FOR EACH ROW
+            BEGIN
+                UPDATE parcelle SET updated_at = datetime('now') WHERE id = NEW.id;
+            END;
+    """),
+    (2, "create_plan_culture", """
+        -- Plan de culture saisonnier : une culture sur une parcelle pour une année donnée.
+        -- Multi-culture possible sur 1 parcelle (sous-surface ha) à condition que la somme
+        -- soit ≤ surface parcelle (validation côté code, pas BDD pour souplesse).
+        CREATE TABLE IF NOT EXISTS plan_culture (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            parcelle_id INTEGER NOT NULL,
+            saison INTEGER NOT NULL CHECK (saison >= 2020 AND saison <= 2100),
+            culture TEXT NOT NULL,                   -- slug culture (chanvre_kompolti, maraichage_diversifie, verger_pommiers, etc.)
+            culture_label TEXT,                      -- libellé lisible (ex: "Chanvre Kompolti")
+            variete TEXT,                            -- variété précise (ex: "Kompolti FBS")
+            surface_ha REAL CHECK (surface_ha IS NULL OR surface_ha > 0),
+            date_semis_prev TEXT,                    -- ISO YYYY-MM-DD prévue
+            date_recolte_prev TEXT,                  -- ISO YYYY-MM-DD prévue
+            date_semis_reel TEXT,                    -- ISO YYYY-MM-DD constaté (post-semis)
+            date_recolte_reel TEXT,                  -- ISO YYYY-MM-DD constaté
+            rendement_kg_attendu REAL,
+            mode_production TEXT DEFAULT 'ab' CHECK (mode_production IN ('ab','nt','conv','hve')),
+            statut TEXT NOT NULL DEFAULT 'prevu' CHECK (statut IN ('prevu','en_cours','recolte','annule')),
+            notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (parcelle_id) REFERENCES parcelle(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_plan_culture_saison ON plan_culture(saison);
+        CREATE INDEX IF NOT EXISTS idx_plan_culture_parcelle ON plan_culture(parcelle_id);
+        CREATE INDEX IF NOT EXISTS idx_plan_culture_statut ON plan_culture(statut);
+        CREATE TRIGGER IF NOT EXISTS trg_plan_culture_updated_at
+            AFTER UPDATE ON plan_culture
+            FOR EACH ROW
+            BEGIN
+                UPDATE plan_culture SET updated_at = datetime('now') WHERE id = NEW.id;
+            END;
+    """),
+]
+
+
+def _ensure_schema() -> None:
+    """Crée paresseusement le schéma de la verticale (parcelle/plan_culture).
+
+    Appelé au début de chaque opération CRUD. Tant que la verticale n'est pas
+    sollicitée, ses tables ne sont jamais créées (noyau agnostique préservé).
+    """
+    apply_module_migrations("self_culture", CULTURE_MIGRATIONS)
+
 
 # mode_production a un enum métier dédié → source de vérité = models.ModeProduction.
 VALID_MODES_PRODUCTION = tuple(m.value for m in ModeProduction)
@@ -107,14 +185,14 @@ def get_varietes_for_datalist() -> list[dict[str, str]]:
 
 def list_parcelles() -> list[dict[str, Any]]:
     """Retourne toutes les parcelles, triées par nom."""
-    init_db()
+    _ensure_schema()
     with _conn() as c:
         rows = c.execute("SELECT * FROM parcelle ORDER BY nom").fetchall()
         return [dict(r) for r in rows]
 
 
 def get_parcelle(parcelle_id: int) -> dict[str, Any] | None:
-    init_db()
+    _ensure_schema()
     with _conn() as c:
         row = c.execute("SELECT * FROM parcelle WHERE id = ?", (parcelle_id,)).fetchone()
         return dict(row) if row else None
@@ -128,7 +206,7 @@ def save_parcelle(data: dict[str, Any]) -> dict[str, Any]:
     - `surface_ha` > 0
     - `statut` dans VALID_PARCELLE_STATUTS si fourni
     """
-    init_db()
+    _ensure_schema()
 
     # Validation
     if not data.get("nom") or not data.get("commune"):
@@ -168,7 +246,7 @@ def save_parcelle(data: dict[str, Any]) -> dict[str, Any]:
 
 def rename_parcelle(parcelle_id: int, new_nom: str) -> dict[str, Any] | None:
     """Renomme une parcelle. Le nom doit être non vide après strip."""
-    init_db()
+    _ensure_schema()
     new_nom = (new_nom or "").strip()
     if not new_nom:
         raise ValueError("rename_parcelle : le nom ne peut pas être vide")
@@ -187,7 +265,7 @@ def delete_parcelle(parcelle_id: int) -> bool:
     """Supprime une parcelle (cascade → plans de culture liés).
     Retourne True si la ligne existait.
     """
-    init_db()
+    _ensure_schema()
     with _conn() as c:
         cursor = c.execute("DELETE FROM parcelle WHERE id = ?", (parcelle_id,))
         return cursor.rowcount > 0
@@ -202,7 +280,7 @@ def list_plan_culture(saison: int | None = None, parcelle_id: int | None = None)
 
     Joint la parcelle pour avoir le nom + commune dans le retour.
     """
-    init_db()
+    _ensure_schema()
     sql = """
         SELECT pc.*, p.nom AS parcelle_nom, p.commune AS parcelle_commune
         FROM plan_culture pc
@@ -224,7 +302,7 @@ def list_plan_culture(saison: int | None = None, parcelle_id: int | None = None)
 
 
 def get_plan_culture(plan_id: int) -> dict[str, Any] | None:
-    init_db()
+    _ensure_schema()
     with _conn() as c:
         row = c.execute("SELECT * FROM plan_culture WHERE id = ?", (plan_id,)).fetchone()
         return dict(row) if row else None
@@ -238,7 +316,7 @@ def save_plan_culture(data: dict[str, Any]) -> dict[str, Any]:
     - `saison` entier 2020-2100
     - `culture` obligatoire (texte libre ou slug catalog)
     """
-    init_db()
+    _ensure_schema()
 
     if not data.get("parcelle_id"):
         raise ValueError("save_plan_culture : 'parcelle_id' requis")
@@ -285,7 +363,7 @@ def save_plan_culture(data: dict[str, Any]) -> dict[str, Any]:
 
 
 def delete_plan_culture(plan_id: int) -> bool:
-    init_db()
+    _ensure_schema()
     with _conn() as c:
         cursor = c.execute("DELETE FROM plan_culture WHERE id = ?", (plan_id,))
         return cursor.rowcount > 0
@@ -306,7 +384,7 @@ def stats_parcelles_saison(saison: int) -> dict[str, Any]:
             "par_culture": [{"label": "Chanvre Kompolti", "surface_ha": 1.2}, ...]
         }
     """
-    init_db()
+    _ensure_schema()
     with _conn() as c:
         parcelles = c.execute(
             "SELECT statut, surface_ha FROM parcelle"
