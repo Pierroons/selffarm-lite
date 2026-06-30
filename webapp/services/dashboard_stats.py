@@ -18,6 +18,12 @@ from typing import Any
 from self_culture.cultures import list_plan_culture, stats_parcelles_saison
 from self_agri_book.exploitation import get_exploitation
 from self_agri_book.storage import _conn, init_db
+from webapp.modules_state import is_module_active
+
+# Stats parcellaire vides quand la verticale culture n'est pas active (profil non-agri)
+_PARC_STATS_VIDE: dict[str, Any] = {
+    "count": 0, "surface_total_ha": 0, "par_statut": {}, "par_culture": [],
+}
 
 log = logging.getLogger(__name__)
 
@@ -80,9 +86,8 @@ def _ecritures_par_mois(saison: int) -> dict[str, list[float]]:
     return {"recettes": recettes, "charges": charges}
 
 
-def _cultures_repartition(saison: int) -> dict[str, Any]:
-    """Répartition des surfaces (ha) par culture sur la saison. Fallback parcelle si plan sans surface."""
-    plans = list_plan_culture(saison=saison)
+def _cultures_repartition(plans: list[dict[str, Any]]) -> dict[str, Any]:
+    """Répartition des surfaces (ha) par culture. Fallback parcelle si plan sans surface."""
     by_culture: dict[str, float] = {}
     for p in plans:
         key = (p.get("culture_label") or p.get("culture") or "—").strip() or "—"
@@ -216,8 +221,14 @@ def _nb_factures_emises_saison(saison: int) -> int:
 def get_dashboard_stats() -> dict[str, Any]:
     """Dict complet prêt à passer au template ou retourner via /api/dashboard/stats."""
     saison = _saison_courante()
-    parc_stats = stats_parcelles_saison(saison)
-    plans = list_plan_culture(saison=saison)
+    # Verticale culture interrogée seulement si active → un profil non-agri ne
+    # déclenche pas la création paresseuse de parcelle/plan_culture.
+    if is_module_active("parcelles"):
+        parc_stats = stats_parcelles_saison(saison)
+        plans = list_plan_culture(saison=saison)
+    else:
+        parc_stats = dict(_PARC_STATS_VIDE)
+        plans = []
 
     ecr_mois = _ecritures_par_mois(saison)
     total_recettes = round(sum(ecr_mois["recettes"]), 2)
@@ -265,7 +276,7 @@ def get_dashboard_stats() -> dict[str, Any]:
             "recettes": [round(v, 2) for v in ecr_mois["recettes"]],
             "charges": [round(v, 2) for v in ecr_mois["charges"]],
         },
-        "chart_cultures": _cultures_repartition(saison),
+        "chart_cultures": _cultures_repartition(plans),
         "chart_aides": aides,
         "gauge": {
             "pct": gauge_pct,
