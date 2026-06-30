@@ -31,9 +31,13 @@ from self_culture.models import ModeProduction
 
 log = logging.getLogger(__name__)
 
+# mode_production a un enum métier dédié → source de vérité = models.ModeProduction.
+VALID_MODES_PRODUCTION = tuple(m.value for m in ModeProduction)
+# Les statuts parcelle/plan n'ont pas d'enum (valeurs propres au schéma SQL) : ces
+# littéraux reflètent les contraintes CHECK des tables parcelle.statut / plan_culture.statut
+# (migrations create_parcelle / create_plan_culture) — pas d'enum inventé « au cas où ».
 VALID_PARCELLE_STATUTS = ("bio", "conversion", "conventionnel")
 VALID_PLAN_STATUTS = ("prevu", "en_cours", "recolte", "annule")
-VALID_MODES_PRODUCTION = ("ab", "nt", "conv", "hve")
 
 PARCELLE_FIELDS = (
     "nom", "ref_cadastrale", "commune", "code_postal",
