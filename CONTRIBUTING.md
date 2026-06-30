@@ -48,6 +48,30 @@ Pour préserver cette portabilité :
 - Avant d'ajouter au noyau : « un autre métier l'utiliserait-il tel quel ? ». Si non →
   c'est une verticale ou du front.
 
+### Migrations de base de données — une suite par module
+
+La base SQLite est unique et partagée, mais **chaque module porte sa propre suite
+de migrations**, versionnée à partir de `1` et suivie par namespace dans la table
+`_schema_migrations` (clé composite `(module, version)`).
+
+- Le **noyau** (`self_agri_book`) déclare ses migrations dans `storage.MIGRATIONS`,
+  appliquées par `init_db()` sous le namespace `self_agri_book`. Elles ne créent
+  **aucune** table métier.
+- Une **verticale** déclare sa propre liste (ex. `cultures.CULTURE_MIGRATIONS`) et
+  l'applique via `apply_module_migrations("self_culture", …)`, en général
+  paresseusement au premier accès. Une verticale jamais sollicitée ne crée jamais
+  ses tables → un profil sans cette verticale (autre métier) reste vierge de son schéma.
+- Exemple : `parcelle` / `plan_culture` sont portées par `self_culture`, pas par le
+  noyau. `ecritures_comptables` (hash-chain immuable) appartient au noyau et ne bouge pas.
+
+**Changement de schéma de `_schema_migrations`** (rare) : la base de dev étant
+régénérable, on ne migre pas le tracking — on **repart propre** :
+
+```bash
+rm ~/.selffarm/compta.db        # ou le fichier pointé par $SELFFARM_COMPTA_DB
+# relancer l'app → schéma recréé ; reseed démo auto si SELFFARM_ENV=demo
+```
+
 ## 🚀 Déploiement
 
 Le déploiement en production est réservé au mainteneur (`scripts/deploy.sh`, audit OPSEC
