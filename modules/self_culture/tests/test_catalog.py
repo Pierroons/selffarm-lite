@@ -152,3 +152,29 @@ def test_filter_combinaison_famille_et_motcle(varietes):
     """Combinaison de filtres : Brassicaceae + 'chou' = au moins 2 variétés."""
     out = filter_varietes(varietes, famille=FamilleBotanique.BRASSICACEAE, mot_cle="chou")
     assert len(out) >= 2
+
+
+def test_get_varietes_for_datalist(varietes):
+    """get_varietes_for_datalist : structure, tri, et slugs cohérents avec le catalogue."""
+    from self_culture.cultures import get_varietes_for_datalist
+
+    options = get_varietes_for_datalist()
+    assert len(options) == len(varietes)
+
+    # Structure exacte de chaque entrée
+    for o in options:
+        assert set(o.keys()) == {"value", "label_attr", "slug", "famille", "categorie"}
+        assert o["value"] and o["slug"]
+        # value = "<emoji> <nom>[ (AB)]" → commence par un caractère non alphanumérique (emoji/•)
+        assert not o["value"][0].isalnum()
+
+    # Tri par (categorie, value)
+    keys = [(o["categorie"], o["value"]) for o in options]
+    assert keys == sorted(keys)
+
+    # Chaque slug correspond à un id réel du catalogue
+    ids = {v.id for v in varietes}
+    assert all(o["slug"] in ids for o in options)
+
+    # Au moins une variété AB (suffixe " (AB)") présente
+    assert any(o["value"].endswith("(AB)") for o in options)
