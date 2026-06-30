@@ -50,10 +50,16 @@ CREATE INDEX IF NOT EXISTS idx_ecritures_source ON ecritures_comptables(source_m
 CREATE INDEX IF NOT EXISTS idx_ecritures_compte_debit ON ecritures_comptables(compte_debit);
 CREATE INDEX IF NOT EXISTS idx_ecritures_compte_credit ON ecritures_comptables(compte_credit);
 
+-- Tracking namespacé par module : le noyau et chaque verticale portent leur
+-- propre suite de migrations (versionnée à partir de 1 chez chacun). La clé
+-- composite (module, version) permet à parcelle/plan_culture de vivre dans la
+-- verticale self_culture sans collision avec la numérotation du noyau.
 CREATE TABLE IF NOT EXISTS _schema_migrations (
-    version INTEGER PRIMARY KEY,
+    module TEXT NOT NULL DEFAULT 'self_agri_book',
+    version INTEGER NOT NULL,
     name TEXT NOT NULL,
-    applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+    applied_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (module, version)
 );
 """
 
@@ -140,66 +146,10 @@ MIGRATIONS: list[tuple[int, str, str]] = [
                 UPDATE exploitation SET updated_at = datetime('now') WHERE id = NEW.id;
             END;
     """),
-    (5, "create_parcelle", """
-        -- Parcelles déclarées de l'exploitation.
-        -- V1 simple, sans planches/zones (sera enrichi V2 via module self_culture complet).
-        CREATE TABLE IF NOT EXISTS parcelle (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nom TEXT NOT NULL,                       -- libellé court (ex: "Champ du haut")
-            ref_cadastrale TEXT,                     -- ex: "ZA 0042" (optionnel)
-            commune TEXT NOT NULL,
-            code_postal TEXT,
-            surface_ha REAL NOT NULL CHECK (surface_ha > 0),
-            statut TEXT NOT NULL DEFAULT 'bio' CHECK (statut IN ('bio','conversion','conventionnel')),
-            date_acquisition TEXT,                   -- ISO YYYY-MM-DD (optionnel)
-            notes TEXT,
-            created_at TEXT NOT NULL DEFAULT (datetime('now')),
-            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-        );
-        CREATE INDEX IF NOT EXISTS idx_parcelle_commune ON parcelle(commune);
-        CREATE INDEX IF NOT EXISTS idx_parcelle_statut ON parcelle(statut);
-        -- Trigger maj updated_at
-        CREATE TRIGGER IF NOT EXISTS trg_parcelle_updated_at
-            AFTER UPDATE ON parcelle
-            FOR EACH ROW
-            BEGIN
-                UPDATE parcelle SET updated_at = datetime('now') WHERE id = NEW.id;
-            END;
-    """),
-    (6, "create_plan_culture", """
-        -- Plan de culture saisonnier : une culture sur une parcelle pour une année donnée.
-        -- Multi-culture possible sur 1 parcelle (sous-surface ha) à condition que la somme
-        -- soit ≤ surface parcelle (validation côté code, pas BDD pour souplesse).
-        CREATE TABLE IF NOT EXISTS plan_culture (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            parcelle_id INTEGER NOT NULL,
-            saison INTEGER NOT NULL CHECK (saison >= 2020 AND saison <= 2100),
-            culture TEXT NOT NULL,                   -- slug culture (chanvre_kompolti, maraichage_diversifie, verger_pommiers, etc.)
-            culture_label TEXT,                      -- libellé lisible (ex: "Chanvre Kompolti")
-            variete TEXT,                            -- variété précise (ex: "Kompolti FBS")
-            surface_ha REAL CHECK (surface_ha IS NULL OR surface_ha > 0),
-            date_semis_prev TEXT,                    -- ISO YYYY-MM-DD prévue
-            date_recolte_prev TEXT,                  -- ISO YYYY-MM-DD prévue
-            date_semis_reel TEXT,                    -- ISO YYYY-MM-DD constaté (post-semis)
-            date_recolte_reel TEXT,                  -- ISO YYYY-MM-DD constaté
-            rendement_kg_attendu REAL,
-            mode_production TEXT DEFAULT 'ab' CHECK (mode_production IN ('ab','nt','conv','hve')),
-            statut TEXT NOT NULL DEFAULT 'prevu' CHECK (statut IN ('prevu','en_cours','recolte','annule')),
-            notes TEXT,
-            created_at TEXT NOT NULL DEFAULT (datetime('now')),
-            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-            FOREIGN KEY (parcelle_id) REFERENCES parcelle(id) ON DELETE CASCADE
-        );
-        CREATE INDEX IF NOT EXISTS idx_plan_culture_saison ON plan_culture(saison);
-        CREATE INDEX IF NOT EXISTS idx_plan_culture_parcelle ON plan_culture(parcelle_id);
-        CREATE INDEX IF NOT EXISTS idx_plan_culture_statut ON plan_culture(statut);
-        CREATE TRIGGER IF NOT EXISTS trg_plan_culture_updated_at
-            AFTER UPDATE ON plan_culture
-            FOR EACH ROW
-            BEGIN
-                UPDATE plan_culture SET updated_at = datetime('now') WHERE id = NEW.id;
-            END;
-    """),
+    # Migrations 5 (create_parcelle) et 6 (create_plan_culture) DÉPLACÉES vers la
+    # verticale self_culture (cf. cultures.CULTURE_MIGRATIONS). Le noyau compta reste
+    # agnostique du métier : il ne crée plus parcelle/plan_culture. Trous 5/6 laissés
+    # volontairement (les versions sont des ids de tracking opaques, pas une séquence).
     (7, "create_pos_produit", """
         -- SelfPOS — Catalogue produits (vente directe marché)
         CREATE TABLE IF NOT EXISTS pos_produit (
@@ -361,25 +311,27 @@ MIGRATIONS: list[tuple[int, str, str]] = [
 ]
 
 
-def _apply_migrations() -> None:
-    """Applique les migrations manquantes. Idempotent.
+def _apply_migrations(module: str, migrations: list[tuple[int, str, str]]) -> None:
+    """Applique les migrations manquantes d'un module. Idempotent.
 
-    Stratégie : version 0 = schéma initial (déjà créé via SCHEMA_SQL).
-    Versions ≥ 1 sont des évolutions à appliquer dans l'ordre, une seule fois.
+    Le suivi est namespacé par `module` : le noyau (self_agri_book) et chaque
+    verticale portent leur propre suite de versions, appliquée une seule fois.
     """
     with _conn() as c:
         applied = {
             int(r["version"])
-            for r in c.execute("SELECT version FROM _schema_migrations").fetchall()
+            for r in c.execute(
+                "SELECT version FROM _schema_migrations WHERE module = ?", (module,)
+            ).fetchall()
         }
-        for version, name, sql in MIGRATIONS:
+        for version, name, sql in migrations:
             if version in applied:
                 continue
-            log.info("Application migration #%d : %s", version, name)
+            log.info("Application migration %s#%d : %s", module, version, name)
             c.executescript(sql)
             c.execute(
-                "INSERT INTO _schema_migrations (version, name) VALUES (?, ?)",
-                (version, name),
+                "INSERT INTO _schema_migrations (module, version, name) VALUES (?, ?, ?)",
+                (module, version, name),
             )
 
 
@@ -400,11 +352,27 @@ def _conn():
 
 
 def init_db() -> None:
-    """Crée la DB + schéma si absents puis applique les migrations. Idempotent."""
+    """Crée la DB + schéma noyau si absents puis applique les migrations du noyau.
+
+    Idempotent. Le noyau (self_agri_book) reste agnostique du métier : ses
+    migrations ne créent aucune table agricole — parcelle/plan_culture sont portées
+    par la verticale self_culture via apply_module_migrations().
+    """
     with _conn() as c:
         c.executescript(SCHEMA_SQL)
-    _apply_migrations()
+    _apply_migrations("self_agri_book", MIGRATIONS)
     log.info("Compta DB initialisée : %s", _db_path())
+
+
+def apply_module_migrations(module: str, migrations: list[tuple[int, str, str]]) -> None:
+    """Applique les migrations propres à une verticale sur la base partagée.
+
+    Garantit d'abord le schéma noyau (init_db), puis applique la suite du module
+    sous son propre namespace. Appelé paresseusement par la verticale au premier
+    accès → une verticale jamais sollicitée ne crée jamais ses tables.
+    """
+    init_db()
+    _apply_migrations(module, migrations)
 
 
 def next_numero_facture(annee: int, prefix: str = "F") -> str:
