@@ -48,6 +48,21 @@ principaux :
 - `cotisations_msa` — cotisation base + barème exonération JA dégressive
 - `uth` — Unités Travail Humain (1.0 par défaut = exploitant seul)
 
+## Questionnaire d'intake guidé (SelfHub)
+
+`intake_schema.yaml` décrit un **questionnaire d'installation** destiné à être
+rendu comme une page SelfFarm et piloté par le LLM local SelfHub : l'utilisateur
+répond en langage terrain (champs libres + cases « je ne sais pas »), le LLM
+applique les référentiels embarqués, les règles auto (certification bio,
+façonnage CBD, barème MSA, découpage DNJA 80/20…) et les checklists de
+complétude par profil, puis assemble l'objet `Hypotheses` passé au moteur.
+
+Sections : `profil`, `productions`, `charges`, `investissements`, `aides`,
+`social`, `financement`, `accompagnement`. Conception **neutre** : aucun
+prestataire nommé, aucun chiffre présenté comme une promesse (valeurs
+indicatives, fourchettes de référence). Garde-fou par défaut : EBE/UTH ≥
+seuil + 2 000 €.
+
 ## Sources officielles mobilisées
 
 - Seuil EBE/UTH 2026 NA zone défavorisée : https://les-aides.nouvelle-aquitaine.fr/
@@ -74,11 +89,14 @@ resultat  = EBE - amort - social
 PYTHONPATH=modules .venv/bin/python -m pytest modules/self_dnja/tests/ -v
 ```
 
-Actuellement : 16 tests, 100 % de couverture du moteur.
+Couvre le moteur (compte de résultat, RDA, bilan, plan de financement,
+`annee_fin`) + le schéma d'intake (`test_intake_schema.py`, dont contrôle
+anti-marque).
 
 ## Roadmap
 
 - v0.2 : connecteur `self-agri-book` → alimente les hypothèses depuis la compta
   réelle historique (calibration fine)
 - v0.3 : mode "scénarios" (comparer 3 YAML avec diff automatique)
-- v0.4 : mode interactif (TUI ou HTML) pour ajuster les hypothèses en live
+- v0.4 : page d'intake guidée (`intake_schema.yaml`) + SelfHub pour saisir les
+  hypothèses en langage naturel et ajuster en live
