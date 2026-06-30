@@ -1,0 +1,174 @@
+# ============================================================
+# intake_schema.yaml — questionnaire d'intake guidé du module dnja (SelfFarm)
+#
+# Le module rend le formulaire depuis `sections`, le LLM (SelfHub) applique
+# `referentiels` + `llm_rules` + `checklists_completude`, puis assemble un objet
+# Hypotheses (modules/self_dnja/models.py) passé au moteur calculer().
+#
+# Principes de conception (cf. neutralité MySelf) :
+#   - Zéro marque/produit : on décrit des mécanismes génériques, jamais un prestataire nommé.
+#   - Zéro chiffre non vérifiable : les montants embarqués sont INDICATIFS et ajustables,
+#     présentés comme des fourchettes de référence, jamais comme une promesse.
+# ============================================================
+version: "0.1"
+
+garde_fou:
+  plancher_marge_ebe_uth: 2000      # cible par défaut = seuil_dnja + 2000 €
+  descente_sous_plancher: "sur demande explicite de l'utilisateur uniquement"
+
+# ---------- Référentiels embarqués (indicatifs, l'utilisateur ne les saisit pas) ----------
+referentiels:
+  seuil_ebe_uth_dnja_na_2026: 17717            # source moteur : EBE_UTH_SEUIL_DNJA_NA_2026
+  certification_bio_annuelle_eur: 550          # indicatif, auto si bio/conversion, ajustable
+  msa_exoneration_ja_pct: [65, 55, 35, 25, 15] # barème dégressif standard JA
+  dnja_decoupage_national: {acompte_pct: 80, annee_acompte: 1, solde_pct: 20}
+  # Façonnage CBD externe — valeurs INDICATIVES, à confirmer auprès du prestataire choisi.
+  faconnage_cbd_indicatif:
+    biomasse_vers_crude_eur_par_kg: 25
+    rendement_crude_pct: 8                      # biomasse ~10 % CB : ~8 kg crude / 100 kg
+    isolat:    {crude_kg_par_kg: 2.0, service_eur_par_kg: 120}
+    distillat: {crude_kg_par_kg: 2.5, service_eur_par_kg: 150}
+    batch_minimum_kg: 250                       # seuil de lancement, mutualisable entre exploitants
+  duree_amortissement_defaut:                  # par type de bien (le LLM choisit)
+    {tracteur: 7, materiel: 5, serre: 10, irrigation: 7, batiment: 20, informatique: 4}
+
+# ---------- Formulaire (1er passage) + mapping vers le modèle Hypotheses ----------
+sections:
+
+  - id: profil
+    titre: "Mon profil"
+    champs:
+      - {id: candidat,         label: "Nom du projet",        type: text, maps_to: candidat, required: true}
+      - {id: date_installation,label: "Date d'installation",  type: date, maps_to: date_installation}
+      - {id: commune,          label: "Commune",              type: text, maps_to: commune}
+      - {id: code_postal,      label: "Code postal",          type: text, maps_to: code_postal,
+         derive: {departement: "2 premiers chiffres", zone: "le LLM déduit zone défavorisée/montagne"}}
+      - {id: statut_juridique, label: "Statut juridique",     type: text, maps_to: statut_juridique,
+         unknown_checkbox: true, on_unknown: llm_infere}
+      - {id: regime_fiscal,    label: "Régime fiscal",        type: text, maps_to: regime_fiscal,
+         unknown_checkbox: true, on_unknown: "llm_calcule selon CA prévisionnel + propose"}
+      - {id: uth,              label: "Actifs temps plein",   type: number, maps_to: uth, defaut: 1.0}
+      - {id: pluriactif,       label: "Autre métier ? Revenu ferme dès le départ ?", type: text,
+         derive: {prelevements_mensuels: "0 si pas de prélèvement au démarrage", article_73b_actif: "déduit"}}
+
+  - id: productions
+    titre: "Mes productions"
+    type: repeatable                              # un bloc par production
+    maps_to: "activites[]"
+    champs:
+      - {id: nom,          label: "Ce que je produis et vends", type: text, maps_to: nom, required: true}
+      - {id: surface_ha,   label: "Surface (ha)", type: number, maps_to: surface_ha,
+         note: "0 si produit transformé issu d'une autre culture"}
+      - {id: production,   label: "Quantité/an plein régime + prix HT", type: text,
+         maps_to: [quantite_annuelle, prix_vente_ht, unite_vente]}
+      - {id: annee_pleine, label: "Année de plein régime", type: number, maps_to: annee_pleine_production}
+      - {id: mode,         label: "Bio / conversion / conventionnel", type: choice, maps_to: bio}
+      - {id: transfo,      label: "Transformation/façonnage externe ? Décris", type: text,
+         on_faconnage: "applique referentiels.faconnage_cbd_indicatif (cf. llm_rules.faconnage)"}
+    llm_derive:
+      montee_en_charge: "courbe 4 ans (fin = 1.0) construite depuis annee_pleine_production, ajustable"
+
+  - id: charges
+    titre: "Mes charges annuelles"
+    champs:
+      - {id: charges_vrac,     label: "Tout ce que je dépense pour produire (en vrac)", type: textarea,
+         maps_to: "charges_recurrentes[]",
+         llm: "catégorise fixe/variable + range par poste ; relance via checklists_completude"}
+      - {id: charges_decalees, label: "Charges qui démarrent plus tard / une seule année", type: textarea,
+         maps_to: "charges_recurrentes[].{annee_demarrage, annee_fin}"}
+
+  - id: investissements
+    titre: "Mes investissements de départ"
+    type: repeatable
+    maps_to: "immobilisations[]"
+    champs:
+      - {id: nom,               label: "Bien",          type: text,   maps_to: nom}
+      - {id: montant_ht,        label: "Prix HT",       type: number, maps_to: montant_ht}
+      - {id: annee_acquisition, label: "Année d'achat", type: number, maps_to: annee_acquisition, defaut: 1}
+      - {id: subvention_pct,    label: "Subvention (%)",type: number, maps_to: subvention_pct, defaut: 0}
+    llm_derive:
+      duree_amortissement: "depuis referentiels.duree_amortissement_defaut selon le type de bien"
+
+  - id: aides
+    titre: "Les aides"
+    champs:
+      - {id: aides_connues, label: "Aides que je connais", type: textarea, maps_to: "aides[]",
+         unknown_checkbox: true,
+         on_unknown: "llm_propose l'éligible (profil+zone+bio), montants sourcés à valider"}
+      - {id: dnja_total,    label: "DNJA — montant total visé", type: number,
+         maps_to: "aides[] (est_subvention_capital=true)"}
+      - {id: dnja_progressive, label: "DNJA progressive ?", type: checkbox,
+         if_checked: {champ: "décris la progression (montants + années)",
+                      maps_to: "aides[].annee_versement par tranche"},
+         else: "découpage national 80/20 (referentiels.dnja_decoupage_national)"}
+
+  - id: social
+    titre: "Le social"
+    champs:
+      - {id: exoneration_msa, label: "Exonération MSA jeune agriculteur ?", type: choice,
+         maps_to: "cotisations_msa.exoneration_ja_active", unknown_checkbox: true}
+      - {id: cotisation_base, label: "Cotisation MSA de base annuelle", type: number,
+         maps_to: "cotisations_msa.cotisation_base_annuelle", unknown_checkbox: true,
+         on_unknown: "llm estime selon le revenu prévisionnel"}
+      - {id: salaries,        label: "Salariés prévus ? Décris", type: text, maps_to: salariat}
+    llm_derive:
+      pct_exoneration: "referentiels.msa_exoneration_ja_pct si exoneration_ja_active"
+
+  - id: financement
+    titre: "Le financement"
+    # Note neutre : mécanisme générique, aucune banque nommée, aucun taux promis.
+    aide_neutre: "Certaines banques peuvent avancer la DNJA à taux préférentiel pour disposer
+                  de l'apport dès l'installation — renseigne-toi auprès de ton établissement."
+    champs:
+      - {id: apport,        label: "Apport personnel", type: number,
+         maps_to: plan_financement_apport_personnel, unknown_checkbox: true}
+      - {id: emprunt,       label: "Emprunt (montant/durée/taux)", type: text,
+         maps_to: [plan_financement_emprunt, annuites_emprunts_annuelles],
+         option: "Calibrer sur le besoin réel → llm calcule l'emprunt minimal pour écart = 0"}
+      - {id: tresorerie_bfr,label: "Trésorerie de sécurité + stock/créances à financer", type: text,
+         maps_to: [tresorerie_securite, bfr_besoin], unknown_checkbox: true}
+
+  - id: accompagnement
+    titre: "Mon accompagnement"
+    champs:
+      - {id: engagements, label: "Engagements (conversion, MAEC, écorégime…)", type: text,
+         maps_to: choix_eco_conditionnalite}
+      - {id: structure,   label: "Structure qui m'accompagne", type: text,
+         maps_to: structure_etude_economique}
+
+# ---------- Règles auto + inférences LLM ----------
+llm_rules:
+  - id: bio_certif_auto
+    quand: "au moins une activité bio = true ou en conversion"
+    action: "ajouter charges_recurrentes : {nom: 'Certification bio', montant_annuel_ht: referentiels.certification_bio_annuelle_eur, categorie: certification}"
+  - id: faconnage
+    quand: "une activité déclare une transformation de type façonnage/extraction CBD"
+    action: >
+      estimer la biomasse, dériver le crude (rendement_crude_pct), coût façonnage = biomasse * tarif/kg ;
+      si l'extraction du lot complet sert à constituer un stock : la poser en charge
+      annee_demarrage = annee_fin = 1 (INVESTISSEMENT N1, constitution de stock) ;
+      poser le service crude -> isolat/distillat en charge récurrente dès N2 (prorata vendu) ;
+      signaler la mutualisation si biomasse < batch_minimum_kg. Tarifs INDICATIFS à confirmer.
+  - id: montee_en_charge
+    action: "construire activite.montee_en_charge (4 valeurs, fin = 1.0) depuis annee_pleine_production"
+  - id: emprunt_minimal
+    quand: "option 'Calibrer sur le besoin réel' choisie"
+    action: "emprunt = max(0, total_besoins - dnja_acompte - subventions_capital - apport) ; annuités déduites du taux saisi"
+  - id: garde_fou
+    action: "si EBE/UTH année cible < seuil + plancher_marge_ebe_uth → alerter + proposer des leviers (volume/prix/charges), sans descendre sauf demande explicite"
+  - id: references_plausibilite
+    action: "croiser rendements/prix saisis avec des références publiques ; alerter si hors-norme (anti-rejet CDOA) ; proposer une fourchette sourcée si l'utilisateur ne sait pas chiffrer, jamais un montant imposé"
+
+# ---------- Checklists de complétude (relance si poste manquant, pas d'ajout silencieux) ----------
+checklists_completude:
+  maraichage:    [eau_irrigation, semences_plants, terreau_fertilisation, protection_cultures, mecanisation_carburant, emballages, assurance, certification, frais_vente, comptabilite]
+  chanvre_cbd:   [semences, analyses_labo_thc, transformation_faconnage, emballages_flacons, certification, assurance, frais_vente, comptabilite, electricite_transfo]
+  elevage:       [alimentation, sante_veto, litiere, eau, mecanisation_carburant, assurance, batiment_entretien, comptabilite]
+  arboriculture: [plants, irrigation, protection_cultures, taille_mecanisation, emballages, assurance, certification, frais_vente, comptabilite]
+  regle: "comparer les charges saisies à la checklist du profil détecté ; pour chaque manque → relancer l'utilisateur (jamais d'ajout silencieux d'un montant)"
+
+# ---------- Sortie ----------
+sortie:
+  assemble: "objet Hypotheses (modules/self_dnja/models.py) -> moteur calculer() -> aperçu + PDF CDOA"
+  horizon_annees: 4
+  champs_systeme: {afficher_engagements_reglementaires: true, afficher_memos_pedagogiques: false}
