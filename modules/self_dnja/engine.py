@@ -92,12 +92,17 @@ def _produit_activite_annee(activite: Activite, annee: int) -> Decimal:
     return (quantite * activite.prix_vente_ht * facteur).quantize(Decimal("0.01"))
 
 
+def _charge_active(c, annee: int) -> bool:
+    """True si la charge s'applique l'année donnée (entre annee_demarrage et annee_fin incluse)."""
+    return c.annee_demarrage <= annee and (c.annee_fin is None or annee <= c.annee_fin)
+
+
 def _charges_recurrentes_annee(h: Hypotheses, annee: int) -> Decimal:
     """Somme des charges d'exploitation récurrentes pour l'année donnée,
-    en tenant compte de l'année de démarrage de chaque charge."""
+    en tenant compte de la fenêtre [annee_demarrage, annee_fin] de chaque charge."""
     return sum(
         (c.montant_annuel_ht for c in h.charges_recurrentes
-         if c.annee_demarrage <= annee),
+         if _charge_active(c, annee)),
         Decimal("0"),
     )
 
@@ -252,7 +257,7 @@ def _calculer_marges_brutes(h: Hypotheses, ligne_n4: LigneResultat) -> list[Marg
     }
     charges_variables_total = sum(
         (c.montant_annuel_ht for c in h.charges_recurrentes
-         if c.categorie in categories_variables and c.annee_demarrage <= ligne_n4.annee),
+         if c.categorie in categories_variables and _charge_active(c, ligne_n4.annee)),
         Decimal("0"),
     )
     for act in h.activites:
@@ -282,25 +287,32 @@ def _calculer_plan_financement(h: Hypotheses) -> PlanFinancement:
     )
     total_besoins = (capex + h.bfr_besoin + h.tresorerie_securite).quantize(Decimal("0.01"))
 
-    dnja_cash = sum(
+    # Acompte = DNJA versée à l'installation (N+1) ; solde = versement(s) ultérieur(s).
+    # Lus directement des aides DNJA (pas de re-split : les montants saisis font foi).
+    dnja_acompte = sum(
         (a.montant for a in h.aides if "DNJA" in a.nom.upper() and a.annee_versement == 1),
         Decimal("0"),
     )
+    dnja_solde = sum(
+        (a.montant for a in h.aides if "DNJA" in a.nom.upper() and a.annee_versement != 1),
+        Decimal("0"),
+    )
+    dnja_total = dnja_acompte + dnja_solde
+    # Seul l'acompte (cash à l'installation) finance les besoins ; le solde, versé
+    # en fin d'engagement, n'est PAS une ressource d'installation.
     total_ressources = (
-        dnja_cash + h.plan_financement_apport_personnel
+        dnja_acompte + h.plan_financement_apport_personnel
         + h.plan_financement_emprunt + subv_capital
     ).quantize(Decimal("0.01"))
 
-    dnja_acompte = (dnja_cash * Decimal(h.dnja_acompte_pct) / Decimal("100")).quantize(Decimal("0.01"))
-    dnja_solde = (dnja_cash * Decimal(100 - h.dnja_acompte_pct) / Decimal("100")).quantize(Decimal("0.01"))
     return PlanFinancement(
         capex_total=capex.quantize(Decimal("0.01")),
         bfr=h.bfr_besoin.quantize(Decimal("0.01")),
         tresorerie_securite=h.tresorerie_securite.quantize(Decimal("0.01")),
         total_besoins=total_besoins,
-        dnja=dnja_cash.quantize(Decimal("0.01")),
-        dnja_acompte=dnja_acompte,
-        dnja_solde=dnja_solde,
+        dnja=dnja_total.quantize(Decimal("0.01")),
+        dnja_acompte=dnja_acompte.quantize(Decimal("0.01")),
+        dnja_solde=dnja_solde.quantize(Decimal("0.01")),
         dnja_annee_solde=h.dnja_annee_solde,
         apport_personnel=h.plan_financement_apport_personnel.quantize(Decimal("0.01")),
         emprunt=h.plan_financement_emprunt.quantize(Decimal("0.01")),
@@ -402,7 +414,7 @@ def _calculer_seuil_rentabilite(h: Hypotheses, ligne_n4: LigneResultat) -> Seuil
     }
     charges_fixes_exploitation = sum(
         (c.montant_annuel_ht for c in h.charges_recurrentes
-         if c.categorie in categories_fixes and c.annee_demarrage <= ligne_n4.annee),
+         if c.categorie in categories_fixes and _charge_active(c, ligne_n4.annee)),
         Decimal("0"),
     )
     charges_fixes_total = (

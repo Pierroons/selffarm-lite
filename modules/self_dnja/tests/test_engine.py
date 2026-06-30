@@ -279,3 +279,67 @@ def test_bilan_n4_equilibre():
     assert bilan.total_passif == (
         bilan.capital_exploitant + bilan.subventions_etalees + bilan.dettes
     )
+
+
+def test_annee_fin_charge_ponctuelle_n1():
+    """Une charge avec annee_demarrage = annee_fin = 1 ne s'applique qu'en N1."""
+    hyp = _minimal_hyp(
+        charges_recurrentes=[
+            ChargeRecurrente(
+                nom="Constitution stock N1", montant_annuel_ht=Decimal("1000"),
+                categorie="intrants", annee_demarrage=1, annee_fin=1,
+            ),
+        ]
+    )
+    r = calculer(hyp)
+    assert r.lignes[0].charges_exploitation == Decimal("1000.00")  # N1
+    assert r.lignes[1].charges_exploitation == Decimal("0.00")     # N2
+    assert r.lignes[2].charges_exploitation == Decimal("0.00")     # N3
+    assert r.lignes[3].charges_exploitation == Decimal("0.00")     # N4
+
+
+def test_annee_fin_none_court_jusqu_horizon():
+    """Sans annee_fin (None), la charge s'applique chaque année (comportement par défaut)."""
+    hyp = _minimal_hyp(
+        charges_recurrentes=[
+            ChargeRecurrente(nom="Récurrente", montant_annuel_ht=Decimal("500"), categorie="intrants"),
+        ]
+    )
+    r = calculer(hyp)
+    for l in r.lignes:
+        assert l.charges_exploitation == Decimal("500.00")
+
+
+def test_annee_fin_fenetre_n2_n3():
+    """Charge active uniquement sur la fenêtre [annee_demarrage, annee_fin] (N2→N3)."""
+    hyp = _minimal_hyp(
+        charges_recurrentes=[
+            ChargeRecurrente(
+                nom="Fenêtre", montant_annuel_ht=Decimal("300"),
+                categorie="intrants", annee_demarrage=2, annee_fin=3,
+            ),
+        ]
+    )
+    r = calculer(hyp)
+    assert r.lignes[0].charges_exploitation == Decimal("0.00")    # N1
+    assert r.lignes[1].charges_exploitation == Decimal("300.00")  # N2
+    assert r.lignes[2].charges_exploitation == Decimal("300.00")  # N3
+    assert r.lignes[3].charges_exploitation == Decimal("0.00")    # N4
+
+
+def test_plan_financement_dnja_acompte_solde_sans_resplit():
+    """La DNJA du plan de financement est lue des aides (acompte N1 + solde ultérieur),
+    sans re-split 80/20, et seul l'acompte finance l'installation."""
+    hyp = _minimal_hyp(
+        aides=[
+            Aide(nom="DNJA acompte 80%", montant=Decimal("19600"), annee_versement=1, est_subvention_capital=True),
+            Aide(nom="DNJA solde 20%", montant=Decimal("4900"), annee_versement=4, est_subvention_capital=True),
+        ],
+    )
+    p = calculer(hyp).plan_financement
+    assert p.dnja == Decimal("24500.00")          # total = somme des versements
+    assert p.dnja_acompte == Decimal("19600.00")  # versement N1, PAS 80% de 19600
+    assert p.dnja_solde == Decimal("4900.00")     # versement ultérieur
+    # Seul l'acompte (cash N1) entre dans les ressources d'installation ; le solde N4 est exclu.
+    # Pas d'immo / apport / emprunt dans _minimal_hyp → ressources = acompte seul.
+    assert p.total_ressources == Decimal("19600.00")

@@ -82,6 +82,11 @@ class ChargeRecurrente(BaseModel):
         default=1, ge=1, le=10,
         description="Année à partir de laquelle la charge commence (1 = dès installation)",
     )
+    annee_fin: int | None = Field(
+        default=None, ge=1, le=10,
+        description="Dernière année où la charge s'applique (incluse). None = jusqu'à l'horizon. "
+        "Permet une charge ponctuelle (ex: annee_demarrage = annee_fin = 1 → charge N1 seulement).",
+    )
 
 
 class Immobilisation(BaseModel):
