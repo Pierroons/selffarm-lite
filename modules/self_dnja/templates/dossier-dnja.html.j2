@@ -7,6 +7,7 @@
 @page {
     size: A4;
     margin: 20mm 18mm;
+    {% if hypotheses.afficher_pied_de_page %}
     @bottom-center {
         content: "Dossier prévisionnel DNJA — " counter(page) " / " counter(pages);
         font-size: 9pt;
@@ -17,6 +18,7 @@
         font-size: 9pt;
         color: #888;
     }
+    {% endif %}
 }
 
 body {
@@ -100,6 +102,21 @@ tbody tr:nth-child(odd) {
     background: #fafbfc;
 }
 
+/* Anti-coupure entre pages : une ligne ne se scinde jamais, l'en-tête se répète en haut de chaque page, un titre reste collé à son tableau. */
+tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+thead {
+    display: table-header-group;
+}
+
+h2, h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+}
+
 tr.total {
     font-weight: bold;
     background: #e0f2fe !important;
@@ -152,7 +169,7 @@ ul.compact li {
 {% else %}
 <p style="margin: 0 0 4px 0;"><strong>Commune :</strong> {{ hypotheses.commune }}</p>
 {% endif %}
-<p style="margin: 0;">Installation prévue : {{ hypotheses.date_installation }} &mdash; Statut : {{ hypotheses.statut_juridique }} &mdash; Régime : {{ hypotheses.regime_fiscal }} &mdash; UTH : {{ hypotheses.uth }} &mdash; Généré le {{ genere_le }} par self-dnja v{{ version }}</p>
+<p style="margin: 0;">Installation prévue : {{ hypotheses.date_installation }} &mdash; Statut : {{ hypotheses.statut_juridique }} &mdash; Régime : {{ hypotheses.regime_fiscal }} &mdash; UTH : {{ hypotheses.uth }} &mdash; Généré le {{ genere_le }}{% if hypotheses.afficher_note_methodologique %} par self-dnja v{{ version }}{% endif %}</p>
 </div>
 
 <h2>1. Synthèse du prévisionnel</h2>
@@ -224,7 +241,7 @@ ul.compact li {
   <td>&nbsp;&nbsp;&nbsp;&nbsp;├─ {{ c.nom }}</td>
   {% for l in lignes %}
   <td>
-    {% if c.annee_demarrage|default(1) <= l.annee %}
+    {% if c.annee_demarrage|default(1) <= l.annee and (c.annee_fin|default(none) is none or l.annee <= c.annee_fin) %}
       {{ "{:,.0f}".format(c.montant_annuel_ht|float).replace(",", " ") }} €
     {% else %}—{% endif %}
   </td>
@@ -375,7 +392,7 @@ ul.compact li {
 <th>Catégorie</th>
 </tr></thead>
 <tbody>
-{% for c in hypotheses.charges_recurrentes %}
+{% for c in hypotheses.charges_recurrentes if c.annee_fin|default(none) is none %}
 <tr>
   <td>{{ c.nom }}</td>
   <td>{{ "{:,.0f}".format(c.montant_annuel_ht|float).replace(",", " ") }} €</td>
@@ -384,6 +401,30 @@ ul.compact li {
 {% endfor %}
 </tbody>
 </table>
+
+{% set ns = namespace(has_ponct=false) %}
+{% for c in hypotheses.charges_recurrentes if c.annee_fin|default(none) is not none %}{% set ns.has_ponct = true %}{% endfor %}
+{% if ns.has_ponct %}
+<p style="margin: 12px 0 4px 0;"><strong>Charges ponctuelles (non récurrentes — investissement / constitution de stock)</strong></p>
+<table>
+<thead><tr>
+<th>Poste</th>
+<th>Montant HT</th>
+<th>Année(s)</th>
+<th>Catégorie</th>
+</tr></thead>
+<tbody>
+{% for c in hypotheses.charges_recurrentes if c.annee_fin|default(none) is not none %}
+<tr>
+  <td>{{ c.nom }}</td>
+  <td>{{ "{:,.0f}".format(c.montant_annuel_ht|float).replace(",", " ") }} €</td>
+  <td>{% if c.annee_demarrage|default(1) == c.annee_fin %}N{{ c.annee_fin }}{% else %}N{{ c.annee_demarrage|default(1) }}–N{{ c.annee_fin }}{% endif %}</td>
+  <td>{{ c.categorie }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
 
 <h2>7. Cotisations MSA — exonération JA</h2>
 
@@ -777,6 +818,7 @@ Barème dégressif d'exonération JA appliqué :</p>
 </table>
 {% endif %}
 
+{% if hypotheses.afficher_note_methodologique %}
 <div class="footer-note">
 <strong>Note méthodologique.</strong> Ce dossier est produit par l'outil <code>self-dnja</code>
 (SelfFarm-Lite, AGPL-3.0-or-later) à partir d'un YAML d'hypothèses structurées.
@@ -789,6 +831,7 @@ l'abattement JA art. 73 B CGI (−50 % sur 5 premières années) et le barème I
 Ce document est un support de réflexion : il ne se substitue pas à l'étude économique
 officielle AITA qui devra être validée par une structure agréée.
 </div>
+{% endif %}
 
 {% if hypotheses.afficher_memos_pedagogiques %}
 <div style="page-break-before: always;"></div>
