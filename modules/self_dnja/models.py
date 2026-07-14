@@ -257,6 +257,14 @@ class Hypotheses(BaseModel):
         description="Affiche l'annexe « Capacité de production & stock de réserve » (écart capacité − vendu). "
                     "⚠️ Pilotage interne uniquement — laisser False pour la version remise à la DDT.",
     )
+    afficher_note_methodologique: bool = Field(
+        default=True,
+        description="Afficher la note méthodologique de fin (outil self-dnja, disclaimer AITA) — off pour version Chambre épurée",
+    )
+    afficher_pied_de_page: bool = Field(
+        default=True,
+        description="Afficher les en-tête/pied de page (pagination + candidat + date) — off pour version Chambre épurée",
+    )
 
     # --- Modalités versement DJA (titre principal vs installation progressive) ---
     dnja_acompte_pct: int = Field(
