@@ -340,6 +340,122 @@ def test_lot_perime_reste_signale():
     assert alertes[0]["jours_restants"] < 0
 
 
+def test_changement_de_statut_de_lot():
+    e = _elevage()
+    b = _bande()
+    lot = e.creer_lot({"bande_id": b["id"], "date_ponte_debut": "2026-07-01",
+                       "date_ponte_fin": "2026-07-05", "nb_oeufs": 240})
+    vendu = e.update_lot_statut(lot["id"], "vendu", destination="Marché de Sainte-Foy")
+    assert vendu["statut"] == "vendu"
+    assert vendu["destination"] == "Marché de Sainte-Foy"
+    # Un lot vendu sort des alertes mais reste au registre
+    assert e.lots_a_ecouler(marge_jours=999) == []
+    assert len(e.list_lots()) == 1
+
+
+def test_statut_de_lot_invalide_rejete():
+    e = _elevage()
+    b = _bande()
+    lot = e.creer_lot({"bande_id": b["id"], "date_ponte_debut": "2026-07-01",
+                       "date_ponte_fin": "2026-07-05", "nb_oeufs": 100})
+    with pytest.raises(ValueError, match="statut"):
+        e.update_lot_statut(lot["id"], "offert")
+
+
+def test_statut_sur_lot_inexistant_rejete():
+    e = _elevage()
+    with pytest.raises(ValueError, match="Lot"):
+        e.update_lot_statut(9999, "vendu")
+
+
+def test_oeufs_periode_propose_le_vendable():
+    """Le lot se remplit avec ce qui part au marché, pas avec le total pondu."""
+    e = _elevage()
+    b = _bande()
+    e.save_ponte({"bande_id": b["id"], "date_ponte": "2026-07-01",
+                  "nb_oeufs": 100, "nb_casses": 2, "nb_declasses": 8})
+    e.save_ponte({"bande_id": b["id"], "date_ponte": "2026-07-02",
+                  "nb_oeufs": 90, "nb_casses": 0, "nb_declasses": 5})
+    # Hors période : ne doit pas être compté
+    e.save_ponte({"bande_id": b["id"], "date_ponte": "2026-07-20", "nb_oeufs": 500})
+
+    p = e.oeufs_periode(b["id"], "2026-07-01", "2026-07-02")
+    assert p["jours_releves"] == 2
+    assert p["total_oeufs"] == 190
+    assert p["vendables"] == 175          # 190 − 2 − 13
+
+
+def test_oeufs_periode_sans_releve():
+    e = _elevage()
+    b = _bande()
+    p = e.oeufs_periode(b["id"], "2026-07-01", "2026-07-05")
+    assert p["jours_releves"] == 0
+    assert p["vendables"] == 0
+
+
+# ========================== REGISTRE ==========================
+
+def test_registre_agrege_effectifs_et_production():
+    e = _elevage()
+    b = _bande(effectif_initial=120)
+    e.add_mouvement({"bande_id": b["id"], "type_mouvement": "mortalite",
+                     "nombre": 3, "date_mouvement": "2026-07-10"})
+    e.add_mouvement({"bande_id": b["id"], "type_mouvement": "reforme",
+                     "nombre": 5, "date_mouvement": "2026-07-12"})
+    e.add_mouvement({"bande_id": b["id"], "type_mouvement": "ajout",
+                     "nombre": 10, "date_mouvement": "2026-07-15"})
+    e.save_ponte({"bande_id": b["id"], "date_ponte": "2026-07-11",
+                  "nb_oeufs": 100, "nb_casses": 2, "nb_declasses": 8})
+    e.add_aliment({"bande_id": b["id"], "date_livraison": "2026-07-05", "quantite_kg": 250})
+
+    r = e.registre_elevage(b["id"])
+    assert r["effectif_initial"] == 120
+    assert r["effectif_vivant"] == 122          # 120 − 3 − 5 + 10
+    assert r["entrees"] == 10
+    assert r["sorties_mortalite"] == 3
+    assert r["sorties_reforme"] == 5
+    assert r["total_oeufs"] == 100
+    assert r["total_vendables"] == 90
+    assert r["total_aliment_kg"] == 250.0
+    assert r["conservation_ans"] == 5
+
+
+def test_registre_filtre_sur_la_periode():
+    """Un registre annuel ne doit pas embarquer les mouvements des autres années."""
+    e = _elevage()
+    b = _bande()
+    e.add_mouvement({"bande_id": b["id"], "type_mouvement": "mortalite",
+                     "nombre": 2, "date_mouvement": "2026-03-01"})
+    e.add_mouvement({"bande_id": b["id"], "type_mouvement": "mortalite",
+                     "nombre": 7, "date_mouvement": "2026-07-01"})
+    e.save_ponte({"bande_id": b["id"], "date_ponte": "2026-03-02", "nb_oeufs": 50})
+    e.save_ponte({"bande_id": b["id"], "date_ponte": "2026-07-02", "nb_oeufs": 80})
+
+    r = e.registre_elevage(b["id"], debut="2026-06-01", fin="2026-12-31")
+    assert r["sorties_mortalite"] == 7          # la mortalité de mars est hors période
+    assert r["total_oeufs"] == 80
+    assert len(r["mouvements"]) == 1
+    # L'effectif vivant reste celui d'aujourd'hui, pas celui de la période :
+    # c'est l'état réel du cheptel, il ne se rejoue pas dans le passé.
+    assert r["effectif_vivant"] == 120 - 9
+
+
+def test_registre_bande_inexistante_rejete():
+    e = _elevage()
+    with pytest.raises(ValueError, match="Bande"):
+        e.registre_elevage(9999)
+
+
+def test_registre_bande_vierge_ne_renvoie_pas_de_none():
+    e = _elevage()
+    b = _bande()
+    r = e.registre_elevage(b["id"])
+    assert r["total_oeufs"] == 0
+    assert r["entrees"] == 0
+    assert r["mouvements"] == []
+    assert r["total_aliment_kg"] == 0
+
+
 # ============================ STATS ============================
 
 def test_stats_base_vide_sans_none():
