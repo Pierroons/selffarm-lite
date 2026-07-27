@@ -897,3 +897,169 @@ def _json_or_redirect(request: Request, payload: dict):
             f'<div class="p-3 rounded border bg-{color}-900/30 border-{color}-700 text-{color}-200 text-sm">{status} {msg}</div>'
         )
     return RedirectResponse(url="/compta", status_code=303)
+
+
+# ════════════════════════════════════════════════════════════════════
+# SAISIE MANUELLE — vente / achat / écriture libre
+# Disponible dans TOUS les environnements (contrairement aux fixtures
+# démo ci-dessus qui sont verrouillées par _demo_only()).
+# ════════════════════════════════════════════════════════════════════
+
+# Plan comptable agricole minimal proposé dans les listes déroulantes.
+# Volontairement court : un exploitant n'a pas à choisir parmi 400 comptes.
+COMPTES_VENTE = [
+    ("701", "Ventes de produits finis (récolte, transformation)"),
+    ("702", "Ventes de produits intermédiaires"),
+    ("706", "Prestations de services (travaux, accueil)"),
+    ("708", "Produits des activités annexes"),
+]
+COMPTES_ACHAT = [
+    ("6011", "Semences et plants"),
+    ("6012", "Engrais et amendements"),
+    ("6013", "Produits de traitement"),
+    ("601", "Achats de matières premières (autres)"),
+    ("606", "Achats non stockés (carburant, fournitures)"),
+    ("613", "Locations (foncier, matériel)"),
+    ("615", "Entretien et réparations"),
+    ("616", "Primes d'assurance"),
+    ("622", "Honoraires (comptable, conseil)"),
+    ("626", "Frais postaux et télécommunications"),
+    ("627", "Services bancaires"),
+]
+COMPTES_TIERS = [
+    ("411", "Clients"),
+    ("401", "Fournisseurs"),
+    ("512", "Banque"),
+    ("530", "Caisse"),
+]
+
+_SAISIE_LABELS = {
+    "vente": ("Nouvelle vente", "VEN"),
+    "achat": ("Nouvel achat", "ACH"),
+    "libre": ("Écriture libre", "OD"),
+}
+
+
+def _numero_piece(prefix: str) -> str:
+    """Numéro de pièce unique et lisible : M-VEN-20260727-1015-42."""
+    from datetime import datetime
+    now = datetime.now()
+    return f"M-{prefix}-{now:%Y%m%d-%H%M}-{random.randint(10, 99)}"
+
+
+def _to_decimal(value: str | None, default: str = "0") -> Decimal:
+    """Parse un montant saisi (virgule ou point) en Decimal, 2 décimales."""
+    raw = (value or default).strip().replace(" ", "").replace(",", ".")
+    if not raw:
+        raw = default
+    try:
+        return Decimal(raw).quantize(Decimal("0.01"))
+    except Exception as exc:  # noqa: BLE001
+        raise ValueError(f"montant invalide : {value!r}") from exc
+
+
+@router.get("/saisie/{type_saisie}", response_class=HTMLResponse)
+async def compta_saisie_form(request: Request, type_saisie: str):
+    """Formulaire de saisie manuelle (vente / achat / écriture libre)."""
+    if type_saisie not in _SAISIE_LABELS:
+        raise HTTPException(status_code=404, detail="Type de saisie inconnu")
+    titre, journal = _SAISIE_LABELS[type_saisie]
+    return templates.TemplateResponse(
+        "compta/saisie.html",
+        {
+            "request": request,
+            "version": __version__,
+            "type_saisie": type_saisie,
+            "titre": titre,
+            "journal": journal,
+            "comptes_vente": COMPTES_VENTE,
+            "comptes_achat": COMPTES_ACHAT,
+            "comptes_tiers": COMPTES_TIERS,
+            "today": date.today().isoformat(),
+            "erreur": request.query_params.get("erreur"),
+        },
+    )
+
+
+@router.post("/saisie/{type_saisie}")
+async def compta_saisie_post(request: Request, type_saisie: str):
+    """Enregistre une écriture saisie à la main.
+
+    Toute erreur de saisie revient sur le formulaire avec un message lisible —
+    jamais de 500 devant l'utilisateur.
+    """
+    if type_saisie not in _SAISIE_LABELS:
+        raise HTTPException(status_code=404, detail="Type de saisie inconnu")
+    if not STORAGE_OK:
+        return JSONResponse({"error": "storage KO"}, status_code=503)
+
+    form = await request.form()
+    _, journal = _SAISIE_LABELS[type_saisie]
+
+    def _err(msg: str):
+        from urllib.parse import quote
+        return RedirectResponse(
+            url=f"/compta/saisie/{type_saisie}?erreur={quote(msg)}", status_code=303
+        )
+
+    libelle = (form.get("libelle") or "").strip()
+    if not libelle:
+        return _err("Le libellé est obligatoire.")
+
+    try:
+        date_op = date.fromisoformat((form.get("date_operation") or "").strip())
+    except ValueError:
+        return _err("Date invalide — format attendu : AAAA-MM-JJ.")
+
+    try:
+        montant_ht = _to_decimal(form.get("montant_ht"))
+        taux_tva = _to_decimal(form.get("taux_tva"), "0")
+    except ValueError as exc:
+        return _err(str(exc))
+
+    if montant_ht <= 0:
+        return _err("Le montant HT doit être supérieur à zéro.")
+
+    montant_tva = (montant_ht * taux_tva / Decimal("100")).quantize(Decimal("0.01"))
+    montant_ttc = (montant_ht + montant_tva).quantize(Decimal("0.01"))
+
+    if type_saisie == "vente":
+        compte_debit = (form.get("compte_tiers") or "411").strip()
+        compte_credit = (form.get("compte_produit") or "701").strip()
+        tiers = (form.get("tiers") or "").strip()
+    elif type_saisie == "achat":
+        compte_debit = (form.get("compte_charge") or "606").strip()
+        compte_credit = (form.get("compte_tiers") or "401").strip()
+        tiers = (form.get("tiers") or "").strip()
+    else:  # libre
+        compte_debit = (form.get("compte_debit") or "").strip()
+        compte_credit = (form.get("compte_credit") or "").strip()
+        tiers = ""
+        if not compte_debit or not compte_credit:
+            return _err("Les comptes de débit et de crédit sont obligatoires.")
+        if compte_debit == compte_credit:
+            return _err("Le compte de débit et le compte de crédit doivent différer.")
+
+    meta = {"saisie": "manuelle", "type": type_saisie}
+    if tiers:
+        meta["tiers"] = tiers
+
+    try:
+        eid, created = save_ecriture(
+            date_operation=date_op,
+            journal=journal,
+            numero_piece=_numero_piece(journal),
+            libelle=f"{libelle} — {tiers}" if tiers else libelle,
+            compte_debit=compte_debit,
+            compte_credit=compte_credit,
+            montant_ttc=montant_ttc,
+            montant_ht=montant_ht,
+            montant_tva=montant_tva,
+            source_module="saisie_manuelle",
+            source_id=f"{type_saisie}-{_numero_piece(journal)}",
+            metadata_json=json.dumps(meta),
+        )
+    except Exception as exc:  # noqa: BLE001
+        return _err(f"Enregistrement impossible : {exc}")
+
+    return RedirectResponse(url=f"/compta?saisie=ok&id={eid}", status_code=303)

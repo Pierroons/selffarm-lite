@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}{{ titre }} — Compta · SelfFarm-Lite{% endblock %}
+{% block content %}
+
+<!-- HEADER -->
+<div style="margin-bottom: 20px;">
+  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+    <a href="/compta" style="font-size: 12px; color: var(--text-muted); text-decoration: none;">← Journal</a>
+    <span style="font-size: 11px; color: var(--text-muted); letter-spacing: 0.6px; text-transform: uppercase; font-weight: 600;">Saisie manuelle · journal {{ journal }}</span>
+  </div>
+  <h1 style="font-size: 26px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; margin-bottom: 6px;">{{ titre }}</h1>
+  <p style="font-size: 13.5px; color: var(--text-secondary); max-width: 760px; line-height: 1.55;">
+    {% if type_saisie == 'vente' %}
+      Vente directe, marché, AMAP, livraison. Pour une facture avec PDF et XML Factur-X, passe plutôt par <a href="/invoice" style="color: var(--forest-500);">SelfInvoice</a>.
+    {% elif type_saisie == 'achat' %}
+      Achat de fournitures, intrants, prestations. Le montant TTC est calculé automatiquement à partir du HT et du taux de TVA.
+    {% else %}
+      Écriture libre en partie double : tu choisis toi-même les comptes débité et crédité. Réservé aux cas que les formulaires vente et achat ne couvrent pas.
+    {% endif %}
+  </p>
+</div>
+
+{% if erreur %}
+<div style="margin-bottom: 18px; padding: 11px 14px; border-radius: 8px; background: rgba(248, 113, 113, 0.08); border: 1px solid rgba(248, 113, 113, 0.3); color: #fca5a5; font-size: 13px; line-height: 1.5;">
+  <strong>Saisie non enregistrée</strong> — {{ erreur }}
+</div>
+{% endif %}
+
+<form method="post" action="/compta/saisie/{{ type_saisie }}" class="card" style="padding: 20px; max-width: 720px;">
+
+  <!-- Ligne 1 : date + libellé -->
+  <div style="display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 16px;">
+    <div style="flex: 0 0 170px;">
+      <label for="date_operation" style="display: block; font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; margin-bottom: 5px;">Date</label>
+      <input type="date" id="date_operation" name="date_operation" value="{{ today }}" required
+             style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.18); color: var(--text-primary); font-size: 13.5px;">
+    </div>
+    <div style="flex: 1; min-width: 240px;">
+      <label for="libelle" style="display: block; font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; margin-bottom: 5px;">Libellé</label>
+      <input type="text" id="libelle" name="libelle" required autofocus
+             placeholder="{% if type_saisie == 'vente' %}Vente légumes marché de Sainte-Foy{% elif type_saisie == 'achat' %}Semences potagères bio{% else %}Régularisation caisse{% endif %}"
+             style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.18); color: var(--text-primary); font-size: 13.5px;">
+    </div>
+  </div>
+
+  {% if type_saisie in ('vente', 'achat') %}
+  <!-- Tiers -->
+  <div style="margin-bottom: 16px;">
+    <label for="tiers" style="display: block; font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; margin-bottom: 5px;">
+      {{ 'Client' if type_saisie == 'vente' else 'Fournisseur' }} <span style="text-transform: none; letter-spacing: 0; font-weight: 400;">— facultatif</span>
+    </label>
+    <input type="text" id="tiers" name="tiers"
+           placeholder="{{ 'Marché de Sainte-Foy' if type_saisie == 'vente' else 'Coopérative bio Sud-Ouest' }}"
+           style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.18); color: var(--text-primary); font-size: 13.5px;">
+  </div>
+  {% endif %}
+
+  <!-- Comptes -->
+  <div style="display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 16px;">
+    {% if type_saisie == 'vente' %}
+      <div style="flex: 1; min-width: 260px;">
+        <label for="compte_produit" style="display: block; font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; margin-bottom: 5px;">Nature de la vente</label>
+        <select id="compte_produit" name="compte_produit" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.18); color: var(--text-primary); font-size: 13.5px;">
+          {% for code, libelle in comptes_vente %}<option value="{{ code }}">{{ code }} — {{ libelle }}</option>{% endfor %}
+        </select>
+      </div>
+      <div style="flex: 0 0 200px;">
+        <label for="compte_tiers" style="display: block; font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; margin-bottom: 5px;">Encaissement</label>
+        <select id="compte_tiers" name="compte_tiers" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.18); color: var(--text-primary); font-size: 13.5px;">
+          {% for code, libelle in comptes_tiers %}<option value="{{ code }}" {% if code == '411' %}selected{% endif %}>{{ code }} — {{ libelle }}</option>{% endfor %}
+        </select>
+      </div>
+    {% elif type_saisie == 'achat' %}
+      <div style="flex: 1; min-width: 260px;">
+        <label for="compte_charge" style="display: block; font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; margin-bottom: 5px;">Nature de l'achat</label>
+        <select id="compte_charge" name="compte_charge" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.18); color: var(--text-primary); font-size: 13.5px;">
+          {% for code, libelle in comptes_achat %}<option value="{{ code }}">{{ code }} — {{ libelle }}</option>{% endfor %}
+        </select>
+      </div>
+      <div style="flex: 0 0 200px;">
+        <label for="compte_tiers" style="display: block; font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; margin-bottom: 5px;">Règlement</label>
+        <select id="compte_tiers" name="compte_tiers" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.18); color: var(--text-primary); font-size: 13.5px;">
+          {% for code, libelle in comptes_tiers %}<option value="{{ code }}" {% if code == '401' %}selected{% endif %}>{{ code }} — {{ libelle }}</option>{% endfor %}
+        </select>
+      </div>
+    {% else %}
+      <div style="flex: 1; min-width: 200px;">
+        <label for="compte_debit" style="display: block; font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; margin-bottom: 5px;">Compte débité</label>
+        <input type="text" id="compte_debit" name="compte_debit" required placeholder="606" pattern="[0-9]{3,6}"
+               style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.18); color: var(--text-primary); font-size: 13.5px; font-family: ui-monospace, monospace;">
+      </div>
+      <div style="flex: 1; min-width: 200px;">
+        <label for="compte_credit" style="display: block; font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; margin-bottom: 5px;">Compte crédité</label>
+        <input type="text" id="compte_credit" name="compte_credit" required placeholder="512" pattern="[0-9]{3,6}"
+               style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.18); color: var(--text-primary); font-size: 13.5px; font-family: ui-monospace, monospace;">
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Montants -->
+  <div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 6px;">
+    <div style="flex: 0 0 170px;">
+      <label for="montant_ht" style="display: block; font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; margin-bottom: 5px;">Montant HT (€)</label>
+      <input type="text" id="montant_ht" name="montant_ht" required inputmode="decimal" placeholder="120,50"
+             style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.18); color: var(--text-primary); font-size: 13.5px; font-family: ui-monospace, monospace;">
+    </div>
+    <div style="flex: 0 0 140px;">
+      <label for="taux_tva" style="display: block; font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; margin-bottom: 5px;">TVA (%)</label>
+      <select id="taux_tva" name="taux_tva" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.18); color: var(--text-primary); font-size: 13.5px;">
+        <option value="0" selected>0 — franchise / exonéré</option>
+        <option value="5.5">5,5 — produits alimentaires</option>
+        <option value="10">10 — taux intermédiaire</option>
+        <option value="20">20 — taux normal</option>
+      </select>
+    </div>
+    <div id="apercu-ttc" style="flex: 1; min-width: 180px; padding: 9px 12px; border-radius: 6px; background: rgba(22,101,52,0.10); border: 1px solid rgba(22,101,52,0.28); font-size: 13px; color: var(--text-secondary);">
+      TTC : <strong id="ttc-valeur" style="color: var(--text-primary); font-family: ui-monospace, monospace;">—</strong>
+    </div>
+  </div>
+
+  <div style="margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border-subtle); display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+    <button type="submit" class="btn" style="font-size: 13px;">Enregistrer l'écriture</button>
+    <a href="/compta" class="btn btn-ghost" style="font-size: 13px;">Annuler</a>
+    <span style="flex: 1;"></span>
+    <span style="font-size: 11.5px; color: var(--text-muted);">Journal {{ journal }} · numéro de pièce automatique</span>
+  </div>
+</form>
+
+<script>
+// Aperçu du TTC en direct — évite la calculette mentale à la saisie.
+(function () {
+  const ht = document.getElementById('montant_ht');
+  const tva = document.getElementById('taux_tva');
+  const out = document.getElementById('ttc-valeur');
+  function maj() {
+    const h = parseFloat((ht.value || '').replace(',', '.'));
+    const t = parseFloat(tva.value || '0');
+    if (isNaN(h) || h <= 0) { out.textContent = '—'; return; }
+    out.textContent = (h * (1 + t / 100)).toFixed(2).replace('.', ',') + ' €';
+  }
+  ht.addEventListener('input', maj);
+  tva.addEventListener('change', maj);
+  maj();
+})();
+</script>
+
+{% endblock %}

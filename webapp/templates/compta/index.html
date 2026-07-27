@@ -123,17 +123,16 @@
   <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
     <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Saisie</span>
     <span style="flex: 1; height: 1px; background: var(--border-subtle); min-width: 40px;"></span>
-    <span class="badge badge-amber">V1 sprint · 8-10 mai</span>
   </div>
   <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-    <button disabled class="btn btn-ghost" style="font-size: 12.5px; opacity: 0.55; cursor: not-allowed;" title="Formulaire libre vente — à coder">+ Nouvelle vente</button>
-    <button disabled class="btn btn-ghost" style="font-size: 12.5px; opacity: 0.55; cursor: not-allowed;" title="Formulaire libre achat — à coder">+ Nouvel achat</button>
-    <button disabled class="btn btn-ghost" style="font-size: 12.5px; opacity: 0.55; cursor: not-allowed;" title="Upload PDF relevé bancaire — parser SG existe">📎 Importer relevé bancaire</button>
-    <button disabled class="btn btn-ghost" style="font-size: 12.5px; opacity: 0.55; cursor: not-allowed;" title="Saisie manuelle libre — à coder">⚙ Écriture libre</button>
+    <a href="/compta/saisie/vente" class="btn btn-ghost" style="font-size: 12.5px;">+ Nouvelle vente</a>
+    <a href="/compta/saisie/achat" class="btn btn-ghost" style="font-size: 12.5px;">+ Nouvel achat</a>
+    <a href="/compta/saisie/libre" class="btn btn-ghost" style="font-size: 12.5px;">⚙ Écriture libre</a>
+    <button disabled class="btn btn-ghost" style="font-size: 12.5px; opacity: 0.55; cursor: not-allowed;" title="Upload PDF relevé bancaire — parser SG existe, branchement à venir">📎 Importer relevé bancaire</button>
     <a href="/invoice" class="btn" style="font-size: 12.5px;">+ Nouvelle facture →</a>
   </div>
   <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-subtle); font-size: 11.5px; color: var(--text-muted); line-height: 1.5;">
-    Ces actions seront actives au sprint V1 polish (8-10 mai 2026). En attendant, les écritures arrivent automatiquement dans le journal dès qu'une facture est émise via SelfInvoice.
+    La saisie manuelle alimente directement le journal (chaînage cryptographique inclus). Les factures émises via SelfInvoice y arrivent automatiquement, sans double saisie.
   </div>
 </div>
 {% endif %}
