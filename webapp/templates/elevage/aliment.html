@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}Élevage — aliment · SelfFarm-Lite{% endblock %}
+
+{% block content %}
+
+<style>
+.elv-header {margin-bottom:20px;}
+.elv-header h1 {font-size:24px; color:var(--text-primary); font-family:'Fraunces',serif; font-weight:600; margin:0 0 4px 0; letter-spacing:-0.018em;}
+.elv-header h1 .accent {color:var(--accent-400); font-style:italic;}
+.elv-header .subtitle {font-size:12.5px; color:var(--text-secondary); max-width:690px; line-height:1.55;}
+
+.flash {padding:11px 15px; border-radius:8px; font-size:13px; margin-bottom:16px; line-height:1.5;}
+.flash.ok {background:rgba(74,222,128,0.09); border:1px solid rgba(74,222,128,0.26); color:#a7f3c0;}
+.flash.err {background:rgba(248,113,113,0.09); border:1px solid rgba(248,113,113,0.28); color:#fca5a5;}
+
+.card {border-radius:10px; border:1px solid var(--border-subtle); overflow:hidden; margin-bottom:18px;}
+.card-head {padding:10px 15px; background:rgba(22,101,52,0.07); border-bottom:1px solid var(--border-subtle); display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.card-head .t {font-size:13.5px; font-weight:600; color:var(--text-primary);}
+.card-head .m {font-size:11.5px; color:var(--text-muted);}
+.card-body {padding:16px 15px;}
+
+.grid {display:flex; gap:13px; flex-wrap:wrap; align-items:flex-end;}
+.f {display:flex; flex-direction:column; gap:5px;}
+.f label {font-size:10.5px; text-transform:uppercase; letter-spacing:0.45px; color:var(--text-muted); font-weight:600;}
+.f input, .f select {padding:9px 11px; border-radius:7px; border:1px solid var(--border-subtle); background:rgba(0,0,0,0.22); color:var(--text-primary); font-size:13.5px; font-family:inherit;}
+.f input:focus, .f select:focus {outline:none; border-color:var(--accent-400); background:rgba(0,0,0,0.30);}
+.f.w-sm input {width:100px;} .f.w-md input {width:160px;}
+.btn {padding:10px 20px; border-radius:8px; border:none; background:var(--accent-400,#e0a458); color:#1a1207; font-size:13.5px; font-weight:640; cursor:pointer; font-family:inherit;}
+.btn:hover {filter:brightness(1.08);}
+
+.at-grid {display:flex; gap:12px; flex-wrap:wrap; margin-bottom:18px;}
+.at {flex:1; min-width:270px; border-radius:10px; border:1px solid var(--border-subtle); overflow:hidden;}
+.at-head {padding:9px 14px; background:rgba(22,101,52,0.07); border-bottom:1px solid var(--border-subtle); font-size:13px; font-weight:600; color:var(--text-primary);}
+.at-body {padding:12px 14px; display:flex; flex-wrap:wrap; gap:12px 18px;}
+.kv {min-width:96px;}
+.kv .k {font-size:10px; text-transform:uppercase; letter-spacing:0.45px; color:var(--text-muted); font-weight:600; margin-bottom:3px;}
+.kv .v {font-size:17px; color:var(--text-primary); font-weight:600; font-variant-numeric:tabular-nums;}
+.kv .u {font-size:11.5px; color:var(--text-secondary); font-weight:400;}
+.at-note {padding:0 14px 12px; font-size:11px; color:var(--text-muted); line-height:1.45;}
+
+table.elv {width:100%; border-collapse:collapse; font-size:12.5px;}
+table.elv th {text-align:left; padding:7px 15px; font-size:10.5px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border-subtle);}
+table.elv td {padding:9px 15px; border-bottom:1px solid rgba(255,255,255,0.03); color:var(--text-secondary);}
+table.elv tr:last-child td {border-bottom:none;}
+table.elv td.nom {color:var(--text-primary); font-weight:500;}
+table.elv td.num {font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap;}
+.empty {padding:28px 20px; text-align:center; color:var(--text-muted); font-size:13px;}
+.lnk {color:var(--accent-400); text-decoration:none;}
+.warn-inline {font-size:11px; color:#f4c47a;}
+</style>
+
+<div class="elv-header">
+  <h1>Élevage <span class="accent">— aliment</span></h1>
+  <p class="subtitle">
+    L'aliment est le <strong>premier poste de charge</strong> d'un atelier volailles : sans lui, aucune
+    marge par œuf n'est calculable. On enregistre les <strong>livraisons</strong>, bon de livraison en
+    main — pas la distribution quotidienne, qui ne serait jamais saisie.
+  </p>
+</div>
+
+{% if ok %}<div class="flash ok">{{ ok }}</div>{% endif %}
+{% if erreur %}<div class="flash err">{{ erreur }}</div>{% endif %}
+
+{% if bandes %}
+<div class="card">
+  <div class="card-head">
+    <span class="t">Nouvelle livraison</span>
+    <span class="m">le prix est facultatif — la consommation se suit même sans</span>
+  </div>
+  <div class="card-body">
+    <form method="post" action="/elevage/aliment">
+      <div class="grid">
+        <div class="f">
+          <label for="bande_id">Bande</label>
+          <select id="bande_id" name="bande_id">
+            {% for b in bandes %}<option value="{{ b.id }}">{{ b.nom }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="f">
+          <label for="type_aliment">Type</label>
+          <select id="type_aliment" name="type_aliment">
+            {% for k, lib in types_aliment %}<option value="{{ k }}">{{ lib }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="f w-sm">
+          <label for="quantite_kg">Quantité (kg)</label>
+          <input type="text" id="quantite_kg" name="quantite_kg" inputmode="decimal"
+                 required placeholder="500" autofocus>
+        </div>
+        <div class="f w-sm">
+          <label for="prix_total_eur">Prix total (€)</label>
+          <input type="text" id="prix_total_eur" name="prix_total_eur" inputmode="decimal"
+                 placeholder="320,00">
+        </div>
+        <div class="f">
+          <label for="date_livraison">Date</label>
+          <input type="date" id="date_livraison" name="date_livraison" value="{{ today }}">
+        </div>
+        <div class="f w-md">
+          <label for="fournisseur">Fournisseur</label>
+          <input type="text" id="fournisseur" name="fournisseur" placeholder="Coopérative">
+        </div>
+        <button type="submit" class="btn">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% if ateliers %}
+<div class="at-grid">
+  {% for a in ateliers %}
+  <div class="at">
+    <div class="at-head">{{ a.nom }} — {{ a.effectif_vivant }} animaux</div>
+    <div class="at-body">
+      <div class="kv">
+        <div class="k">Aliment acheté</div>
+        <div class="v">{{ a.stats.total_kg|kg }} <span class="u">kg</span></div>
+      </div>
+      <div class="kv">
+        <div class="k">Coût</div>
+        <div class="v">{% if a.stats.total_eur is not none %}{{ a.stats.total_eur|ha }} <span class="u">€</span>{% else %}—{% endif %}</div>
+      </div>
+      <div class="kv">
+        <div class="k">Prix moyen</div>
+        <div class="v">{% if a.stats.prix_moyen_kg is not none %}{{ a.stats.prix_moyen_kg|ha }} <span class="u">€/kg</span>{% else %}—{% endif %}</div>
+      </div>
+      <div class="kv">
+        <div class="k">Conso estimée</div>
+        <div class="v">
+          {% if a.stats.conso_g_jour_poule is not none %}
+            {{ a.stats.conso_g_jour_poule|kg }} <span class="u">g/j/poule</span>
+          {% else %}—{% endif %}
+        </div>
+      </div>
+      <div class="kv">
+        <div class="k">Coût par œuf</div>
+        <div class="v">{% if a.stats.cout_par_oeuf_eur is not none %}{{ a.stats.cout_par_oeuf_eur|string|replace('.', ',') }} <span class="u">€</span>{% else %}—{% endif %}</div>
+      </div>
+    </div>
+    {% if a.stats.conso_g_jour_poule is not none %}
+    <div class="at-note">
+      Repère usuel pour une pondeuse adulte : <strong>{{ a.stats.repere_g_jour }} g/jour</strong>.
+      Estimation lissée sur {{ a.stats.jours_periode }} jours depuis la première livraison —
+      un stock non encore consommé la surévalue.
+      {% if a.stats.conso_g_jour_poule > a.stats.repere_g_jour * 1.5 %}
+      <span class="warn-inline">Écart important : vérifie s'il reste du stock en réserve.</span>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-head">
+    <span class="t">Livraisons</span>
+    <span class="m">50 plus récentes</span>
+  </div>
+  {% if livraisons %}
+  <table class="elv">
+    <thead>
+      <tr><th>Date</th><th>Bande</th><th>Type</th><th class="num">Quantité</th>
+          <th class="num">Prix</th><th class="num">€/kg</th><th>Fournisseur</th></tr>
+    </thead>
+    <tbody>
+      {% for l in livraisons %}
+      <tr>
+        <td>{{ l.date_livraison }}</td>
+        <td class="nom">{{ l.bande_nom or '—' }}</td>
+        <td>{{ l.type_label }}</td>
+        <td class="num">{{ l.quantite_kg|kg }} kg</td>
+        <td class="num">{% if l.prix_total_eur is not none %}{{ l.prix_total_eur|ha }} €{% else %}—{% endif %}</td>
+        <td class="num">{% if l.prix_kg_eur is not none %}{{ l.prix_kg_eur|ha }}{% else %}—{% endif %}</td>
+        <td>{{ l.fournisseur or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    Aucune livraison enregistrée.
+    {% if not bandes %}<br><span style="font-size:12px;">Crée d'abord une bande :
+    <a href="/elevage/bandes" class="lnk">Bandes &amp; mouvements</a>.</span>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<p style="margin-top:18px; font-size:11.5px; color:var(--text-muted); line-height:1.5;">
+  La consommation affichée est un <strong>ordre de grandeur</strong>, calculé sur les livraisons et non
+  sur la distribution réelle. Elle sert à repérer une dérive — une conso qui grimpe sans que la ponte
+  suive — pas à mesurer précisément un indice de consommation.
+</p>
+
+{% endblock %}

@@ -31,6 +31,7 @@ from webapp.routes import home as home_module
 from webapp.routes import dnja as dnja_module
 from webapp.routes import aides as aides_module
 from webapp.routes import cultures as cultures_module
+from webapp.routes import elevage as elevage_module
 from webapp.routes import parcelles as parcelles_module
 from webapp.routes import invoice as invoice_module
 from webapp.routes import compta as compta_module
@@ -49,6 +50,7 @@ home_router = home_module.router
 dnja_router = dnja_module.router
 aides_router = aides_module.router
 cultures_router = cultures_module.router
+elevage_router = elevage_module.router
 parcelles_router = parcelles_module.router
 invoice_router = invoice_module.router
 compta_router = compta_module.router
@@ -86,9 +88,21 @@ def _fmt_ha(value) -> str:
         return "0,00"
 
 
+def _fmt_kg(value) -> str:
+    """Poids à la française : « 500 » et « 12,5 », jamais « 500.0 »."""
+    try:
+        n = float(value or 0)
+    except (TypeError, ValueError):
+        return "0"
+    s = f"{n:.1f}"
+    if s.endswith(".0"):          # pas de décimale inutile — mais on ne rogne
+        s = s[:-2]                # jamais un zéro significatif (100.0 → 100)
+    return s.replace(".", ",")
+
+
 from self_backup import backup_health  # santé sauvegardes (B3c) → bandeau global
 
-for _route_module in (home_module, dnja_module, aides_module, parcelles_module, cultures_module, invoice_module, compta_module, backup_module, onboarding_module, roadmap_module, pos_module, modules_routes):
+for _route_module in (home_module, dnja_module, aides_module, parcelles_module, cultures_module, elevage_module, invoice_module, compta_module, backup_module, onboarding_module, roadmap_module, pos_module, modules_routes):
     if hasattr(_route_module, "templates"):
         _route_module.templates.env.globals["env"] = ENV_NAME
         # Expose get_exploitation() comme global Jinja pour que tous les templates
@@ -109,6 +123,7 @@ for _route_module in (home_module, dnja_module, aides_module, parcelles_module, 
         # Filters monnaie / surface — utilisés par home.html (dashboard)
         _route_module.templates.env.filters["eur"] = _fmt_eur
         _route_module.templates.env.filters["ha"] = _fmt_ha
+        _route_module.templates.env.filters["kg"] = _fmt_kg
 
 log = logging.getLogger("selffarm-webapp")
 
@@ -219,6 +234,7 @@ app.include_router(dnja_router)
 app.include_router(aides_router)
 app.include_router(parcelles_router)
 app.include_router(cultures_router)
+app.include_router(elevage_router)
 app.include_router(invoice_router)
 app.include_router(compta_router)
 app.include_router(backup_router)
