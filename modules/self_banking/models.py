@@ -44,7 +44,7 @@ class Transaction(BaseModel):
             return self.credit
         if self.debit is not None:
             return -self.debit
-        return Decimal("0")
+        return Decimal(0)
 
 
 class Releve(BaseModel):
@@ -63,11 +63,11 @@ class Releve(BaseModel):
 
     @property
     def total_debits(self) -> Decimal:
-        return sum((t.debit or Decimal("0") for t in self.transactions), Decimal("0"))
+        return sum((t.debit or Decimal(0) for t in self.transactions), Decimal(0))
 
     @property
     def total_credits(self) -> Decimal:
-        return sum((t.credit or Decimal("0") for t in self.transactions), Decimal("0"))
+        return sum((t.credit or Decimal(0) for t in self.transactions), Decimal(0))
 
     @property
     def solde_calcule(self) -> Decimal:

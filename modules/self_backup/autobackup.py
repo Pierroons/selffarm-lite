@@ -15,13 +15,13 @@ from __future__ import annotations
 import logging
 import os
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from self_backup import (
+    backup_to_external,
+    list_external_mounts,
     load_ext_config,
     save_ext_config,
-    list_external_mounts,
-    backup_to_external,
 )
 
 
@@ -55,7 +55,7 @@ def _backup_external(log, version: str) -> int:
         log.info("Disque externe OK : %s (%d octets)", r.get("path"), r.get("size_bytes", 0))
         return 0
 
-    cfg["last_missed_utc"] = datetime.now(timezone.utc).isoformat()
+    cfg["last_missed_utc"] = datetime.now(UTC).isoformat()
     save_ext_config(cfg)
     log.warning("Disque externe %s absent/non inscriptible → manqué (noté).", target_uuid)
     _notify(log, "Disque externe de sauvegarde absent ou non inscriptible — branche-le pour rattraper.")
@@ -65,7 +65,7 @@ def _backup_external(log, version: str) -> int:
 def _backup_sftp(log, version: str) -> int:
     """Serveur SSH distant chiffré (B4). Retourne 0 si OK/désactivé, 2 si échec."""
     try:
-        from self_backup.remote import load_sftp_config, save_sftp_config, backup_to_sftp
+        from self_backup.remote import backup_to_sftp, load_sftp_config, save_sftp_config
     except Exception as e:  # noqa: BLE001 — paramiko absent, etc.
         log.warning("SFTP distant indisponible : %s", e)
         return 0
@@ -81,7 +81,7 @@ def _backup_sftp(log, version: str) -> int:
         return 0
     except Exception as e:  # noqa: BLE001
         scfg["last_sftp_error"] = str(e)
-        scfg["last_sftp_missed_utc"] = datetime.now(timezone.utc).isoformat()
+        scfg["last_sftp_missed_utc"] = datetime.now(UTC).isoformat()
         save_sftp_config(scfg)
         log.warning("SFTP distant échoué → manqué (noté) : %s", e)
         _notify(log, f"Sauvegarde distante chiffrée échouée — serveur injoignable ? ({e})")

@@ -27,6 +27,7 @@ import logging
 from typing import Any
 
 from self_agri_book.storage import _conn, apply_module_migrations
+
 from self_culture.catalog import load_catalog
 from self_culture.models import ModeProduction
 
@@ -224,7 +225,7 @@ def save_parcelle(data: dict[str, Any]) -> dict[str, Any]:
     with _conn() as c:
         if parcelle_id:
             # UPDATE
-            set_clause = ", ".join(f"{k} = ?" for k in payload.keys())
+            set_clause = ", ".join(f"{k} = ?" for k in payload)
             c.execute(
                 f"UPDATE parcelle SET {set_clause} WHERE id = ?",
                 list(payload.values()) + [parcelle_id],
@@ -342,7 +343,7 @@ def save_plan_culture(data: dict[str, Any]) -> dict[str, Any]:
 
     with _conn() as c:
         if plan_id:
-            set_clause = ", ".join(f"{k} = ?" for k in payload.keys())
+            set_clause = ", ".join(f"{k} = ?" for k in payload)
             c.execute(
                 f"UPDATE plan_culture SET {set_clause} WHERE id = ?",
                 list(payload.values()) + [plan_id],

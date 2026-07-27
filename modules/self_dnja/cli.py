@@ -99,7 +99,7 @@ def _print_summary(result) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="self-dnja",
-        description="Moteur de prévisionnel DNJA/DJA (v%s)" % __version__,
+        description=f"Moteur de prévisionnel DNJA/DJA (v{__version__})",
     )
     parser.add_argument("--version", action="version", version=f"self-dnja {__version__}")
     parser.add_argument("--no-log", action="store_true", help="Désactive le log")

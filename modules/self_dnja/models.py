@@ -97,7 +97,7 @@ class Immobilisation(BaseModel):
     annee_acquisition: int = Field(ge=1, le=10)
     duree_amortissement: int = Field(ge=1, le=30, description="Durée d'amortissement (années)")
     subvention_pct: Decimal = Field(
-        default=Decimal("0"), ge=0, le=100,
+        default=Decimal(0), ge=0, le=100,
         description="Part subventionnée (ex: 40%), réduit l'assiette amortissable"
     )
 
@@ -121,12 +121,12 @@ class CotisationsMSA(BaseModel):
     exoneration_ja_active: bool = True
     pct_exoneration: list[Decimal] = Field(
         default_factory=lambda: [
-            Decimal("65"), Decimal("55"), Decimal("35"), Decimal("25"), Decimal("15")
+            Decimal(65), Decimal(55), Decimal(35), Decimal(25), Decimal(15)
         ],
         description="Taux d'exonération N+1..N+5 (par défaut barème 2026)"
     )
     cotisation_base_annuelle: Decimal = Field(
-        default=Decimal("4500"),
+        default=Decimal(4500),
         description="Cotisation MSA annuelle estimée sans exonération JA"
     )
 
@@ -134,7 +134,7 @@ class CotisationsMSA(BaseModel):
 class Salariat(BaseModel):
     """Maintien d'une activité salariée parallèle."""
 
-    salaire_net_mensuel: Decimal = Field(default=Decimal("0"), ge=0)
+    salaire_net_mensuel: Decimal = Field(default=Decimal(0), ge=0)
     fin_prevue_annee: int | None = Field(
         default=None, description="Année où le salariat s'arrête (None = jamais)"
     )
@@ -180,12 +180,12 @@ class Hypotheses(BaseModel):
     aides: list[Aide] = Field(default_factory=list)
     cotisations_msa: CotisationsMSA = Field(default_factory=CotisationsMSA)
     salariat: Salariat = Field(default_factory=Salariat)
-    uth: Decimal = Field(default=Decimal("1"), ge=Decimal("0.1"), le=Decimal("5"),
+    uth: Decimal = Field(default=Decimal(1), ge=Decimal("0.1"), le=Decimal(5),
                           description="Unités Travail Humain (1 = exploitant seul plein-temps)")
 
     # --- Enrichissements v0.2 (prélèvements, impôt, calendrier, temps UTH) ---
     prelevements_mensuels: Decimal = Field(
-        default=Decimal("1500"),
+        default=Decimal(1500),
         ge=0,
         description="Prélèvements privés mensuels exploitant (salaire de vie)",
     )
@@ -198,17 +198,17 @@ class Hypotheses(BaseModel):
 
     # --- Composantes RDA (Annexe 4 CdC DNJA) ---
     annuites_emprunts_annuelles: Decimal = Field(
-        default=Decimal("0"),
+        default=Decimal(0),
         ge=0,
         description="Annuités emprunts LT/MT qui réduisent le RDA (crédit moyen/long terme)",
     )
     frais_financiers_ct_annuels: Decimal = Field(
-        default=Decimal("0"),
+        default=Decimal(0),
         ge=0,
         description="Frais financiers des dettes court terme (agios, découverts)",
     )
     produits_financiers_ct_annuels: Decimal = Field(
-        default=Decimal("0"),
+        default=Decimal(0),
         ge=0,
         description="Produits financiers court terme (placements trésorerie)",
     )
@@ -218,15 +218,15 @@ class Hypotheses(BaseModel):
         default="",
         description="Présentation narrative exploitation (motivations, parcours, stratégie)",
     )
-    plan_financement_apport_personnel: Decimal = Field(default=Decimal("0"), ge=0)
-    plan_financement_emprunt: Decimal = Field(default=Decimal("0"), ge=0)
+    plan_financement_apport_personnel: Decimal = Field(default=Decimal(0), ge=0)
+    plan_financement_emprunt: Decimal = Field(default=Decimal(0), ge=0)
     bfr_besoin: Decimal = Field(
-        default=Decimal("3000"),
+        default=Decimal(3000),
         ge=0,
         description="BFR : fonds pour stocks en cours + créances clients avant encaissement",
     )
     tresorerie_securite: Decimal = Field(
-        default=Decimal("3000"),
+        default=Decimal(3000),
         ge=0,
         description="Matelas de trésorerie à conserver (sécurité aléas)",
     )
@@ -295,15 +295,15 @@ class LigneResultat(BaseModel):
     salaire_net_disponible: Decimal  # EBE - MSA - annuités (si prêt) = revenu dispo
 
     # --- Enrichissements v0.2 ---
-    ir_estime: Decimal = Field(default=Decimal("0"))
-    resultat_net_apres_ir: Decimal = Field(default=Decimal("0"))
-    prelevements_annuels: Decimal = Field(default=Decimal("0"))
-    revenu_disponible_mensuel: Decimal = Field(default=Decimal("0"))
+    ir_estime: Decimal = Field(default=Decimal(0))
+    resultat_net_apres_ir: Decimal = Field(default=Decimal(0))
+    prelevements_annuels: Decimal = Field(default=Decimal(0))
+    revenu_disponible_mensuel: Decimal = Field(default=Decimal(0))
 
     # --- Critère officiel DNJA (CdC V3 Annexe 4) ---
     # RDA = EBE + produits fin CT − annuités emprunts LT/MT − frais fin dettes CT
     rda: Decimal = Field(
-        default=Decimal("0"),
+        default=Decimal(0),
         description="Revenu Disponible Agricole — critère officiel DNJA (Annexe 4 CdC V3)",
     )
 
@@ -365,8 +365,8 @@ class PlanFinancement(BaseModel):
 
     # Ressources
     dnja: Decimal  # DNJA TOTALE (acompte + solde)
-    dnja_acompte: Decimal = Decimal("0")  # 80 % versé à l'installation
-    dnja_solde: Decimal = Decimal("0")  # 20 % versé à l'issue 5e année
+    dnja_acompte: Decimal = Decimal(0)  # 80 % versé à l'installation
+    dnja_solde: Decimal = Decimal(0)  # 20 % versé à l'issue 5e année
     dnja_annee_solde: int = 5
     apport_personnel: Decimal
     emprunt: Decimal

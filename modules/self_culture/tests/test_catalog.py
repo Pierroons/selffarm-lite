@@ -126,8 +126,8 @@ def test_engrais_verts_ont_rendement_zero(varietes):
     engrais = filter_varietes(varietes, categorie=CategorieVariete.ENGRAIS_VERT)
     assert len(engrais) >= 3
     for ev in engrais:
-        assert ev.rendement.valeur_min_kg_m2 == Decimal("0")
-        assert ev.rendement.valeur_max_kg_m2 == Decimal("0")
+        assert ev.rendement.valeur_min_kg_m2 == Decimal(0)
+        assert ev.rendement.valeur_max_kg_m2 == Decimal(0)
 
 
 def test_familles_presentes_couvre_au_moins_8_familles(varietes):

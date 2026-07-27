@@ -45,7 +45,7 @@ def list_stock_a_reviewer(jours: int = 7) -> list[dict[str, Any]]:
     init_db()
     with _conn() as c:
         rows = c.execute(
-            f"""
+            """
             SELECT * FROM pos_residu_marche
             WHERE status = 'stock'
               AND archive = 0
