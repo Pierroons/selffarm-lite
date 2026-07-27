@@ -24,11 +24,15 @@ API :
 - list_ponte(bande_id=None, debut=None, fin=None) → list[dict]
 - taux_ponte(bande_id, jours=7) → dict
 - creer_lot(data) → dict
+- get_lot(lot_id) → dict | None
 - list_lots(statut=None) → list[dict]
 - lots_a_ecouler(marge_jours=5) → list[dict]
+- update_lot_statut(lot_id, statut, destination=None) → dict
+- oeufs_periode(bande_id, debut, fin) → dict   (aide au remplissage d'un lot)
 - add_aliment(data) → dict           (livraison d'aliment)
 - list_aliment(bande_id=None) → list[dict]
 - stats_aliment(bande_id) → dict     (conso g/j/poule, coût par œuf)
+- registre_elevage(bande_id, debut=None, fin=None) → dict   (document imprimable)
 - stats_elevage() → dict             (bandeau tableau de bord)
 """
 
@@ -55,6 +59,9 @@ VALID_TYPES_ALIMENT = ("ponte", "demarrage", "croissance", "complement", "autre"
 # Repère de consommation d'une poule pondeuse adulte, en grammes par jour.
 # Sert uniquement à situer une conso mesurée — jamais à la remplacer.
 REPERE_CONSO_G_JOUR = 120
+
+# Durée de conservation du registre d'élevage (arrêté du 5 juin 2000).
+DUREE_CONSERVATION_REGISTRE_ANS = 5
 
 BANDE_FIELDS = (
     "nom", "espece", "race", "effectif_initial", "date_mise_en_place",
@@ -532,6 +539,57 @@ def lots_a_ecouler(marge_jours: int = 5) -> list[dict[str, Any]]:
     ]
 
 
+def get_lot(lot_id: int) -> dict[str, Any] | None:
+    _ensure_schema()
+    with _conn() as con:
+        row = con.execute("SELECT * FROM lot_oeufs WHERE id = ?", (lot_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def update_lot_statut(lot_id: int, statut: str,
+                      destination: str | None = None) -> dict[str, Any]:
+    """Fait passer un lot de « disponible » à « vendu » ou « retiré ».
+
+    Un lot n'est jamais supprimé : le registre doit garder trace de ce qui a été
+    produit, y compris de ce qui n'a pas pu être vendu. « retiré » couvre le lot
+    périmé, cassé ou consommé sur place.
+    """
+    _ensure_schema()
+    if statut not in VALID_STATUTS_LOT:
+        raise ValueError(f"statut invalide '{statut}' — attendu un de {VALID_STATUTS_LOT}")
+    if not get_lot(lot_id):
+        raise ValueError("Lot introuvable.")
+
+    with _conn() as con:
+        if destination is not None:
+            con.execute("UPDATE lot_oeufs SET statut = ?, destination = ? WHERE id = ?",
+                        (statut, destination, lot_id))
+        else:
+            con.execute("UPDATE lot_oeufs SET statut = ? WHERE id = ?", (statut, lot_id))
+    return get_lot(lot_id)  # type: ignore[return-value]
+
+
+def oeufs_periode(bande_id: int, debut: str, fin: str) -> dict[str, Any]:
+    """Ce qu'ont donné les relevés d'une période — aide à remplir un lot.
+
+    Renvoie le total ramassé et le **vendable** (hors casses et déclassés) : c'est
+    ce second chiffre qu'on propose par défaut à la création d'un lot, puisque
+    c'est lui qui partira au marché.
+    """
+    _ensure_schema()
+    releves = list_ponte(bande_id=bande_id, debut=debut, fin=fin)
+    total = sum(int(r["nb_oeufs"] or 0) for r in releves)
+    casses = sum(int(r["nb_casses"] or 0) for r in releves)
+    declasses = sum(int(r.get("nb_declasses") or 0) for r in releves)
+    return {
+        "jours_releves": len(releves),
+        "total_oeufs": total,
+        "total_casses": casses,
+        "total_declasses": declasses,
+        "vendables": max(0, total - casses - declasses),
+    }
+
+
 # ============================================================
 # ALIMENT
 # ============================================================
@@ -653,6 +711,78 @@ def stats_aliment(bande_id: int) -> dict[str, Any]:
         "oeufs_periode": oeufs,
         "cout_par_oeuf_eur": cout_oeuf,
         "repere_g_jour": REPERE_CONSO_G_JOUR,
+    }
+
+
+# ============================================================
+# REGISTRE D'ÉLEVAGE
+# ============================================================
+
+def registre_elevage(bande_id: int, debut: str | None = None,
+                     fin: str | None = None) -> dict[str, Any]:
+    """Registre d'élevage d'une bande, prêt à imprimer.
+
+    L'arrêté du 5 juin 2000 impose la tenue d'un registre d'élevage conservé
+    **5 ans** : identification de l'atelier, entrées et sorties d'animaux,
+    traitements et ordonnances, mortalités.
+
+    ⚠️ SelfFarm n'en couvre que la **partie effectifs et production**. Les
+    traitements vétérinaires et les ordonnances ne sont pas modélisés : ils
+    restent à consigner par ailleurs, et le document le rappelle explicitement
+    plutôt que de laisser croire à un registre complet.
+    """
+    _ensure_schema()
+    bande = get_bande(bande_id)
+    if not bande:
+        raise ValueError("Bande introuvable.")
+
+    mouvements = list_mouvements(bande_id=bande_id)
+    if debut:
+        mouvements = [m for m in mouvements if m["date_mouvement"] >= debut]
+    if fin:
+        mouvements = [m for m in mouvements if m["date_mouvement"] <= fin]
+
+    releves = list_ponte(bande_id=bande_id, debut=debut, fin=fin)
+    lots = [l for l in list_lots() if int(l["bande_id"]) == bande_id]
+    if debut:
+        lots = [l for l in lots if l["date_ponte_fin"] >= debut]
+    if fin:
+        lots = [l for l in lots if l["date_ponte_debut"] <= fin]
+
+    livraisons = list_aliment(bande_id=bande_id)
+    if debut:
+        livraisons = [a for a in livraisons if a["date_livraison"] >= debut]
+    if fin:
+        livraisons = [a for a in livraisons if a["date_livraison"] <= fin]
+
+    # Bilan d'effectif sur la période — les entrées et sorties du registre.
+    par_type = {t: 0 for t in VALID_TYPES_MOUVEMENT}
+    for m in mouvements:
+        par_type[m["type_mouvement"]] += int(m["nombre"] or 0)
+
+    total_oeufs = sum(int(r["nb_oeufs"] or 0) for r in releves)
+    total_casses = sum(int(r["nb_casses"] or 0) for r in releves)
+    total_declasses = sum(int(r.get("nb_declasses") or 0) for r in releves)
+
+    return {
+        "bande": bande,
+        "periode": {"debut": debut, "fin": fin},
+        "effectif_initial": int(bande["effectif_initial"] or 0),
+        "effectif_vivant": effectif_vivant(bande_id),
+        "entrees": par_type["ajout"],
+        "sorties_mortalite": par_type["mortalite"],
+        "sorties_reforme": par_type["reforme"],
+        "mouvements": mouvements,
+        "nb_jours_releves": len(releves),
+        "total_oeufs": total_oeufs,
+        "total_casses": total_casses,
+        "total_declasses": total_declasses,
+        "total_vendables": max(0, total_oeufs - total_casses - total_declasses),
+        "releves": releves,
+        "lots": lots,
+        "livraisons": livraisons,
+        "total_aliment_kg": round(sum(float(a["quantite_kg"] or 0) for a in livraisons), 1),
+        "conservation_ans": DUREE_CONSERVATION_REGISTRE_ANS,
     }
 
 

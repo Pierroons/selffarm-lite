@@ -1,6 +1,6 @@
-"""Route /elevage — atelier volailles : ponte quotidienne, bandes, mouvements.
+"""Route /elevage — atelier volailles : ponte, cheptel, lots d'œufs, aliment.
 
-Deux écrans, deux usages très différents :
+Quatre écrans, quatre rythmes d'usage — c'est ce qui gouverne leur ergonomie :
 
 - **`/elevage`** — le tableau de bord et la **saisie de la ponte**. C'est l'écran
   du quotidien, utilisé tous les jours en sortant du poulailler, souvent les
@@ -8,6 +8,11 @@ Deux écrans, deux usages très différents :
   c'est pénible, il sera abandonné en une semaine, et tout le module avec.
 - **`/elevage/bandes`** — la gestion du cheptel : création de bande, mortalités,
   réformes, ajouts. Écran occasionnel, on peut y être plus verbeux.
+- **`/elevage/lots`** — constitution des lots d'œufs et suivi du délai
+  réglementaire de 21 jours. Rythme hebdomadaire, au moment de préparer une
+  vente.
+- **`/elevage/aliment`** — livraisons et coût alimentaire. Saisie à la
+  livraison, bon de livraison en main.
 
 Le moteur vient de `self_elevage.elevage` : rien n'est réimplémenté ici. En
 particulier le **taux de ponte se calcule sur l'effectif vivant**, jamais sur
@@ -23,27 +28,36 @@ from urllib.parse import quote
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-
+from self_agri_book.exploitation import get_exploitation
 from self_elevage.elevage import (
+    DELAI_VENTE_DIRECTE_JOURS,
     VALID_ESPECES,
     VALID_MODES_ELEVAGE,
+    VALID_STATUTS_LOT,
     VALID_TYPES_ALIMENT,
     VALID_TYPES_MOUVEMENT,
     add_aliment,
     add_mouvement,
+    creer_lot,
     effectif_vivant,
     get_bande,
+    get_lot,
     list_aliment,
     list_bandes,
+    list_lots,
     list_mouvements,
     list_ponte,
     lots_a_ecouler,
+    oeufs_periode,
+    registre_elevage,
     save_bande,
     save_ponte,
     stats_aliment,
     stats_elevage,
     taux_ponte,
+    update_lot_statut,
 )
+
 from webapp import __version__
 
 log = logging.getLogger(__name__)
@@ -271,6 +285,295 @@ async def elevage_bandes_post(request: Request):
 
     verbe = "mise à jour" if form.get("id") else "créée"
     return _redirect("/elevage/bandes", ok=f"Bande « {bande['nom']} » {verbe}.")
+
+
+# ============================================================
+# LOTS D'ŒUFS
+# ============================================================
+
+LABELS_STATUT_LOT = {"disponible": "Disponible", "vendu": "Vendu", "retire": "Retiré"}
+
+
+@router.get("/lots", response_class=HTMLResponse)
+async def elevage_lots(request: Request, ok: str | None = None, erreur: str | None = None,
+                       bande_id: int | None = None, debut: str | None = None,
+                       fin: str | None = None):
+    """Lots d'œufs et suivi du délai réglementaire de 21 jours.
+
+    Les paramètres `bande_id`, `debut` et `fin` servent au bouton « proposer
+    depuis les relevés » : l'écran recalcule côté serveur ce qu'a donné la
+    période et pré-remplit la quantité. Pas de JavaScript, même logique que le
+    reste de l'application.
+    """
+    bandes = list_bandes(actives_only=True)
+
+    suggestion = None
+    if bande_id and debut and fin:
+        try:
+            date.fromisoformat(debut), date.fromisoformat(fin)
+            if get_bande(bande_id):
+                suggestion = {"bande_id": bande_id, "debut": debut, "fin": fin,
+                              **oeufs_periode(bande_id, debut, fin)}
+        except ValueError:
+            suggestion = None
+
+    lots = [
+        {**l, "statut_label": LABELS_STATUT_LOT.get(l["statut"], l["statut"])}
+        for l in list_lots()
+    ]
+
+    return templates.TemplateResponse(
+        "elevage/lots.html",
+        {
+            "request": request,
+            "version": __version__,
+            "bandes": bandes,
+            "lots": lots,
+            "alertes": lots_a_ecouler(),
+            "disponibles": [l for l in lots if l["statut"] == "disponible"],
+            "suggestion": suggestion,
+            "sessions_pos": _sessions_pos_ouvertes(),
+            "produits_pos": _produits_pos(),
+            "delai_jours": DELAI_VENTE_DIRECTE_JOURS,
+            "today": date.today().isoformat(),
+            "ok": ok,
+            "erreur": erreur,
+        },
+    )
+
+
+@router.post("/lots")
+async def elevage_lots_post(request: Request):
+    """Constitue un lot sur une période de ponte."""
+    form = await request.form()
+
+    try:
+        bande_id = int(form.get("bande_id") or 0)
+    except (TypeError, ValueError):
+        return _redirect("/elevage/lots", erreur="Bande invalide.")
+
+    debut = (form.get("date_ponte_debut") or "").strip()
+    fin = (form.get("date_ponte_fin") or "").strip()
+
+    # Bouton « proposer » : on repasse par le GET avec la période, qui calcule.
+    if form.get("action") == "proposer":
+        if not (debut and fin):
+            return _redirect("/elevage/lots", erreur="Indique la période de ponte à analyser.")
+        return RedirectResponse(
+            url=f"/elevage/lots?bande_id={bande_id}&debut={quote(debut)}&fin={quote(fin)}",
+            status_code=303,
+        )
+
+    raw = (form.get("nb_oeufs") or "").strip()
+    if not raw:
+        return _redirect("/elevage/lots", erreur="Indique le nombre d'œufs du lot.")
+    try:
+        nb_oeufs = int(raw)
+    except ValueError:
+        return _redirect("/elevage/lots", erreur="Nombre d'œufs invalide — chiffres uniquement.")
+
+    try:
+        lot = creer_lot({
+            "bande_id": bande_id,
+            "date_ponte_debut": debut, "date_ponte_fin": fin,
+            "nb_oeufs": nb_oeufs,
+            "destination": (form.get("destination") or "").strip() or None,
+            "notes": (form.get("notes") or "").strip() or None,
+        })
+    except ValueError as exc:
+        return _redirect("/elevage/lots", erreur=str(exc))
+
+    return _redirect(
+        "/elevage/lots",
+        ok=f"Lot de {lot['nb_oeufs']} œufs créé — à écouler avant le {lot['date_limite']}.",
+    )
+
+
+def _sessions_pos_ouvertes() -> list[dict]:
+    """Sessions de vente ouvertes — marché comme point de vente collectif.
+
+    Import local et défensif : le module POS peut être désactivé, ou absent
+    d'une install allégée. L'élevage doit continuer de fonctionner sans lui.
+    """
+    try:
+        from self_pos.storage import list_sessions
+    except ImportError:
+        return []
+    try:
+        return [s for s in list_sessions(limit=30) if s.get("statut") == "ouverte"]
+    except Exception:
+        log.warning("Sessions POS illisibles — envoi en vente désactivé", exc_info=True)
+        return []
+
+
+def _produits_pos() -> list[dict]:
+    try:
+        from self_pos.storage import list_produits
+    except ImportError:
+        return []
+    try:
+        return list_produits(actifs_only=True)
+    except Exception:  # noqa: BLE001 — idem
+        return []
+
+
+def _quantite_pour_unite(nb_oeufs: int, unite: str) -> float:
+    """Convertit un nombre d'œufs dans l'unité de vente du produit.
+
+    Les œufs se comptent à l'unité côté élevage mais se vendent souvent à la
+    douzaine ou à la demi-douzaine. Sans cette conversion, on chargerait 181
+    douzaines au lieu de 15.
+    """
+    u = (unite or "").lower()
+    if "douzaine" in u and "demi" not in u:
+        return round(nb_oeufs / 12, 2)
+    if "demi-douzaine" in u or "6" == u:
+        return round(nb_oeufs / 6, 2)
+    return float(nb_oeufs)
+
+
+@router.post("/lots/{lot_id}/vendre")
+async def elevage_lot_vendre(request: Request, lot_id: int):
+    """Envoie un lot vers une session de vente — marché ou point de vente collectif.
+
+    L'orchestration vit ici, pas dans `self_elevage` : la verticale élevage
+    n'a pas à connaître la caisse. Le couplage reste à la couche route.
+    """
+    form = await request.form()
+
+    lot = get_lot(lot_id)
+    if not lot:
+        return _redirect("/elevage/lots", erreur="Lot introuvable.")
+    if lot["statut"] != "disponible":
+        return _redirect("/elevage/lots", erreur="Ce lot n'est plus disponible.")
+
+    try:
+        session_id = int(form.get("session_id") or 0)
+        produit_id = int(form.get("produit_id") or 0)
+    except (TypeError, ValueError):
+        return _redirect("/elevage/lots", erreur="Session ou produit invalide.")
+
+    session = next((s for s in _sessions_pos_ouvertes() if int(s["id"]) == session_id), None)
+    if not session:
+        return _redirect("/elevage/lots", erreur="Session de vente introuvable ou déjà clôturée.")
+
+    produit = next((p for p in _produits_pos() if int(p["id"]) == produit_id), None)
+    if not produit:
+        return _redirect("/elevage/lots", erreur="Produit introuvable au catalogue de la caisse.")
+
+    quantite = _quantite_pour_unite(int(lot["nb_oeufs"] or 0), produit.get("unite", ""))
+
+    try:
+        from self_pos.chargement import add_chargement_line
+        add_chargement_line(
+            session_id=session_id,
+            produit_id=produit_id,
+            produit_nom=produit["nom"],
+            unite=produit.get("unite") or "pièce",
+            quantite_chargee=quantite,
+        )
+    except (ImportError, ValueError) as exc:
+        return _redirect("/elevage/lots", erreur=f"Chargement impossible : {exc}")
+
+    try:
+        update_lot_statut(lot_id, "vendu", destination=session.get("lieu"))
+    except ValueError as exc:
+        return _redirect("/elevage/lots", erreur=str(exc))
+
+    unite = produit.get("unite") or "pièce"
+    qte = f"{quantite:g}".replace(".", ",")      # séparateur décimal français
+    return _redirect(
+        "/elevage/lots",
+        ok=f"{qte} {unite} de « {produit['nom']} » chargées pour "
+           f"{session.get('lieu') or 'la vente'} — lot marqué vendu.",
+    )
+
+
+@router.post("/lots/{lot_id}/statut")
+async def elevage_lot_statut(request: Request, lot_id: int):
+    """Marque un lot vendu ou retiré. Un lot n'est jamais supprimé du registre."""
+    form = await request.form()
+    statut = (form.get("statut") or "").strip()
+    if statut not in VALID_STATUTS_LOT:
+        return _redirect("/elevage/lots", erreur="Statut inconnu.")
+
+    try:
+        lot = update_lot_statut(
+            lot_id, statut,
+            destination=(form.get("destination") or "").strip() or None,
+        )
+    except ValueError as exc:
+        return _redirect("/elevage/lots", erreur=str(exc))
+
+    label = LABELS_STATUT_LOT.get(statut, statut).lower()
+    dest = f" ({lot['destination']})" if lot.get("destination") else ""
+    return _redirect("/elevage/lots", ok=f"Lot de {lot['nb_oeufs']} œufs marqué {label}{dest}.")
+
+
+# ============================================================
+# REGISTRE D'ÉLEVAGE
+# ============================================================
+
+@router.get("/registre", response_class=HTMLResponse)
+async def elevage_registre(request: Request, bande_id: int | None = None,
+                           debut: str | None = None, fin: str | None = None,
+                           erreur: str | None = None):
+    """Registre d'élevage imprimable — arrêté du 5 juin 2000, conservation 5 ans.
+
+    Par défaut : première bande active, année civile en cours. C'est le cadrage
+    qu'on présente à un contrôle, et celui qu'on archive en fin d'exercice.
+    """
+    bandes = list_bandes(actives_only=False)
+    if not bandes:
+        return templates.TemplateResponse(
+            "elevage/registre.html",
+            {"request": request, "version": __version__, "bandes": [],
+             "registre": None, "erreur": erreur,
+             "debut": debut, "fin": fin, "today": date.today().isoformat()},
+        )
+
+    if bande_id is None or not get_bande(bande_id):
+        bande_id = int(bandes[0]["id"])
+
+    annee = date.today().year
+    debut = debut or f"{annee}-01-01"
+    fin = fin or f"{annee}-12-31"
+    try:
+        date.fromisoformat(debut)
+        date.fromisoformat(fin)
+    except ValueError:
+        return _redirect("/elevage/registre", erreur="Dates invalides — format attendu AAAA-MM-JJ.")
+
+    registre = registre_elevage(bande_id, debut=debut, fin=fin)
+    registre["bande"] = {
+        **registre["bande"],
+        "espece_label": LABELS_ESPECE.get(registre["bande"]["espece"], registre["bande"]["espece"]),
+        "mode_label": LABELS_MODE.get(registre["bande"]["mode_elevage"],
+                                      registre["bande"]["mode_elevage"]),
+    }
+    registre["mouvements"] = [
+        {**m, "type_label": LABELS_MOUVEMENT.get(m["type_mouvement"], m["type_mouvement"])}
+        for m in registre["mouvements"]
+    ]
+
+    exploitation = get_exploitation() or {}
+
+    return templates.TemplateResponse(
+        "elevage/registre.html",
+        {
+            "request": request,
+            "version": __version__,
+            "bandes": bandes,
+            "bande_id": bande_id,
+            "registre": registre,
+            "exploitation": exploitation,
+            "debut": debut,
+            "fin": fin,
+            "edite_le": date.today().isoformat(),
+            "today": date.today().isoformat(),
+            "erreur": erreur,
+        },
+    )
 
 
 # ============================================================

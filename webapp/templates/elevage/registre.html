@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block title %}Élevage — registre · SelfFarm-Lite{% endblock %}
+
+{% block content %}
+
+<style>
+.elv-header {margin-bottom:20px;}
+.elv-header h1 {font-size:24px; color:var(--text-primary); font-family:'Fraunces',serif; font-weight:600; margin:0 0 4px 0; letter-spacing:-0.018em;}
+.elv-header h1 .accent {color:var(--accent-400); font-style:italic;}
+.elv-header .subtitle {font-size:12.5px; color:var(--text-secondary); max-width:700px; line-height:1.55;}
+
+.flash.err {background:rgba(248,113,113,0.09); border:1px solid rgba(248,113,113,0.28); color:#fca5a5; padding:11px 15px; border-radius:8px; font-size:13px; margin-bottom:16px;}
+
+.bar {display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; padding:14px 15px; border-radius:10px; border:1px solid var(--border-subtle); margin-bottom:20px;}
+.f {display:flex; flex-direction:column; gap:5px;}
+.f label {font-size:10.5px; text-transform:uppercase; letter-spacing:0.45px; color:var(--text-muted); font-weight:600;}
+.f input, .f select {padding:9px 11px; border-radius:7px; border:1px solid var(--border-subtle); background:rgba(0,0,0,0.22); color:var(--text-primary); font-size:13.5px; font-family:inherit;}
+.btn {padding:10px 20px; border-radius:8px; border:none; background:var(--accent-400,#e0a458); color:#1a1207; font-size:13.5px; font-weight:640; cursor:pointer; font-family:inherit;}
+.btn.ghost {background:transparent; border:1px solid var(--border-subtle); color:var(--text-secondary);}
+
+/* ── Le document lui-même : fond clair, pensé pour l'impression ──────── */
+.doc {background:#fbfaf7; color:#1f1b16; border-radius:10px; padding:26px 30px; border:1px solid var(--border-subtle);}
+.doc h2 {font-size:17px; margin:0 0 3px 0; color:#3b2a17; font-family:'Fraunces',serif;}
+.doc .doc-sub {font-size:11.5px; color:#6b6152; margin-bottom:18px;}
+.doc h3 {font-size:11px; text-transform:uppercase; letter-spacing:0.7px; color:#8a6a3f; margin:20px 0 7px 0; padding-bottom:3px; border-bottom:1px solid #e2dbcd; font-family:'DejaVu Sans',sans-serif;}
+.doc table {width:100%; border-collapse:collapse; font-size:11.5px; margin-bottom:4px;}
+.doc th {text-align:left; padding:5px 8px; font-size:10px; text-transform:uppercase; letter-spacing:0.4px; color:#6b6152; border-bottom:1px solid #d8cfbe; font-weight:600;}
+.doc td {padding:5px 8px; border-bottom:1px solid #ece6da; color:#33302a;}
+.doc td.num {text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap;}
+.doc tr:last-child td {border-bottom:none;}
+.kv-row {display:flex; flex-wrap:wrap; gap:8px 26px; margin-bottom:4px;}
+.kv {min-width:120px;}
+.kv .k {font-size:9.5px; text-transform:uppercase; letter-spacing:0.4px; color:#8a8175; font-weight:600;}
+.kv .v {font-size:14px; color:#1f1b16; font-weight:600; font-variant-numeric:tabular-nums;}
+.doc .avert {margin-top:22px; padding:11px 14px; border-left:3px solid #c1502e; background:#fdf1ea; font-size:11px; color:#6b3320; line-height:1.55;}
+.doc .pied {margin-top:16px; padding-top:10px; border-top:1px solid #e2dbcd; font-size:10px; color:#8a8175; line-height:1.5;}
+.doc .vide {padding:12px 8px; color:#8a8175; font-size:11.5px; font-style:italic;}
+
+@media print {
+  body {background:#fff !important;}
+  .elv-header, .bar, .no-print, nav, aside, header, footer {display:none !important;}
+  .doc {border:none; border-radius:0; padding:0; background:#fff;}
+  .doc h3 {break-after:avoid;} .doc tr {break-inside:avoid;}
+  .doc thead {display:table-header-group;}
+}
+.lnk {color:var(--accent-400); text-decoration:none;}
+</style>
+
+<div class="elv-header no-print">
+  <h1>Élevage <span class="accent">— registre</span></h1>
+  <p class="subtitle">
+    Document imprimable reprenant effectifs, mouvements, production et aliment sur une période.
+    Le registre d'élevage relève de l'arrêté du 5 juin 2000 et se conserve
+    <strong>{{ registre.conservation_ans if registre else 5 }} ans</strong>.
+  </p>
+</div>
+
+{% if erreur %}<div class="flash err no-print">{{ erreur }}</div>{% endif %}
+
+{% if not bandes %}
+  <div style="padding:34px 20px; text-align:center; color:var(--text-muted); font-size:13px; border:1px dashed var(--border-subtle); border-radius:10px;">
+    Aucune bande enregistrée — rien à consigner pour l'instant.<br>
+    <span style="font-size:12px;">Commence par <a href="/elevage/bandes" class="lnk">créer une bande</a>.</span>
+  </div>
+{% else %}
+
+<form class="bar no-print" method="get" action="/elevage/registre">
+  <div class="f">
+    <label for="bande_id">Bande</label>
+    <select id="bande_id" name="bande_id">
+      {% for b in bandes %}
+      <option value="{{ b.id }}" {% if b.id == bande_id %}selected{% endif %}>{{ b.nom }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="f"><label for="debut">Du</label><input type="date" id="debut" name="debut" value="{{ debut }}"></div>
+  <div class="f"><label for="fin">Au</label><input type="date" id="fin" name="fin" value="{{ fin }}"></div>
+  <button type="submit" class="btn ghost">Afficher</button>
+  <button type="button" class="btn" onclick="window.print()">Imprimer</button>
+</form>
+
+<div class="doc">
+  <h2>Registre d'élevage</h2>
+  <div class="doc-sub">
+    {% if exploitation and exploitation.nom %}{{ exploitation.nom }}{% if exploitation.commune %} — {{ exploitation.commune }}{% endif %} · {% endif %}
+    Période du {{ debut }} au {{ fin }} · édité le {{ edite_le }}
+  </div>
+
+  <h3>Identification de l'atelier</h3>
+  <div class="kv-row">
+    <div class="kv"><div class="k">Bande</div><div class="v">{{ registre.bande.nom }}</div></div>
+    <div class="kv"><div class="k">Espèce</div><div class="v">{{ registre.bande.espece_label }}</div></div>
+    {% if registre.bande.race %}<div class="kv"><div class="k">Race</div><div class="v">{{ registre.bande.race }}</div></div>{% endif %}
+    <div class="kv"><div class="k">Mode d'élevage</div><div class="v">{{ registre.bande.mode_label }}</div></div>
+    <div class="kv"><div class="k">Mise en place</div><div class="v">{{ registre.bande.date_mise_en_place }}</div></div>
+  </div>
+
+  <h3>Effectifs</h3>
+  <div class="kv-row">
+    <div class="kv"><div class="k">Effectif initial</div><div class="v">{{ registre.effectif_initial }}</div></div>
+    <div class="kv"><div class="k">Entrées</div><div class="v">{{ registre.entrees }}</div></div>
+    <div class="kv"><div class="k">Sorties — mortalité</div><div class="v">{{ registre.sorties_mortalite }}</div></div>
+    <div class="kv"><div class="k">Sorties — réforme</div><div class="v">{{ registre.sorties_reforme }}</div></div>
+    <div class="kv"><div class="k">Effectif présent</div><div class="v">{{ registre.effectif_vivant }}</div></div>
+  </div>
+  <p style="font-size:10.5px; color:#8a8175; margin:6px 0 0 0;">
+    L'effectif présent est celui du jour d'édition : c'est l'état réel du cheptel, il ne se rejoue
+    pas à la date de fin de période.
+  </p>
+
+  <h3>Mouvements d'animaux</h3>
+  {% if registre.mouvements %}
+  <table>
+    <thead><tr><th>Date</th><th>Nature</th><th class="num">Nombre</th><th>Motif</th></tr></thead>
+    <tbody>
+      {% for m in registre.mouvements %}
+      <tr><td>{{ m.date_mouvement }}</td><td>{{ m.type_label }}</td>
+          <td class="num">{{ m.nombre }}</td><td>{{ m.motif or '—' }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<div class="vide">Aucun mouvement sur la période.</div>{% endif %}
+
+  <h3>Production d'œufs</h3>
+  <div class="kv-row">
+    <div class="kv"><div class="k">Jours relevés</div><div class="v">{{ registre.nb_jours_releves }}</div></div>
+    <div class="kv"><div class="k">Œufs ramassés</div><div class="v">{{ registre.total_oeufs }}</div></div>
+    <div class="kv"><div class="k">Dont cassés</div><div class="v">{{ registre.total_casses }}</div></div>
+    <div class="kv"><div class="k">Dont déclassés</div><div class="v">{{ registre.total_declasses }}</div></div>
+    <div class="kv"><div class="k">Vendables</div><div class="v">{{ registre.total_vendables }}</div></div>
+  </div>
+
+  <h3>Lots constitués</h3>
+  {% if registre.lots %}
+  <table>
+    <thead><tr><th>Période de ponte</th><th class="num">Œufs</th><th>Date limite</th><th>État</th><th>Destination</th></tr></thead>
+    <tbody>
+      {% for l in registre.lots %}
+      <tr><td>{{ l.date_ponte_debut }} → {{ l.date_ponte_fin }}</td>
+          <td class="num">{{ l.nb_oeufs }}</td><td>{{ l.date_limite }}</td>
+          <td>{{ l.statut }}</td><td>{{ l.destination or '—' }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<div class="vide">Aucun lot sur la période.</div>{% endif %}
+
+  <h3>Aliment</h3>
+  {% if registre.livraisons %}
+  <table>
+    <thead><tr><th>Date</th><th>Type</th><th class="num">Quantité</th><th>Fournisseur</th></tr></thead>
+    <tbody>
+      {% for a in registre.livraisons %}
+      <tr><td>{{ a.date_livraison }}</td><td>{{ a.type_aliment }}</td>
+          <td class="num">{{ a.quantite_kg|kg }} kg</td><td>{{ a.fournisseur or '—' }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p style="font-size:10.5px; color:#8a8175; margin:6px 0 0 0;">
+    Total sur la période : <strong>{{ registre.total_aliment_kg|kg }} kg</strong>.
+  </p>
+  {% else %}<div class="vide">Aucune livraison sur la période.</div>{% endif %}
+
+  <div class="avert">
+    <strong>Registre partiel.</strong> Ce document couvre les effectifs, les mouvements, la
+    production et l'alimentation. Il ne contient <strong>ni les traitements vétérinaires, ni les
+    ordonnances</strong>, également exigés par l'arrêté du 5 juin 2000 : ils restent à consigner
+    et à conserver séparément. SelfFarm outille la tenue du registre, il n'atteste d'aucune
+    conformité.
+  </div>
+
+  <div class="pied">
+    Registre d'élevage — arrêté du 5 juin 2000 · conservation {{ registre.conservation_ans }} ans ·
+    édité le {{ edite_le }} par SelfFarm-Lite v{{ version }}
+  </div>
+</div>
+
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% block title %}Élevage — lots d'œufs · SelfFarm-Lite{% endblock %}
+
+{% block content %}
+
+<style>
+.elv-header {margin-bottom:20px;}
+.elv-header h1 {font-size:24px; color:var(--text-primary); font-family:'Fraunces',serif; font-weight:600; margin:0 0 4px 0; letter-spacing:-0.018em;}
+.elv-header h1 .accent {color:var(--accent-400); font-style:italic;}
+.elv-header .subtitle {font-size:12.5px; color:var(--text-secondary); max-width:700px; line-height:1.55;}
+
+.flash {padding:11px 15px; border-radius:8px; font-size:13px; margin-bottom:16px; line-height:1.5;}
+.flash.ok {background:rgba(74,222,128,0.09); border:1px solid rgba(74,222,128,0.26); color:#a7f3c0;}
+.flash.err {background:rgba(248,113,113,0.09); border:1px solid rgba(248,113,113,0.28); color:#fca5a5;}
+
+.card {border-radius:10px; border:1px solid var(--border-subtle); overflow:hidden; margin-bottom:18px;}
+.card.alert {border-color:rgba(224,164,88,0.35);}
+.card-head {padding:10px 15px; background:rgba(22,101,52,0.07); border-bottom:1px solid var(--border-subtle); display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.card.alert .card-head {background:rgba(224,164,88,0.08);}
+.card-head .t {font-size:13.5px; font-weight:600; color:var(--text-primary);}
+.card-head .m {font-size:11.5px; color:var(--text-muted);}
+.card-body {padding:16px 15px;}
+
+.grid {display:flex; gap:13px; flex-wrap:wrap; align-items:flex-end;}
+.f {display:flex; flex-direction:column; gap:5px;}
+.f label {font-size:10.5px; text-transform:uppercase; letter-spacing:0.45px; color:var(--text-muted); font-weight:600;}
+.f input, .f select {padding:9px 11px; border-radius:7px; border:1px solid var(--border-subtle); background:rgba(0,0,0,0.22); color:var(--text-primary); font-size:13.5px; font-family:inherit;}
+.f input:focus, .f select:focus {outline:none; border-color:var(--accent-400); background:rgba(0,0,0,0.30);}
+.f.w-sm input {width:110px;} .f.w-md input {width:200px;}
+.btn {padding:10px 20px; border-radius:8px; border:none; background:var(--accent-400,#e0a458); color:#1a1207; font-size:13.5px; font-weight:640; cursor:pointer; font-family:inherit;}
+.btn:hover {filter:brightness(1.08);}
+.btn.ghost {background:transparent; border:1px solid var(--border-subtle); color:var(--text-secondary);}
+.btn.mini {padding:5px 11px; font-size:11.5px; border-radius:6px;}
+
+.sugg {margin-top:12px; padding:10px 13px; border-radius:8px; background:rgba(74,222,128,0.07); border:1px solid rgba(74,222,128,0.22); font-size:12.5px; color:#a7f3c0; line-height:1.55;}
+
+table.elv {width:100%; border-collapse:collapse; font-size:12.5px;}
+table.elv th {text-align:left; padding:7px 15px; font-size:10.5px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border-subtle);}
+table.elv td {padding:9px 15px; border-bottom:1px solid rgba(255,255,255,0.03); color:var(--text-secondary); vertical-align:middle;}
+table.elv tr:last-child td {border-bottom:none;}
+table.elv td.nom {color:var(--text-primary); font-weight:500;}
+table.elv td.num {font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap;}
+tr.done td {opacity:0.55;}
+
+.pill {font-size:10px; padding:2px 8px; border-radius:10px; white-space:nowrap;}
+.pill.ok {background:rgba(74,222,128,0.10); color:#86efac; border:1px solid rgba(74,222,128,0.22);}
+.pill.warn {background:rgba(224,164,88,0.10); color:#f4c47a; border:1px solid rgba(224,164,88,0.25);}
+.pill.late {background:rgba(248,113,113,0.12); color:#fca5a5; border:1px solid rgba(248,113,113,0.30);}
+.pill.mute {background:rgba(255,255,255,0.04); color:var(--text-muted); border:1px solid var(--border-subtle);}
+.empty {padding:28px 20px; text-align:center; color:var(--text-muted); font-size:13px;}
+.lnk {color:var(--accent-400); text-decoration:none;}
+.inline-form {display:inline-flex; gap:5px; align-items:center;}
+.inline-form input {padding:4px 8px; font-size:11.5px; width:130px; border-radius:6px; border:1px solid var(--border-subtle); background:rgba(0,0,0,0.22); color:var(--text-primary); font-family:inherit;}
+</style>
+
+<div class="elv-header">
+  <h1>Élevage <span class="accent">— lots d'œufs</span></h1>
+  <p class="subtitle">
+    Un lot regroupe la ponte d'une période et porte sa <strong>date limite</strong> :
+    {{ delai_jours }} jours après la fin de ponte, délai réglementaire de remise au consommateur
+    en vente directe. Le relevé quotidien est sur <a href="/elevage" class="lnk">Ponte du jour</a>.
+  </p>
+</div>
+
+{% if ok %}<div class="flash ok">{{ ok }}</div>{% endif %}
+{% if erreur %}<div class="flash err">{{ erreur }}</div>{% endif %}
+
+<!-- ── Alertes ─────────────────────────────────────────────────────────── -->
+{% if alertes %}
+<div class="card alert">
+  <div class="card-head">
+    <span class="t">À écouler en priorité</span>
+    <span class="m">{{ alertes|length }} lot{{ 's' if alertes|length > 1 }} arrive{{ '' if alertes|length > 1 else 'nt' }} en limite</span>
+  </div>
+  <table class="elv">
+    <thead><tr><th>Bande</th><th>Période de ponte</th><th class="num">Œufs</th><th>Limite</th><th>Reste</th></tr></thead>
+    <tbody>
+      {% for l in alertes %}
+      <tr>
+        <td class="nom">{{ l.bande_nom or '—' }}</td>
+        <td>{{ l.date_ponte_debut }} → {{ l.date_ponte_fin }}</td>
+        <td class="num">{{ l.nb_oeufs }}</td>
+        <td>{{ l.date_limite }}</td>
+        <td>
+          {% if l.jours_restants is not none and l.jours_restants < 0 %}
+            <span class="pill late">dépassé de {{ -l.jours_restants }} j</span>
+          {% else %}<span class="pill warn">{{ l.jours_restants }} j</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- ── Constituer un lot ───────────────────────────────────────────────── -->
+{% if bandes %}
+<div class="card">
+  <div class="card-head">
+    <span class="t">Constituer un lot</span>
+    <span class="m">la date limite se calcule seule : fin de ponte + {{ delai_jours }} jours</span>
+  </div>
+  <div class="card-body">
+    <form method="post" action="/elevage/lots">
+      <div class="grid">
+        <div class="f">
+          <label for="bande_id">Bande</label>
+          <select id="bande_id" name="bande_id">
+            {% for b in bandes %}
+            <option value="{{ b.id }}" {% if suggestion and suggestion.bande_id == b.id %}selected{% endif %}>{{ b.nom }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="f">
+          <label for="date_ponte_debut">Ponte du</label>
+          <input type="date" id="date_ponte_debut" name="date_ponte_debut" required
+                 value="{{ suggestion.debut if suggestion else '' }}">
+        </div>
+        <div class="f">
+          <label for="date_ponte_fin">au</label>
+          <input type="date" id="date_ponte_fin" name="date_ponte_fin" required
+                 value="{{ suggestion.fin if suggestion else today }}">
+        </div>
+        <button type="submit" name="action" value="proposer" class="btn ghost">
+          Proposer depuis les relevés
+        </button>
+        <div class="f w-sm">
+          <label for="nb_oeufs">Œufs du lot</label>
+          <input type="number" id="nb_oeufs" name="nb_oeufs" min="1" step="1" inputmode="numeric"
+                 required value="{{ suggestion.vendables if suggestion and suggestion.vendables else '' }}">
+        </div>
+        <div class="f w-md">
+          <label for="destination">Destination <span style="text-transform:none; font-weight:400;">(facultatif)</span></label>
+          <input type="text" id="destination" name="destination" placeholder="Marché, magasin de producteurs…">
+        </div>
+        <button type="submit" class="btn">Créer le lot</button>
+      </div>
+
+      {% if suggestion %}
+      <div class="sugg">
+        Du {{ suggestion.debut }} au {{ suggestion.fin }} :
+        <strong>{{ suggestion.jours_releves }} relevé{{ 's' if suggestion.jours_releves > 1 }}</strong>,
+        {{ suggestion.total_oeufs }} œufs ramassés dont {{ suggestion.total_casses }} cassés et
+        {{ suggestion.total_declasses }} déclassés →
+        <strong>{{ suggestion.vendables }} vendables</strong>, valeur reprise ci-dessus.
+        {% if suggestion.jours_releves == 0 %}
+        <br>Aucun relevé sur cette période — vérifie les dates ou saisis la quantité à la main.
+        {% endif %}
+      </div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+{% else %}
+<div class="empty" style="border:1px dashed var(--border-subtle); border-radius:10px;">
+  Aucune bande active. Commence par en créer une :
+  <a href="/elevage/bandes" class="lnk">Bandes &amp; mouvements</a>.
+</div>
+{% endif %}
+
+<!-- ── Tous les lots ───────────────────────────────────────────────────── -->
+<div class="card">
+  <div class="card-head">
+    <span class="t">Lots</span>
+    <span class="m">
+      {{ disponibles|length }} disponible{{ 's' if disponibles|length > 1 }} ·
+      {{ lots|length }} au total — un lot n'est jamais supprimé, le registre garde tout
+    </span>
+    {% if disponibles and not sessions_pos %}
+    <span class="m" style="margin-left:auto;">
+      Aucune session de vente ouverte —
+      <a href="/pos" class="lnk">ouvrir un marché ou un dépôt</a> pour charger un lot directement.
+    </span>
+    {% endif %}
+  </div>
+  {% if lots %}
+  <table class="elv">
+    <thead>
+      <tr>
+        <th>Bande</th><th>Période de ponte</th><th>Mode</th><th class="num">Œufs</th>
+        <th>Limite</th><th>État</th><th>Destination</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for l in lots %}
+      <tr {% if l.statut != 'disponible' %}class="done"{% endif %}>
+        <td class="nom">{{ l.bande_nom or '—' }}</td>
+        <td>{{ l.date_ponte_debut }} → {{ l.date_ponte_fin }}</td>
+        <td>{{ l.mode_elevage or '—' }}</td>
+        <td class="num">{{ l.nb_oeufs }}</td>
+        <td>
+          {{ l.date_limite }}
+          {% if l.statut == 'disponible' and l.jours_restants is not none %}
+            {% if l.jours_restants < 0 %}
+              <span class="pill late">dépassé</span>
+            {% elif l.jours_restants <= 5 %}
+              <span class="pill warn">{{ l.jours_restants }} j</span>
+            {% else %}
+              <span class="pill ok">{{ l.jours_restants }} j</span>
+            {% endif %}
+          {% endif %}
+        </td>
+        <td>
+          {% if l.statut == 'disponible' %}<span class="pill ok">{{ l.statut_label }}</span>
+          {% else %}<span class="pill mute">{{ l.statut_label }}</span>{% endif %}
+        </td>
+        <td>{{ l.destination or '—' }}</td>
+        <td>
+          {% if l.statut == 'disponible' %}
+            {% if sessions_pos and produits_pos %}
+            <form class="inline-form" method="post" action="/elevage/lots/{{ l.id }}/vendre"
+                  style="margin-bottom:5px;">
+              <select name="session_id" style="padding:4px 7px; font-size:11.5px; border-radius:6px; border:1px solid var(--border-subtle); background:rgba(0,0,0,0.22); color:var(--text-primary); font-family:inherit;">
+                {% for s in sessions_pos %}<option value="{{ s.id }}">{{ s.lieu }} — {{ s.date_marche }}</option>{% endfor %}
+              </select>
+              <select name="produit_id" style="padding:4px 7px; font-size:11.5px; border-radius:6px; border:1px solid var(--border-subtle); background:rgba(0,0,0,0.22); color:var(--text-primary); font-family:inherit;">
+                {% for p in produits_pos %}<option value="{{ p.id }}">{{ p.nom }} ({{ p.unite }})</option>{% endfor %}
+              </select>
+              <button type="submit" class="btn mini">Charger</button>
+            </form>
+            {% endif %}
+          <form class="inline-form" method="post" action="/elevage/lots/{{ l.id }}/statut">
+            <input type="text" name="destination" placeholder="destination">
+            <button type="submit" name="statut" value="vendu" class="btn mini ghost">Vendu</button>
+            <button type="submit" name="statut" value="retire" class="btn mini ghost">Retiré</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">Aucun lot constitué. Le premier se crée avec le formulaire ci-dessus.</div>
+  {% endif %}
+</div>
+
+<p style="margin-top:18px; font-size:11.5px; color:var(--text-muted); line-height:1.5;">
+  Le délai de {{ delai_jours }} jours, l'affichage de la période de ponte et du mode d'élevage
+  relèvent du régime de la <strong>vente directe sous 250 poules</strong>. Hors du site de production
+  — marché, point de vente collectif — le <strong>marquage du code producteur</strong> est également
+  obligatoire. SelfFarm outille ce suivi mais <strong>n'atteste d'aucune conformité</strong> :
+  déclaration préalable et marquage restent à vérifier auprès de ta DDETSPP.
+</p>
+
+{% endblock %}
