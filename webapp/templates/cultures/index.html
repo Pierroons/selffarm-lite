@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Cultures — Assolement {{ saison }} · SelfFarm-Lite{% endblock %}
+
+{% block content %}
+
+<style>
+.cult-header {margin-bottom:22px; display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;}
+.cult-header h1 {font-size:24px; color:var(--text-primary); font-family:'Fraunces',serif; font-weight:600; margin:0 0 4px 0; letter-spacing:-0.018em;}
+.cult-header h1 .accent {color:var(--accent-400); font-style:italic;}
+.cult-header .subtitle {font-size:12.5px; color:var(--text-secondary); max-width:660px; line-height:1.55;}
+
+.cult-stats {display:flex; gap:10px; flex-wrap:wrap; margin-bottom:22px;}
+.cult-stat {flex:1; min-width:140px; padding:12px 14px; border-radius:9px; background:var(--bg-card,rgba(255,255,255,0.02)); border:1px solid var(--border-subtle);}
+.cult-stat .k {font-size:10.5px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); font-weight:600; margin-bottom:5px;}
+.cult-stat .v {font-size:21px; color:var(--text-primary); font-weight:600; font-variant-numeric:tabular-nums;}
+.cult-stat .u {font-size:12px; color:var(--text-secondary); font-weight:400;}
+
+.fam-card {margin-bottom:14px; border-radius:10px; border:1px solid var(--border-subtle); overflow:hidden;}
+.fam-head {padding:11px 15px; display:flex; align-items:center; gap:11px; flex-wrap:wrap; background:rgba(22,101,52,0.07); border-bottom:1px solid var(--border-subtle);}
+.fam-head .nom {font-size:14px; font-weight:600; color:var(--text-primary);}
+.fam-head .meta {font-size:11.5px; color:var(--text-muted);}
+.fam-head .rot {margin-left:auto; font-size:11px; padding:3px 9px; border-radius:11px; background:rgba(224,164,88,0.10); color:#f4c47a; border:1px solid rgba(224,164,88,0.25);}
+
+table.cult {width:100%; border-collapse:collapse; font-size:12.5px;}
+table.cult th {text-align:left; padding:7px 15px; font-size:10.5px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border-subtle);}
+table.cult td {padding:9px 15px; border-bottom:1px solid rgba(255,255,255,0.03); color:var(--text-secondary);}
+table.cult tr:last-child td {border-bottom:none;}
+table.cult td.cult-nom {color:var(--text-primary); font-weight:500;}
+table.cult td.num {font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap;}
+.badge-ab {font-size:10px; padding:1px 6px; border-radius:9px; background:rgba(74,222,128,0.10); color:#86efac; border:1px solid rgba(74,222,128,0.22);}
+.empty {padding:34px 20px; text-align:center; color:var(--text-muted); font-size:13px; border:1px dashed var(--border-subtle); border-radius:10px;}
+</style>
+
+<div class="cult-header">
+  <div>
+    <h1>Cultures <span class="accent">— assolement {{ saison }}</span></h1>
+    <p class="subtitle">
+      Vue transversale de toutes les parcelles, regroupée par <strong>famille botanique</strong> —
+      la maille qui gouverne les rotations. Le foncier et le détail parcelle par parcelle sont sur
+      <a href="/parcelles" style="color:var(--accent-400);">Parcellaire</a>.
+    </p>
+  </div>
+  {% if saisons|length > 1 %}
+  <form method="get" action="/cultures" style="display:flex; align-items:center; gap:7px;">
+    <label for="saison" style="font-size:11.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px; font-weight:600;">Saison</label>
+    <select id="saison" name="saison" onchange="this.form.submit()"
+            style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-subtle); background:rgba(0,0,0,0.18); color:var(--text-primary); font-size:13px;">
+      {% for s in saisons %}<option value="{{ s }}" {% if s == saison %}selected{% endif %}>{{ s }}</option>{% endfor %}
+    </select>
+  </form>
+  {% endif %}
+</div>
+
+<div class="cult-stats">
+  <div class="cult-stat"><div class="k">Cultures planifiées</div><div class="v">{{ nb_plans }}</div></div>
+  <div class="cult-stat"><div class="k">Familles</div><div class="v">{{ familles|length }}</div></div>
+  <div class="cult-stat"><div class="k">Surface cultivée</div><div class="v">{{ surface_cultivee }} <span class="u">ha</span></div></div>
+  <div class="cult-stat">
+    <div class="k">Occupation</div>
+    <div class="v">{% if taux_occupation is not none %}{{ taux_occupation }} <span class="u">%</span>{% else %}—{% endif %}</div>
+  </div>
+</div>
+
+{% if familles %}
+  {% for f in familles %}
+  <div class="fam-card">
+    <div class="fam-head">
+      <span class="nom">{{ f.nom }}</span>
+      <span class="meta">
+        {{ f.plans|length }} culture{{ 's' if f.plans|length > 1 }} ·
+        {{ f.surface_ha }} ha ·
+        {{ f.parcelles|length }} parcelle{{ 's' if f.parcelles|length > 1 }}
+      </span>
+      {% if f.retour_ans %}
+      <span class="rot" title="Délai de retour conseillé sur une même parcelle — repère de rotation, non réglementaire">
+        retour conseillé : {{ f.retour_ans }} ans
+      </span>
+      {% endif %}
+    </div>
+    <table class="cult">
+      <thead>
+        <tr>
+          <th>Culture</th><th>Parcelle</th>
+          <th class="num">Surface</th><th>Semis prévu</th><th>Récolte prévue</th>
+          <th class="num">Rendement att.</th><th>Mode</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in f.plans %}
+        <tr>
+          <td class="cult-nom">
+            {{ p.culture_label or p.culture }}
+            {% if p.variete %}<span style="color:var(--text-muted); font-size:11.5px;"> · {{ p.variete }}</span>{% endif %}
+          </td>
+          <td>{{ p.parcelle_nom or '—' }}</td>
+          <td class="num">{% if p.surface_ha %}{{ p.surface_ha }} ha{% else %}—{% endif %}</td>
+          <td>{{ p.date_semis_prev or '—' }}</td>
+          <td>{{ p.date_recolte_prev or '—' }}</td>
+          <td class="num">{% if p.rendement_kg_attendu %}{{ p.rendement_kg_attendu|round|int }} kg{% else %}—{% endif %}</td>
+          <td>{% if p.mode_production == 'ab' %}<span class="badge-ab">AB</span>{% else %}{{ p.mode_production or '—' }}{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty">
+    Aucune culture planifiée pour {{ saison }}.<br>
+    <span style="font-size:12px;">Les plans de culture se créent depuis une parcelle : <a href="/parcelles" style="color:var(--accent-400);">Parcellaire</a>.</span>
+  </div>
+{% endif %}
+
+<p style="margin-top:18px; font-size:11.5px; color:var(--text-muted); line-height:1.5;">
+  Les délais de retour affichés sont des <strong>repères agronomiques courants</strong> en maraîchage biologique,
+  destinés à repérer un risque de rotation trop courte. Ils n'ont pas de valeur réglementaire et ne remplacent
+  pas le cahier des charges de ton organisme certificateur.
+</p>
+
+{% endblock %}
