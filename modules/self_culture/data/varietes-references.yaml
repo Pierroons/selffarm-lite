@@ -1,0 +1,893 @@
+# Catalogue de variétés de référence — self_culture
+# Généré : 28 avril 2026 — 22:00 (Europe/Paris)
+# Profil de référence : maraîchage AB en zone défavorisée + chanvre à fibres/fleurs
+#
+# Sources : ITAB (Institut technique de l'agriculture biologique),
+#           GEVES (catalogue officiel FR des variétés), Kokopelli, Germinance,
+#           sélectionneurs spécialisés (chanvre), retours de terrain de maraîchers.
+#
+# Densités et rendements en AB, fourchette indicative — à ajuster sur le
+# terrain. Les variétés ont vocation à être étendues par l'utilisateur via
+# la table `varietes_user` (catalogue de base + ajouts perso).
+
+version: "2026-04"
+licence: "AGPL-3.0-or-later"
+description: "Catalogue de base SelfFarm — 38 variétés courantes maraîchage AB + chanvre + engrais verts"
+
+varietes:
+
+  # =========================================================
+  # SOLANACEAE (tomate, pomme de terre, aubergine, poivron)
+  # =========================================================
+
+  - id: tomate-marmande-ab
+    nom_commun: "Tomate Marmande"
+    nom_botanique: "Solanum lycopersicum"
+    famille: "Solanaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 3
+      semis_mois_max: 4
+      recolte_mois_min: 7
+      recolte_mois_max: 10
+      duree_jours_min: 110
+      duree_jours_max: 140
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 4
+      valeur_max_kg_m2: 8
+      densite_plants_m2: 2.5
+      source_note: "ITAB Maraîchage bio + retours de terrain"
+    saisons_principales: [ete, automne]
+    fournisseurs_recommandes: [Kokopelli, Germinance, "Le Biau Germe"]
+    notes: "Variété ancienne, port semi-déterminé, fruits côtelés, excellent pour sauce et conserve."
+
+  - id: tomate-coeur-de-boeuf-ab
+    nom_commun: "Tomate Cœur de Bœuf"
+    nom_botanique: "Solanum lycopersicum"
+    famille: "Solanaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 3
+      semis_mois_max: 4
+      recolte_mois_min: 7
+      recolte_mois_max: 10
+      duree_jours_min: 110
+      duree_jours_max: 150
+      sous_abri: true
+    rendement:
+      valeur_min_kg_m2: 5
+      valeur_max_kg_m2: 9
+      densite_plants_m2: 2
+      source_note: "ITAB + retour terrain"
+    saisons_principales: [ete, automne]
+    fournisseurs_recommandes: [Kokopelli, Germinance]
+    notes: "Indéterminé, à tuteurer ; fruits massifs (300-500g) ; vente directe valorisante."
+
+  - id: pomme-de-terre-charlotte-ab
+    nom_commun: "Pomme de terre Charlotte"
+    nom_botanique: "Solanum tuberosum"
+    famille: "Solanaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 3
+      semis_mois_max: 4
+      recolte_mois_min: 7
+      recolte_mois_max: 9
+      duree_jours_min: 100
+      duree_jours_max: 130
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 2
+      valeur_max_kg_m2: 4
+      densite_plants_m2: 4
+      source_note: "ITAB grandes cultures bio"
+    saisons_principales: [ete, automne]
+    fournisseurs_recommandes: [Germinance, "Plants de Pomme de Terre du Pin"]
+    notes: "Variété chair ferme, conservation moyenne, polyvalente cuisine."
+
+  - id: aubergine-de-barbentane-ab
+    nom_commun: "Aubergine de Barbentane"
+    nom_botanique: "Solanum melongena"
+    famille: "Solanaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 2
+      semis_mois_max: 3
+      recolte_mois_min: 7
+      recolte_mois_max: 10
+      duree_jours_min: 130
+      duree_jours_max: 160
+      sous_abri: true
+    rendement:
+      valeur_min_kg_m2: 3
+      valeur_max_kg_m2: 6
+      densite_plants_m2: 1.5
+      source_note: "ITAB"
+    saisons_principales: [ete]
+    fournisseurs_recommandes: [Kokopelli, Germinance]
+    notes: "Variété traditionnelle provençale, fruits longs, demande chaleur."
+
+  - id: poivron-yolo-wonder-ab
+    nom_commun: "Poivron Yolo Wonder"
+    nom_botanique: "Capsicum annuum"
+    famille: "Solanaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 2
+      semis_mois_max: 3
+      recolte_mois_min: 7
+      recolte_mois_max: 10
+      duree_jours_min: 120
+      duree_jours_max: 150
+      sous_abri: true
+    rendement:
+      valeur_min_kg_m2: 3
+      valeur_max_kg_m2: 5
+      densite_plants_m2: 3
+      source_note: "ITAB"
+    saisons_principales: [ete, automne]
+    fournisseurs_recommandes: [Germinance, "Voltz Bio"]
+    notes: "Carré, charnu, rouge à maturité, idéal sous tunnel."
+
+  # =========================================================
+  # APIACEAE (carotte, persil, céleri)
+  # =========================================================
+
+  - id: carotte-touchon-ab
+    nom_commun: "Carotte Touchon"
+    nom_botanique: "Daucus carota"
+    famille: "Apiaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 3
+      semis_mois_max: 7
+      recolte_mois_min: 6
+      recolte_mois_max: 11
+      duree_jours_min: 90
+      duree_jours_max: 120
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 3
+      valeur_max_kg_m2: 5
+      densite_plants_m2: 80
+      source_note: "ITAB"
+    saisons_principales: [printemps, ete, automne]
+    fournisseurs_recommandes: [Kokopelli, Germinance, "Bingenheimer Saatgut"]
+    notes: "Variété classique, racine cylindrique, conservation hiver bonne."
+
+  - id: persil-geant-italie-ab
+    nom_commun: "Persil Géant d'Italie"
+    nom_botanique: "Petroselinum crispum"
+    famille: "Apiaceae"
+    categorie: "aromatique"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 3
+      semis_mois_max: 8
+      recolte_mois_min: 5
+      recolte_mois_max: 11
+      duree_jours_min: 60
+      duree_jours_max: 90
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 1
+      valeur_max_kg_m2: 2
+      densite_plants_m2: 25
+      source_note: "ITAB"
+    saisons_principales: [printemps, ete, automne]
+    fournisseurs_recommandes: [Kokopelli, Germinance]
+    notes: "Plat, parfumé, coupes successives possibles."
+
+  # =========================================================
+  # BRASSICACEAE (chou, radis, navet, moutarde)
+  # =========================================================
+
+  - id: radis-cherry-belle-ab
+    nom_commun: "Radis Cherry Belle"
+    nom_botanique: "Raphanus sativus"
+    famille: "Brassicaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 3
+      semis_mois_max: 9
+      recolte_mois_min: 4
+      recolte_mois_max: 10
+      duree_jours_min: 25
+      duree_jours_max: 40
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 1.5
+      valeur_max_kg_m2: 3
+      densite_plants_m2: 200
+      source_note: "ITAB"
+    saisons_principales: [printemps, ete, automne]
+    fournisseurs_recommandes: [Kokopelli, Germinance]
+    notes: "Rond, rouge, croquant, idéal début de saison ou intercalaire rapide."
+
+  - id: chou-quintal-alsace-ab
+    nom_commun: "Chou Quintal d'Alsace"
+    nom_botanique: "Brassica oleracea"
+    famille: "Brassicaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 4
+      semis_mois_max: 6
+      recolte_mois_min: 9
+      recolte_mois_max: 11
+      duree_jours_min: 130
+      duree_jours_max: 160
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 4
+      valeur_max_kg_m2: 7
+      densite_plants_m2: 2
+      source_note: "ITAB"
+    saisons_principales: [automne]
+    fournisseurs_recommandes: [Kokopelli, Germinance]
+    notes: "Très gros pommes (3-5 kg), idéal choucroute, conservation longue."
+
+  - id: navet-boule-or-ab
+    nom_commun: "Navet Boule d'Or"
+    nom_botanique: "Brassica rapa"
+    famille: "Brassicaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 7
+      semis_mois_max: 9
+      recolte_mois_min: 10
+      recolte_mois_max: 12
+      duree_jours_min: 60
+      duree_jours_max: 90
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 2
+      valeur_max_kg_m2: 4
+      densite_plants_m2: 30
+      source_note: "ITAB"
+    saisons_principales: [automne, hiver]
+    fournisseurs_recommandes: [Kokopelli, Germinance]
+    notes: "Chair jaune sucrée, doux, peu piquant, semis estival pour récolte automne."
+
+  - id: brocoli-calabrese-ab
+    nom_commun: "Brocoli Calabrese"
+    nom_botanique: "Brassica oleracea var. italica"
+    famille: "Brassicaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 3
+      semis_mois_max: 7
+      recolte_mois_min: 6
+      recolte_mois_max: 10
+      duree_jours_min: 80
+      duree_jours_max: 110
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 1
+      valeur_max_kg_m2: 2
+      densite_plants_m2: 4
+      source_note: "ITAB"
+    saisons_principales: [ete, automne]
+    fournisseurs_recommandes: [Germinance, Kokopelli]
+    notes: "Pomme principale + repousses latérales, productions étalées."
+
+  # =========================================================
+  # AMARYLLIDACEAE (ail, oignon, échalote, poireau)
+  # =========================================================
+
+  - id: poireau-bleu-solaise-ab
+    nom_commun: "Poireau Bleu de Solaise"
+    nom_botanique: "Allium ampeloprasum"
+    famille: "Amaryllidaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 2
+      semis_mois_max: 4
+      recolte_mois_min: 10
+      recolte_mois_max: 3
+      duree_jours_min: 180
+      duree_jours_max: 240
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 3
+      valeur_max_kg_m2: 5
+      densite_plants_m2: 16
+      source_note: "ITAB"
+    saisons_principales: [automne, hiver]
+    fournisseurs_recommandes: [Kokopelli, Germinance]
+    notes: "Très rustique, résiste -15°C, feuillage bleuté, valeur ajoutée hiver."
+
+  - id: oignon-stuttgart-ab
+    nom_commun: "Oignon de Stuttgart"
+    nom_botanique: "Allium cepa"
+    famille: "Amaryllidaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 2
+      semis_mois_max: 4
+      recolte_mois_min: 7
+      recolte_mois_max: 9
+      duree_jours_min: 120
+      duree_jours_max: 160
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 3
+      valeur_max_kg_m2: 5
+      densite_plants_m2: 40
+      source_note: "ITAB"
+    saisons_principales: [ete, automne]
+    fournisseurs_recommandes: [Germinance, "Le Biau Germe"]
+    notes: "Bulbe aplati, jaune doré, conservation longue."
+
+  - id: ail-germidour-ab
+    nom_commun: "Ail Germidour"
+    nom_botanique: "Allium sativum"
+    famille: "Amaryllidaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 10
+      semis_mois_max: 11
+      recolte_mois_min: 6
+      recolte_mois_max: 7
+      duree_jours_min: 220
+      duree_jours_max: 260
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 1
+      valeur_max_kg_m2: 2
+      densite_plants_m2: 25
+      source_note: "ITAB grandes cultures"
+    saisons_principales: [ete]
+    fournisseurs_recommandes: ["Le Biau Germe", "Plants d'Ail du Sud-Ouest"]
+    notes: "Variété d'automne (plantation oct-nov), gros bulbes blancs."
+
+  - id: echalote-cuisse-poulet-ab
+    nom_commun: "Échalote Cuisse de Poulet"
+    nom_botanique: "Allium ascalonicum"
+    famille: "Amaryllidaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 2
+      semis_mois_max: 3
+      recolte_mois_min: 7
+      recolte_mois_max: 8
+      duree_jours_min: 140
+      duree_jours_max: 180
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 1
+      valeur_max_kg_m2: 2
+      densite_plants_m2: 20
+      source_note: "ITAB"
+    saisons_principales: [ete]
+    fournisseurs_recommandes: ["Le Biau Germe"]
+    notes: "Échalote longue, cuivrée, conservation excellente."
+
+  # =========================================================
+  # FABACEAE (haricot, pois, fève, légumineuses)
+  # =========================================================
+
+  - id: haricot-triomphe-farcy-ab
+    nom_commun: "Haricot Triomphe de Farcy"
+    nom_botanique: "Phaseolus vulgaris"
+    famille: "Fabaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 5
+      semis_mois_max: 7
+      recolte_mois_min: 7
+      recolte_mois_max: 10
+      duree_jours_min: 60
+      duree_jours_max: 90
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 1.5
+      valeur_max_kg_m2: 3
+      densite_plants_m2: 25
+      source_note: "ITAB"
+    saisons_principales: [ete]
+    fournisseurs_recommandes: [Kokopelli, Germinance]
+    notes: "Filet vert, productif, légumineuse fixatrice d'azote, bon précédent."
+
+  - id: pois-telephone-ab
+    nom_commun: "Pois Téléphone"
+    nom_botanique: "Pisum sativum"
+    famille: "Fabaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 3
+      semis_mois_max: 5
+      recolte_mois_min: 6
+      recolte_mois_max: 8
+      duree_jours_min: 80
+      duree_jours_max: 110
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 1
+      valeur_max_kg_m2: 2
+      densite_plants_m2: 30
+      source_note: "ITAB"
+    saisons_principales: [printemps, ete]
+    fournisseurs_recommandes: [Kokopelli, Germinance]
+    notes: "Grimpant, à rames, gros grains sucrés."
+
+  - id: feve-aguadulce-ab
+    nom_commun: "Fève Aguadulce"
+    nom_botanique: "Vicia faba"
+    famille: "Fabaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 10
+      semis_mois_max: 3
+      recolte_mois_min: 5
+      recolte_mois_max: 7
+      duree_jours_min: 150
+      duree_jours_max: 220
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 1
+      valeur_max_kg_m2: 2.5
+      densite_plants_m2: 8
+      source_note: "ITAB"
+    saisons_principales: [printemps]
+    fournisseurs_recommandes: [Kokopelli, Germinance]
+    notes: "Semis automne (régions douces) ou février ; légumineuse rustique."
+
+  # =========================================================
+  # CUCURBITACEAE (courgette, concombre, courge)
+  # =========================================================
+
+  - id: courgette-black-beauty-ab
+    nom_commun: "Courgette Black Beauty"
+    nom_botanique: "Cucurbita pepo"
+    famille: "Cucurbitaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 4
+      semis_mois_max: 6
+      recolte_mois_min: 6
+      recolte_mois_max: 10
+      duree_jours_min: 50
+      duree_jours_max: 70
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 5
+      valeur_max_kg_m2: 10
+      densite_plants_m2: 1
+      source_note: "ITAB"
+    saisons_principales: [ete, automne]
+    fournisseurs_recommandes: [Kokopelli, Germinance]
+    notes: "Productive, port buissonnant, vert foncé brillant ; gourmande en azote."
+
+  - id: concombre-marketmore-ab
+    nom_commun: "Concombre Marketmore"
+    nom_botanique: "Cucumis sativus"
+    famille: "Cucurbitaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 4
+      semis_mois_max: 6
+      recolte_mois_min: 7
+      recolte_mois_max: 9
+      duree_jours_min: 60
+      duree_jours_max: 80
+      sous_abri: true
+    rendement:
+      valeur_min_kg_m2: 4
+      valeur_max_kg_m2: 8
+      densite_plants_m2: 2
+      source_note: "ITAB"
+    saisons_principales: [ete]
+    fournisseurs_recommandes: [Kokopelli, Germinance]
+    notes: "Fruits longs verts, peu d'amertume, bonne tenue maladie."
+
+  # =========================================================
+  # AMARANTHACEAE (betterave, blette, épinards)
+  # =========================================================
+
+  - id: betterave-crapaudine-ab
+    nom_commun: "Betterave Crapaudine"
+    nom_botanique: "Beta vulgaris"
+    famille: "Amaranthaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 3
+      semis_mois_max: 7
+      recolte_mois_min: 6
+      recolte_mois_max: 11
+      duree_jours_min: 90
+      duree_jours_max: 130
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 3
+      valeur_max_kg_m2: 5
+      densite_plants_m2: 20
+      source_note: "ITAB"
+    saisons_principales: [ete, automne]
+    fournisseurs_recommandes: [Kokopelli, Germinance]
+    notes: "Variété ancienne, peau rugueuse, chair sucrée, conservation excellente."
+
+  - id: blette-bright-lights-ab
+    nom_commun: "Blette Bright Lights"
+    nom_botanique: "Beta vulgaris var. cicla"
+    famille: "Amaranthaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 3
+      semis_mois_max: 8
+      recolte_mois_min: 6
+      recolte_mois_max: 11
+      duree_jours_min: 60
+      duree_jours_max: 90
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 2
+      valeur_max_kg_m2: 4
+      densite_plants_m2: 8
+      source_note: "ITAB"
+    saisons_principales: [ete, automne]
+    fournisseurs_recommandes: [Kokopelli, Germinance]
+    notes: "Cardes multicolores, esthétique vente directe ; coupes successives."
+
+  - id: epinards-geant-hiver-ab
+    nom_commun: "Épinards Géant d'Hiver"
+    nom_botanique: "Spinacia oleracea"
+    famille: "Amaranthaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 8
+      semis_mois_max: 10
+      recolte_mois_min: 10
+      recolte_mois_max: 4
+      duree_jours_min: 60
+      duree_jours_max: 90
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 1.5
+      valeur_max_kg_m2: 3
+      densite_plants_m2: 50
+      source_note: "ITAB"
+    saisons_principales: [hiver, printemps]
+    fournisseurs_recommandes: [Germinance, Kokopelli]
+    notes: "Rustique, feuilles épaisses, idéal récolte hivernale."
+
+  # =========================================================
+  # ASTERACEAE (salade, chicorée)
+  # =========================================================
+
+  - id: laitue-reine-de-mai-ab
+    nom_commun: "Laitue Reine de Mai"
+    nom_botanique: "Lactuca sativa"
+    famille: "Asteraceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 2
+      semis_mois_max: 4
+      recolte_mois_min: 4
+      recolte_mois_max: 6
+      duree_jours_min: 50
+      duree_jours_max: 75
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 2
+      valeur_max_kg_m2: 4
+      densite_plants_m2: 12
+      source_note: "ITAB"
+    saisons_principales: [printemps]
+    fournisseurs_recommandes: [Kokopelli, Germinance]
+    notes: "Beurre, pommée, précoce, peu sensible montaison printemps."
+
+  - id: laitue-iceberg-ab
+    nom_commun: "Laitue Iceberg"
+    nom_botanique: "Lactuca sativa"
+    famille: "Asteraceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 4
+      semis_mois_max: 8
+      recolte_mois_min: 6
+      recolte_mois_max: 10
+      duree_jours_min: 60
+      duree_jours_max: 85
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 3
+      valeur_max_kg_m2: 5
+      densite_plants_m2: 10
+      source_note: "ITAB"
+    saisons_principales: [ete]
+    fournisseurs_recommandes: [Germinance]
+    notes: "Batavia croquante, pomme dense, tenue chaleur correcte."
+
+  # =========================================================
+  # POACEAE (céréales)
+  # =========================================================
+
+  - id: mais-doux-golden-bantam-ab
+    nom_commun: "Maïs doux Golden Bantam"
+    nom_botanique: "Zea mays"
+    famille: "Poaceae"
+    categorie: "legume"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 5
+      semis_mois_max: 6
+      recolte_mois_min: 8
+      recolte_mois_max: 9
+      duree_jours_min: 80
+      duree_jours_max: 100
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 1
+      valeur_max_kg_m2: 2
+      densite_plants_m2: 6
+      source_note: "ITAB"
+    saisons_principales: [ete]
+    fournisseurs_recommandes: [Kokopelli, Germinance]
+    notes: "Variété ancienne sucrée, à consommer rapidement après récolte."
+
+  # =========================================================
+  # LAMIACEAE (aromatiques)
+  # =========================================================
+
+  - id: basilic-grand-vert-ab
+    nom_commun: "Basilic Grand Vert"
+    nom_botanique: "Ocimum basilicum"
+    famille: "Lamiaceae"
+    categorie: "aromatique"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 4
+      semis_mois_max: 6
+      recolte_mois_min: 6
+      recolte_mois_max: 10
+      duree_jours_min: 60
+      duree_jours_max: 90
+      sous_abri: true
+    rendement:
+      valeur_min_kg_m2: 0.5
+      valeur_max_kg_m2: 1.5
+      densite_plants_m2: 15
+      source_note: "ITAB"
+    saisons_principales: [ete, automne]
+    fournisseurs_recommandes: [Kokopelli, Germinance]
+    notes: "Aromatique très valorisable en vente directe, sensible froid."
+
+  - id: menthe-marocaine-ab
+    nom_commun: "Menthe Marocaine"
+    nom_botanique: "Mentha spicata"
+    famille: "Lamiaceae"
+    categorie: "aromatique"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 3
+      semis_mois_max: 5
+      recolte_mois_min: 5
+      recolte_mois_max: 10
+      duree_jours_min: 60
+      duree_jours_max: 90
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 0.5
+      valeur_max_kg_m2: 1.5
+      densite_plants_m2: 9
+      source_note: "ITAB"
+    saisons_principales: [ete, automne]
+    fournisseurs_recommandes: [Germinance, Kokopelli]
+    notes: "Vivace, à contenir en bordure ou pot. Coupes successives toute saison."
+
+  # =========================================================
+  # CANNABACEAE — CHANVRE
+  # =========================================================
+
+  - id: chanvre-kompolti-ab
+    nom_commun: "Chanvre Kompolti AB"
+    nom_botanique: "Cannabis sativa"
+    famille: "Cannabaceae"
+    categorie: "industriel"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 5
+      semis_mois_max: 6
+      recolte_mois_min: 9
+      recolte_mois_max: 10
+      duree_jours_min: 130
+      duree_jours_max: 160
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 0.05
+      valeur_max_kg_m2: 0.15
+      densite_plants_m2: 1.2
+      source_note: "Données sélectionneur + retours de terrain en zone tempérée"
+    saisons_principales: [ete, automne]
+    fournisseurs_recommandes: [Genscore]
+    notes: "Variété hongroise féminisée bio, taux CBD 4-7 %, taux THC < 0,3 %, certifiée AB. Disponible en achat direct auprès des sélectionneurs spécialisés — compter ~0,30 €/graine."
+
+  # =========================================================
+  # POLYGONACEAE & BORAGINACEAE — engrais verts
+  # =========================================================
+
+  - id: sarrasin-engrais-vert
+    nom_commun: "Sarrasin (engrais vert)"
+    nom_botanique: "Fagopyrum esculentum"
+    famille: "Polygonaceae"
+    categorie: "engrais_vert"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 5
+      semis_mois_max: 8
+      recolte_mois_min: 7
+      recolte_mois_max: 10
+      duree_jours_min: 60
+      duree_jours_max: 100
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 0
+      valeur_max_kg_m2: 0
+      densite_plants_m2: 200
+      source_note: "ITAB engrais verts"
+    saisons_principales: [ete]
+    fournisseurs_recommandes: [Sem-Partners, "La Ferme de Sainte Marthe"]
+    notes: "Croissance rapide, étouffe les adventices, libère le phosphore. Non hôte des familles cultivées."
+
+  - id: phacelie-engrais-vert
+    nom_commun: "Phacélie (engrais vert)"
+    nom_botanique: "Phacelia tanacetifolia"
+    famille: "Boraginaceae"
+    categorie: "engrais_vert"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 4
+      semis_mois_max: 9
+      recolte_mois_min: 6
+      recolte_mois_max: 11
+      duree_jours_min: 70
+      duree_jours_max: 100
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 0
+      valeur_max_kg_m2: 0
+      densite_plants_m2: 200
+      source_note: "ITAB engrais verts"
+    saisons_principales: [ete, automne]
+    fournisseurs_recommandes: [Sem-Partners]
+    notes: "Mellifère, non hôte de toutes les familles cultivées, idéal entre deux cultures."
+
+  - id: moutarde-blanche-engrais-vert
+    nom_commun: "Moutarde Blanche (engrais vert)"
+    nom_botanique: "Sinapis alba"
+    famille: "Brassicaceae"
+    categorie: "engrais_vert"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 7
+      semis_mois_max: 9
+      recolte_mois_min: 9
+      recolte_mois_max: 11
+      duree_jours_min: 60
+      duree_jours_max: 90
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 0
+      valeur_max_kg_m2: 0
+      densite_plants_m2: 100
+      source_note: "ITAB engrais verts"
+    saisons_principales: [automne]
+    fournisseurs_recommandes: [Sem-Partners]
+    notes: "ATTENTION : Brassicaceae — ne pas semer avant un chou ! Bon biofumigant."
+
+  - id: vesce-hiver-engrais-vert
+    nom_commun: "Vesce d'Hiver (légumineuse engrais vert)"
+    nom_botanique: "Vicia villosa"
+    famille: "Fabaceae"
+    categorie: "engrais_vert"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 9
+      semis_mois_max: 10
+      recolte_mois_min: 4
+      recolte_mois_max: 5
+      duree_jours_min: 200
+      duree_jours_max: 240
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 0
+      valeur_max_kg_m2: 0
+      densite_plants_m2: 80
+      source_note: "ITAB engrais verts légumineuses"
+    saisons_principales: [hiver]
+    fournisseurs_recommandes: [Sem-Partners, "La Ferme de Sainte Marthe"]
+    notes: "Fixe l'azote, couverture hivernale efficace, à détruire au printemps avant culture suivante."
+
+  - id: trefle-incarnat-engrais-vert
+    nom_commun: "Trèfle Incarnat (légumineuse engrais vert)"
+    nom_botanique: "Trifolium incarnatum"
+    famille: "Fabaceae"
+    categorie: "engrais_vert"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 8
+      semis_mois_max: 9
+      recolte_mois_min: 4
+      recolte_mois_max: 5
+      duree_jours_min: 180
+      duree_jours_max: 220
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 0
+      valeur_max_kg_m2: 0
+      densite_plants_m2: 200
+      source_note: "ITAB"
+    saisons_principales: [hiver, printemps]
+    fournisseurs_recommandes: [Sem-Partners]
+    notes: "Floraison rouge mellifère, fixateur azote, idéal couvert intercalaire."
+
+  - id: feverole-engrais-vert
+    nom_commun: "Féverole (légumineuse engrais vert)"
+    nom_botanique: "Vicia faba var. minor"
+    famille: "Fabaceae"
+    categorie: "engrais_vert"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 10
+      semis_mois_max: 11
+      recolte_mois_min: 4
+      recolte_mois_max: 5
+      duree_jours_min: 180
+      duree_jours_max: 220
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 0
+      valeur_max_kg_m2: 0
+      densite_plants_m2: 50
+      source_note: "ITAB"
+    saisons_principales: [hiver]
+    fournisseurs_recommandes: [Sem-Partners, "La Ferme de Sainte Marthe"]
+    notes: "Variété grain petit, semis automne, restitution azote majeure."
+
+  - id: luzerne-engrais-vert
+    nom_commun: "Luzerne (légumineuse pluriannuelle)"
+    nom_botanique: "Medicago sativa"
+    famille: "Fabaceae"
+    categorie: "engrais_vert"
+    mode_production_principal: "ab"
+    calendrier:
+      semis_mois_min: 4
+      semis_mois_max: 9
+      recolte_mois_min: 5
+      recolte_mois_max: 11
+      duree_jours_min: 730
+      duree_jours_max: 1825
+      sous_abri: false
+    rendement:
+      valeur_min_kg_m2: 0
+      valeur_max_kg_m2: 0
+      densite_plants_m2: 50
+      source_note: "ITAB grandes cultures"
+    saisons_principales: [printemps, ete, automne]
+    fournisseurs_recommandes: [Sem-Partners]
+    notes: "Prairie pluriannuelle 3-5 ans, tête de rotation classique en AB, nettoie les sols."

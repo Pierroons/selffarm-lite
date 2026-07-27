@@ -1,0 +1,704 @@
+# ----------------------------------------------------------------------------
+# Plan Comptable Agricole - Version applicable 2026
+# Fichier canonique pour le module self-agri-book de SelfFarm-Lite
+#
+# Construction : fusion de deux sources officielles primaires.
+#   1. Règlement ANC n° 2014-03 relatif au Plan Comptable Général (PCG),
+#      tel que modifie par le règlement ANC n° 2024-07 du 6 décembre 2024,
+#      homologue par arrêté du 26 décembre 2025, applicable aux exercices
+#      ouverts à compter du 1er janvier 2026.
+#      -> Base commune (Plan-de-comptes-2026.pdf, ANC).
+#   2. Arrêté du 11 décembre 1986 portant homologation du Plan Comptable
+#      Général Agricole (PCGA), toujours la référence pour les subdivisions
+#      spécifiques au secteur agricole non encore intégrées au PCG général.
+#      Complete par le règlement ANC n° 2019-01 du 8 février 2019
+#      (articles 618-8 à 618-11 du PCG) qui traite des biens vivants
+#      immobilises et de l'évaluation des stocks et avances aux cultures.
+#
+# Les comptes marques `agri_specifique: true` sont propres au secteur
+# agricole (non presents dans le PCG général ou subdivises differemment).
+# ----------------------------------------------------------------------------
+
+version_pcg: "PCG agricole - version applicable aux exercices ouverts à compter du 1er janvier 2026"
+
+source:
+  autorite: anc.gouv.fr
+  date_maj_vu: "2026-04-22"
+  publication: >
+    Règlement ANC n° 2014-03 (PCG) modifie par règlement ANC n° 2024-07
+    du 06/12/2024 (homologation arrêté du 26/12/2025), applicable au
+    1er janvier 2026. Complete par le règlement ANC n° 2019-01 du
+    08/02/2019 (activité agricole, art. 618-8 à 618-11 du PCG) et par
+    l'arrêté du 11 décembre 1986 portant homologation du Plan Comptable
+    Général Agricole (PCGA) pour les subdivisions sectorielles non
+    encore integrees au PCG.
+  references:
+    - url: https://www.anc.gouv.fr/plan-comptable-general-0
+      nom: "ANC - Plan comptable général"
+    - url: https://www.anc.gouv.fr/files/anc/files/1_Normes_fran%C3%A7aises/Plans%20comptables/2026/Plan-de-comptes-2026.pdf
+      nom: "Plan de comptes 2026 (PDF ANC)"
+    - url: https://www.anc.gouv.fr/files/anc/files/1_Normes_fran%C3%A7aises/Reglements/2019/Reglt_2019_01/Reglt_2019-01_PCG_note-de-presentation_Agriculture.pdf
+      nom: "ANC 2019-01 - Note de présentation activité agricole"
+    - url: https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000029583307
+      nom: "Légifrance - homologation règlements ANC"
+
+notes_methodologiques:
+  - >
+    Les comptes à 3 chiffres du PCG 2026 sont la référence officielle.
+    Les subdivisions à 4 chiffres reprennent soit le PCG 2026 quand
+    elles y figurent, soit le PCGA 1986 (arrêté du 11/12/1986) pour
+    les subdivisions proprement agricoles (semences, engrais,
+    phyto, aliments, animaux, avances aux cultures, biens vivants...).
+  - >
+    Le PCGA 1986 codifiait certains comptes sur 5 chiffres (ex. 30110
+    stocks d'engrais). Dans ce fichier, on aligne sur la logique PCG
+    (4 chiffres) en preservant la granularité agricole.
+  - >
+    Comptes 657 / 757 : utilises pour les cessions habituelles de
+    biens vivants immobilises (art. 618-8 du PCG - ANC 2019-01).
+  - >
+    Compte 218 "Cheptel" (PCG général) et compte 24 "Biens vivants
+    immobilises" (PCGA) coexistent selon l'approche retenue par
+    l'exploitation. Le PCGA utilise la classe 24 pour isoler les
+    animaux reproducteurs et plantations pérennes.
+
+# ----------------------------------------------------------------------------
+# Structure des 9 classes
+# ----------------------------------------------------------------------------
+
+classes:
+  # --------------------------------------------------------------------------
+  - code: "1"
+    nom: "Comptes de capitaux"
+    comptes:
+      - code: "10"
+        nom: "Capital et réserves"
+        sous_comptes:
+          - { code: "101", nom: "Capital" }
+          - { code: "104", nom: "Primes liées au capital" }
+          - { code: "105", nom: "Écarts de réévaluation" }
+          - { code: "106", nom: "Réserves" }
+          - { code: "107", nom: "Écart d'équivalence" }
+          - { code: "108", nom: "Compte de l'exploitant", agri_specifique: true, note: "Compte pivot pour les exploitations individuelles en nom propre" }
+          - { code: "109", nom: "Actionnaires : capital souscrit - non appelé" }
+      - code: "11"
+        nom: "Report à nouveau"
+        sous_comptes:
+          - { code: "110", nom: "Report à nouveau - solde créditeur" }
+          - { code: "119", nom: "Report à nouveau - solde débiteur" }
+      - code: "12"
+        nom: "Résultat de l'exercice"
+        sous_comptes:
+          - { code: "120", nom: "Résultat de l'exercice - bénéfice" }
+          - { code: "129", nom: "Résultat de l'exercice - perte" }
+      - code: "13"
+        nom: "Subventions d'investissement"
+        sous_comptes:
+          - { code: "131", nom: "Subventions d'investissement octroyées" }
+          - { code: "139", nom: "Subventions d'investissement inscrites au compte de résultat" }
+      - code: "14"
+        nom: "Provisions réglementées"
+        sous_comptes:
+          - { code: "143", nom: "Provisions réglementées pour hausse de prix" }
+          - { code: "145", nom: "Amortissements dérogatoires" }
+          - { code: "148", nom: "Autres provisions réglementées" }
+      - code: "15"
+        nom: "Provisions"
+        sous_comptes:
+          - { code: "151", nom: "Provisions pour risques" }
+          - { code: "152", nom: "Provisions pour charges" }
+          - { code: "1572", nom: "Provisions pour aléas climatiques (DEP agricole)", agri_specifique: true, note: "Dotation pour épargne de précaution agricole (art. 73 CGI)" }
+      - code: "16"
+        nom: "Emprunts et dettes assimilées"
+        sous_comptes:
+          - { code: "161", nom: "Emprunts obligataires convertibles" }
+          - { code: "163", nom: "Autres emprunts obligataires" }
+          - { code: "164", nom: "Emprunts auprès des établissements de crédit" }
+          - { code: "1641", nom: "Emprunts fonciers", agri_specifique: true, note: "Typique agriculture : acquisition de foncier" }
+          - { code: "165", nom: "Dépôts et cautionnements reçus" }
+          - { code: "166", nom: "Participation des salariés aux résultats" }
+          - { code: "167", nom: "Fonds non remboursables et avances conditionnées" }
+          - { code: "168", nom: "Autres emprunts et dettes assimilées" }
+          - { code: "169", nom: "Primes de remboursement des emprunts" }
+      - code: "17"
+        nom: "Dettes rattachées à des participations"
+      - code: "18"
+        nom: "Comptes de liaison des établissements et sociétés en participation"
+
+  # --------------------------------------------------------------------------
+  - code: "2"
+    nom: "Comptes d'immobilisations"
+    comptes:
+      - code: "20"
+        nom: "Immobilisations incorporelles et frais d'établissement"
+        sous_comptes:
+          - { code: "201", nom: "Frais d'établissement" }
+          - { code: "203", nom: "Frais de développement" }
+          - { code: "205", nom: "Concessions, brevets, licences, marques, procédés, logiciels" }
+          - { code: "206", nom: "Droit au bail" }
+          - { code: "2063", nom: "Droit au bail rural", agri_specifique: true }
+          - { code: "207", nom: "Fonds commercial" }
+          - { code: "208", nom: "Autres immobilisations incorporelles" }
+          - { code: "2088", nom: "Droits à paiement de base (DPB) et droits d'aide PAC", agri_specifique: true, note: "Règlement ANC 2015-06 : DPB comptabilises en immobilisations incorporelles" }
+      - code: "21"
+        nom: "Immobilisations corporelles"
+        sous_comptes:
+          - { code: "211", nom: "Terrains" }
+          - { code: "2111", nom: "Terrains nus" }
+          - { code: "21115", nom: "Terrains agricoles exploités en faire-valoir direct", agri_specifique: true }
+          - { code: "2112", nom: "Terrains aménagés" }
+          - { code: "2115", nom: "Terrains bâtis" }
+          - { code: "212", nom: "Agencements et aménagements de terrains" }
+          - { code: "2121", nom: "Améliorations foncières permanentes (drainage, irrigation, défrichement)", agri_specifique: true }
+          - { code: "213", nom: "Constructions" }
+          - { code: "2131", nom: "Bâtiments" }
+          - { code: "21311", nom: "Bâtiments affectés à la production agricole", agri_specifique: true }
+          - { code: "2135", nom: "Installations générales, agencements, aménagements des constructions" }
+          - { code: "2138", nom: "Ouvrages d'infrastructure" }
+          - { code: "214", nom: "Constructions sur sol d'autrui" }
+          - { code: "215", nom: "Installations techniques, matériels et outillages industriels" }
+          - { code: "2154", nom: "Matériel agricole (tracteurs, moissonneuses, outils attelés)", agri_specifique: true }
+          - { code: "2155", nom: "Outillage agricole", agri_specifique: true }
+          - { code: "217", nom: "Amélioration du fonds agricole", agri_specifique: true }
+          - { code: "218", nom: "Autres immobilisations corporelles" }
+          - { code: "2181", nom: "Installations générales, agencements, aménagements divers" }
+          - { code: "2182", nom: "Matériel de transport" }
+          - { code: "2183", nom: "Matériel de bureau et matériel informatique" }
+          - { code: "2184", nom: "Mobilier" }
+          - { code: "2185", nom: "Cheptel", agri_specifique: true, note: "Utilisé quand l'entité ne subdivise pas en classe 24 (PCG général)" }
+          - { code: "2186", nom: "Emballages récupérables" }
+      - code: "22"
+        nom: "Immobilisations mises en concession"
+      - code: "23"
+        nom: "Immobilisations en cours, avances et acomptes"
+        sous_comptes:
+          - { code: "231", nom: "Immobilisations corporelles en cours" }
+          - { code: "232", nom: "Immobilisations incorporelles en cours" }
+          - { code: "234", nom: "Biens vivants immobilisés en cours", agri_specifique: true }
+          - { code: "2341", nom: "Animaux reproducteurs en cours d'élevage", agri_specifique: true }
+          - { code: "2346", nom: "Plantations pérennes en cours", agri_specifique: true }
+          - { code: "237", nom: "Avances et acomptes versés sur commandes d'immobilisations incorporelles" }
+          - { code: "238", nom: "Avances et acomptes versés sur commandes d'immobilisations corporelles" }
+      - code: "24"
+        nom: "Biens vivants immobilisés"
+        agri_specifique: true
+        note: "Classe réservée par le PCGA aux actifs vivants utilisés durablement comme moyens de production. Articles 618-8 et 618-9 du PCG (ANC 2019-01)."
+        sous_comptes:
+          - { code: "241", nom: "Animaux reproducteurs - adultes", agri_specifique: true }
+          - { code: "242", nom: "Animaux reproducteurs - jeunes", agri_specifique: true }
+          - { code: "243", nom: "Animaux de service (chiens de troupeau, chevaux de trait)", agri_specifique: true }
+          - { code: "246", nom: "Plantations pérennes", agri_specifique: true }
+          - { code: "2461", nom: "Plantations pérennes sur sol propre", agri_specifique: true }
+          - { code: "2465", nom: "Plantations pérennes sur sol d'autrui", agri_specifique: true }
+          - { code: "2467", nom: "Aménagement des plantations pérennes", agri_specifique: true }
+          - { code: "247", nom: "Autres végétaux immobilisés", agri_specifique: true }
+      - code: "26"
+        nom: "Participations et créances rattachées à des participations"
+        sous_comptes:
+          - { code: "261", nom: "Titres de participation" }
+          - { code: "262", nom: "Titres évalués par équivalence" }
+          - { code: "2621", nom: "Parts sociales dans coopératives agricoles", agri_specifique: true }
+          - { code: "2622", nom: "Parts sociales dans CUMA", agri_specifique: true, note: "Coopératives d'Utilisation de Matériel Agricole" }
+          - { code: "2624", nom: "Parts sociales dans SICA", agri_specifique: true }
+          - { code: "266", nom: "Autres formes de participation" }
+          - { code: "267", nom: "Créances rattachées à des participations" }
+          - { code: "268", nom: "Créances rattachées à des sociétés en participation" }
+          - { code: "269", nom: "Versements restant à effectuer sur titres de participation non libérés" }
+      - code: "27"
+        nom: "Autres immobilisations financières"
+        sous_comptes:
+          - { code: "271", nom: "Titres immobilisés - droit de propriété" }
+          - { code: "272", nom: "Titres immobilisés - droit de créance" }
+          - { code: "274", nom: "Prêts" }
+          - { code: "275", nom: "Dépôts et cautionnements versés" }
+          - { code: "276", nom: "Autres créances immobilisées" }
+          - { code: "277", nom: "Actions propres ou parts propres" }
+      - code: "28"
+        nom: "Amortissements des immobilisations"
+        sous_comptes:
+          - { code: "280", nom: "Amortissements des immobilisations incorporelles" }
+          - { code: "281", nom: "Amortissements des immobilisations corporelles" }
+          - { code: "2812", nom: "Amortissements - Agencements/aménagements de terrains" }
+          - { code: "2813", nom: "Amortissements - Constructions" }
+          - { code: "2815", nom: "Amortissements - Installations techniques et matériel agricole", agri_specifique: true }
+          - { code: "2817", nom: "Amortissements - Amélioration du fonds agricole", agri_specifique: true }
+          - { code: "2818", nom: "Amortissements - Autres immobilisations corporelles" }
+          - { code: "284", nom: "Amortissements des biens vivants immobilisés", agri_specifique: true }
+          - { code: "2841", nom: "Amortissements - Animaux reproducteurs adultes", agri_specifique: true }
+          - { code: "2843", nom: "Amortissements - Animaux de service", agri_specifique: true }
+          - { code: "2846", nom: "Amortissements - Plantations pérennes", agri_specifique: true }
+      - code: "29"
+        nom: "Dépréciations des immobilisations"
+        sous_comptes:
+          - { code: "290", nom: "Dépréciations des immobilisations incorporelles" }
+          - { code: "291", nom: "Dépréciations des immobilisations corporelles" }
+          - { code: "294", nom: "Dépréciations des biens vivants immobilisés", agri_specifique: true }
+          - { code: "296", nom: "Dépréciations des participations et créances rattachées" }
+          - { code: "297", nom: "Dépréciations des autres immobilisations financières" }
+
+  # --------------------------------------------------------------------------
+  - code: "3"
+    nom: "Comptes de stocks et en-cours"
+    comptes:
+      - code: "31"
+        nom: "Matières premières et fournitures"
+        sous_comptes:
+          - { code: "311", nom: "Approvisionnements stockés", agri_specifique: true }
+          - { code: "3111", nom: "Engrais et amendements", agri_specifique: true }
+          - { code: "3112", nom: "Semences et plants", agri_specifique: true }
+          - { code: "3113", nom: "Produits de défense des végétaux (phytosanitaires)", agri_specifique: true }
+          - { code: "3114", nom: "Aliments du bétail", agri_specifique: true }
+          - { code: "3115", nom: "Produits de défense des animaux (vétérinaires)", agri_specifique: true }
+          - { code: "3116", nom: "Produits de reproduction animale (semences, insémination)", agri_specifique: true }
+          - { code: "3117", nom: "Emballages agricoles", agri_specifique: true }
+          - { code: "3118", nom: "Combustibles stockés" }
+      - code: "32"
+        nom: "Autres approvisionnements"
+        sous_comptes:
+          - { code: "321", nom: "Matières consommables" }
+          - { code: "3211", nom: "Carburants et lubrifiants stockés", agri_specifique: true, note: "Important en exploitation : GNR, fioul" }
+          - { code: "322", nom: "Fournitures consommables" }
+          - { code: "3221", nom: "Combustibles" }
+          - { code: "3222", nom: "Produits d'entretien" }
+          - { code: "3223", nom: "Fournitures d'atelier et d'usine" }
+          - { code: "3224", nom: "Fournitures de magasin" }
+          - { code: "3225", nom: "Fournitures de bureau" }
+          - { code: "326", nom: "Emballages" }
+      - code: "33"
+        nom: "En-cours de production - biens"
+        sous_comptes:
+          - { code: "331", nom: "Avances aux cultures (cycle long)", agri_specifique: true, note: "Façons culturales de végétaux en terre non encore commercialisables (art. 618-10 PCG)" }
+          - { code: "3311", nom: "Avances aux cultures - Engrais et amendements", agri_specifique: true }
+          - { code: "3312", nom: "Avances aux cultures - Semences et plants", agri_specifique: true }
+          - { code: "3313", nom: "Avances aux cultures - Produits de défense des végétaux", agri_specifique: true }
+          - { code: "3314", nom: "Avances aux cultures - Autres approvisionnements", agri_specifique: true }
+          - { code: "3315", nom: "Avances aux cultures - Façons culturales (main d'oeuvre, matériel)", agri_specifique: true }
+          - { code: "332", nom: "Stocks en pépinières", agri_specifique: true }
+          - { code: "335", nom: "Travaux en cours" }
+          - { code: "338", nom: "Autres végétaux en terre cycle long", agri_specifique: true }
+      - code: "34"
+        nom: "En-cours de production - services et cultures cycle court"
+        sous_comptes:
+          - { code: "341", nom: "Avances aux cultures (cycle court)", agri_specifique: true, note: "Même ventilation que 331" }
+          - { code: "345", nom: "Prestations de services en cours" }
+          - { code: "348", nom: "Autres végétaux cycle court", agri_specifique: true }
+      - code: "35"
+        nom: "Stocks de produits"
+        sous_comptes:
+          - { code: "351", nom: "Produits intermédiaires" }
+          - { code: "3511", nom: "Produits intermédiaires végétaux", agri_specifique: true }
+          - { code: "3512", nom: "Produits intermédiaires animaux", agri_specifique: true }
+          - { code: "3513", nom: "Produits intermédiaires transformés", agri_specifique: true }
+          - { code: "355", nom: "Produits finis" }
+          - { code: "3551", nom: "Produits finis végétaux (récoltes)", agri_specifique: true }
+          - { code: "3552", nom: "Produits finis animaux", agri_specifique: true }
+          - { code: "3553", nom: "Produits finis transformés (vins, fromages, huiles...)", agri_specifique: true }
+          - { code: "358", nom: "Produits résiduels ou matières de récupération" }
+      - code: "36"
+        nom: "Stocks animaux"
+        agri_specifique: true
+        note: "Compte ouvert au titre du PCGA sous l'intitulé Stocks d'animaux (distingués des biens vivants immobilisés classe 24)"
+        sous_comptes:
+          - { code: "361", nom: "Stocks animaux cycle long", agri_specifique: true, note: "Bovins, ovins destinés à la vente" }
+          - { code: "362", nom: "Stocks animaux cycle court", agri_specifique: true, note: "Volailles, porcs" }
+      - code: "37"
+        nom: "Stocks de marchandises"
+      - code: "38"
+        nom: "Stocks en voie d'acheminement, en dépôt ou en consignation"
+      - code: "39"
+        nom: "Dépréciations des stocks et en-cours"
+        sous_comptes:
+          - { code: "391", nom: "Dépréciations des matières premières et fournitures" }
+          - { code: "392", nom: "Dépréciations des autres approvisionnements" }
+          - { code: "393", nom: "Dépréciations des en-cours - Avances aux cultures", agri_specifique: true }
+          - { code: "394", nom: "Dépréciations des en-cours de production de services" }
+          - { code: "395", nom: "Dépréciations des stocks de produits" }
+          - { code: "396", nom: "Dépréciations des stocks animaux", agri_specifique: true }
+          - { code: "397", nom: "Dépréciations des stocks de marchandises" }
+
+  # --------------------------------------------------------------------------
+  - code: "4"
+    nom: "Comptes de tiers"
+    comptes:
+      - code: "40"
+        nom: "Fournisseurs et comptes rattachés"
+        sous_comptes:
+          - { code: "401", nom: "Fournisseurs" }
+          - { code: "403", nom: "Fournisseurs - Effets à payer" }
+          - { code: "404", nom: "Fournisseurs d'immobilisations" }
+          - { code: "405", nom: "Fournisseurs d'immobilisations - Effets à payer" }
+          - { code: "408", nom: "Fournisseurs - Factures non parvenues" }
+          - { code: "409", nom: "Fournisseurs débiteurs (avances, acomptes, RRR à obtenir)" }
+      - code: "41"
+        nom: "Clients et comptes rattachés"
+        sous_comptes:
+          - { code: "411", nom: "Clients" }
+          - { code: "413", nom: "Clients - Effets à recevoir" }
+          - { code: "416", nom: "Clients douteux ou litigieux" }
+          - { code: "418", nom: "Clients - Produits non encore facturés" }
+          - { code: "419", nom: "Clients créditeurs" }
+      - code: "42"
+        nom: "Personnel et comptes rattachés"
+        sous_comptes:
+          - { code: "421", nom: "Personnel - Rémunérations dues" }
+          - { code: "422", nom: "Comité social et économique" }
+          - { code: "424", nom: "Participation des salariés aux résultats" }
+          - { code: "425", nom: "Personnel - Avances et acomptes" }
+          - { code: "427", nom: "Personnel - Oppositions" }
+          - { code: "428", nom: "Personnel - Charges à payer" }
+      - code: "43"
+        nom: "Sécurité sociale et autres organismes sociaux"
+        sous_comptes:
+          - { code: "431", nom: "Sécurité sociale (MSA pour exploitants agricoles)", agri_specifique: true, note: "Mutualité Sociale Agricole : régime social agricole unifié" }
+          - { code: "437", nom: "Autres organismes sociaux" }
+          - { code: "438", nom: "Organismes sociaux - Charges à payer" }
+          - { code: "439", nom: "Organismes sociaux - Produits à recevoir" }
+      - code: "44"
+        nom: "État et autres collectivités publiques"
+        sous_comptes:
+          - { code: "441", nom: "État - Subventions et aides à recevoir" }
+          - { code: "4411", nom: "État - Subventions d'investissement à recevoir" }
+          - { code: "4417", nom: "État - Aides PAC et subventions d'exploitation à recevoir", agri_specifique: true }
+          - { code: "4418", nom: "État - Subventions d'équilibre à recevoir" }
+          - { code: "442", nom: "Contributions, impôts et taxes recouvrés pour le compte de l'État" }
+          - { code: "444", nom: "État - Impôts sur les bénéfices" }
+          - { code: "445", nom: "État - Taxes sur le chiffre d'affaires (TVA)" }
+          - { code: "4451", nom: "TVA - Remboursement forfaitaire agricole", agri_specifique: true }
+          - { code: "44566", nom: "TVA déductible sur autres biens et services" }
+          - { code: "44567", nom: "Crédit de TVA à reporter" }
+          - { code: "44571", nom: "TVA collectée" }
+          - { code: "446", nom: "Obligations cautionnées" }
+          - { code: "447", nom: "Autres impôts, taxes et versements assimilés" }
+          - { code: "448", nom: "État - Charges à payer et produits à recevoir" }
+      - code: "45"
+        nom: "Groupe et associés"
+        sous_comptes:
+          - { code: "451", nom: "Groupe" }
+          - { code: "455", nom: "Associés - Comptes courants" }
+          - { code: "456", nom: "Associés - Opérations sur le capital" }
+          - { code: "457", nom: "Associés - Dividendes à payer" }
+          - { code: "458", nom: "Associés - Opérations faites en commun et en GAEC/GFA/GIE/EARL", agri_specifique: true, note: "Structures sociétaires agricoles : GAEC, EARL, SCEA, GFA" }
+      - code: "46"
+        nom: "Débiteurs divers et créditeurs divers"
+      - code: "47"
+        nom: "Comptes transitoires ou d'attente"
+      - code: "48"
+        nom: "Comptes de régularisation"
+        sous_comptes:
+          - { code: "481", nom: "Frais d'émission des emprunts" }
+          - { code: "486", nom: "Charges constatées d'avance" }
+          - { code: "487", nom: "Produits constatés d'avance" }
+          - { code: "488", nom: "Comptes de répartition périodique des charges et des produits" }
+      - code: "49"
+        nom: "Dépréciations des comptes de tiers"
+
+  # --------------------------------------------------------------------------
+  - code: "5"
+    nom: "Comptes financiers"
+    comptes:
+      - code: "50"
+        nom: "Valeurs mobilières de placement"
+      - code: "51"
+        nom: "Banques, établissements financiers et assimilés"
+        sous_comptes:
+          - { code: "511", nom: "Valeurs à l'encaissement" }
+          - { code: "512", nom: "Banques" }
+          - { code: "517", nom: "Autres organismes financiers" }
+          - { code: "518", nom: "Intérêts courus" }
+          - { code: "519", nom: "Concours bancaires courants" }
+          - { code: "5191", nom: "Crédits bancaires de campagne", agri_specifique: true, note: "Spécifique agriculture : crédit court terme pour financer le cycle cultural" }
+      - code: "52"
+        nom: "Instruments financiers à terme et jetons détenus"
+      - code: "53"
+        nom: "Caisse"
+      - code: "58"
+        nom: "Virements internes"
+      - code: "59"
+        nom: "Dépréciations des comptes financiers"
+
+  # --------------------------------------------------------------------------
+  - code: "6"
+    nom: "Comptes de charges"
+    comptes:
+      - code: "60"
+        nom: "Achats (sauf 603)"
+        sous_comptes:
+          - { code: "601", nom: "Achats stockés - Approvisionnements agricoles", agri_specifique: true, note: "Subdivisé en 6011..6018 selon les intrants agricoles" }
+          - { code: "6011", nom: "Engrais et amendements", agri_specifique: true }
+          - { code: "6012", nom: "Semences et plants", agri_specifique: true }
+          - { code: "6013", nom: "Produits de défense des végétaux (phytosanitaires)", agri_specifique: true }
+          - { code: "6014", nom: "Aliments du bétail", agri_specifique: true }
+          - { code: "6015", nom: "Produits de défense des animaux (vétérinaires, sanitaires)", agri_specifique: true }
+          - { code: "6016", nom: "Produits de reproduction animale", agri_specifique: true }
+          - { code: "6017", nom: "Emballages agricoles", agri_specifique: true }
+          - { code: "6018", nom: "Combustibles stockés" }
+          - { code: "602", nom: "Achats stockés - Autres approvisionnements" }
+          - { code: "6021", nom: "Carburants et lubrifiants stockés (GNR, fioul, huiles)", agri_specifique: true }
+          - { code: "6022", nom: "Produits d'entretien" }
+          - { code: "6023", nom: "Fournitures d'atelier et d'usine" }
+          - { code: "6024", nom: "Fournitures de bureau" }
+          - { code: "603", nom: "Variation des stocks d'approvisionnements et de marchandises" }
+          - { code: "6031", nom: "Variation des stocks de matières premières et fournitures" }
+          - { code: "6032", nom: "Variation des stocks des autres approvisionnements" }
+          - { code: "6037", nom: "Variation des stocks de marchandises" }
+          - { code: "604", nom: "Achats d'animaux (destinés à la vente, non reproducteurs)", agri_specifique: true }
+          - { code: "6041", nom: "Achats d'animaux reproducteurs adultes", agri_specifique: true }
+          - { code: "6042", nom: "Achats d'animaux reproducteurs jeunes", agri_specifique: true }
+          - { code: "6045", nom: "Achats d'autres animaux", agri_specifique: true }
+          - { code: "605", nom: "Achats de travaux et services incorporés aux produits (travaux à façon agricoles)", agri_specifique: true, note: "Sous-traitance de récolte, moisson, pressage, ensilage par tiers ou ETA" }
+          - { code: "606", nom: "Achats non stockés de matières et fournitures" }
+          - { code: "6061", nom: "Fournitures non stockables (eau, énergie)" }
+          - { code: "60611", nom: "Eau" }
+          - { code: "60612", nom: "Électricité" }
+          - { code: "60613", nom: "Gaz" }
+          - { code: "60614", nom: "Carburants et lubrifiants non stockés", agri_specifique: true }
+          - { code: "60615", nom: "Eau d'irrigation", agri_specifique: true }
+          - { code: "6063", nom: "Fournitures d'entretien et de petit équipement" }
+          - { code: "6064", nom: "Fournitures administratives" }
+          - { code: "6068", nom: "Autres matières et fournitures" }
+          - { code: "607", nom: "Achats de marchandises" }
+          - { code: "608", nom: "Frais accessoires incorporés aux achats (regroupement)" }
+          - { code: "609", nom: "Rabais, remises et ristournes obtenus sur achats" }
+      - code: "61"
+        nom: "Services extérieurs"
+        sous_comptes:
+          - { code: "611", nom: "Sous-traitance générale" }
+          - { code: "612", nom: "Redevances de crédit-bail" }
+          - { code: "6122", nom: "Crédit-bail mobilier (matériel agricole en leasing)", agri_specifique: true }
+          - { code: "6125", nom: "Crédit-bail immobilier" }
+          - { code: "613", nom: "Locations" }
+          - { code: "6131", nom: "Fermages et loyers du foncier agricole", agri_specifique: true, note: "Location de terres agricoles (bail rural, fermage)" }
+          - { code: "6132", nom: "Locations immobilières" }
+          - { code: "6133", nom: "Locations de matériel agricole (hors CUMA)", agri_specifique: true }
+          - { code: "6134", nom: "Locations d'animaux (pension, saillie)", agri_specifique: true }
+          - { code: "6135", nom: "Locations mobilières" }
+          - { code: "614", nom: "Charges locatives et de copropriété" }
+          - { code: "6141", nom: "Charges locatives du foncier agricole (taxe foncière refacturée)", agri_specifique: true }
+          - { code: "615", nom: "Entretien et réparation" }
+          - { code: "6152", nom: "Entretien et réparation sur biens immobiliers" }
+          - { code: "6155", nom: "Entretien et réparation sur biens mobiliers (matériel agricole)", agri_specifique: true }
+          - { code: "6156", nom: "Maintenance" }
+          - { code: "616", nom: "Primes d'assurances" }
+          - { code: "6161", nom: "Multirisques" }
+          - { code: "6164", nom: "Risques d'exploitation (grêle, gel, mortalité du bétail)", agri_specifique: true }
+          - { code: "617", nom: "Études et recherches" }
+          - { code: "618", nom: "Divers" }
+          - { code: "619", nom: "Rabais, remises et ristournes obtenus sur services extérieurs" }
+      - code: "62"
+        nom: "Autres services extérieurs"
+        sous_comptes:
+          - { code: "621", nom: "Personnel extérieur à l'entité" }
+          - { code: "6211", nom: "Personnel intérimaire" }
+          - { code: "6214", nom: "Personnel détaché ou prêté (entraide agricole, travail saisonnier)", agri_specifique: true }
+          - { code: "622", nom: "Rémunérations d'intermédiaires et honoraires" }
+          - { code: "6225", nom: "Honoraires vétérinaires", agri_specifique: true }
+          - { code: "6226", nom: "Honoraires (comptable, juridique, technique)" }
+          - { code: "623", nom: "Publicité, publications, relations publiques" }
+          - { code: "624", nom: "Transports de biens" }
+          - { code: "625", nom: "Déplacements, missions et réceptions" }
+          - { code: "626", nom: "Frais postaux et de télécommunications" }
+          - { code: "627", nom: "Services bancaires et assimilés" }
+          - { code: "628", nom: "Divers" }
+          - { code: "6281", nom: "Cotisations professionnelles agricoles (Chambre, syndicat, interprofession)", agri_specifique: true }
+      - code: "63"
+        nom: "Impôts, taxes et versements assimilés"
+        sous_comptes:
+          - { code: "631", nom: "Impôts sur rémunérations (administration des impôts)" }
+          - { code: "633", nom: "Impôts sur rémunérations (autres organismes)" }
+          - { code: "634", nom: "Taxes spécialisées sur produits d'exploitation", agri_specifique: true, note: "Cotisations FranceAgriMer, taxes CNIEL, CNIV, interprofessions" }
+          - { code: "6341", nom: "Taxes spécialisées sur produits végétaux", agri_specifique: true }
+          - { code: "6342", nom: "Taxes spécialisées sur produits animaux", agri_specifique: true }
+          - { code: "6343", nom: "Taxes spécialisées sur produits transformés", agri_specifique: true }
+          - { code: "635", nom: "Autres impôts, taxes (administrations)" }
+          - { code: "6351", nom: "Impôts directs (hors IS)" }
+          - { code: "63511", nom: "Contribution économique territoriale (CFE + CVAE)" }
+          - { code: "63512", nom: "Taxes foncières (TFNB sur terres agricoles)", agri_specifique: true }
+          - { code: "637", nom: "Autres impôts, taxes (autres organismes)" }
+      - code: "64"
+        nom: "Charges de personnel"
+        sous_comptes:
+          - { code: "641", nom: "Rémunérations du personnel" }
+          - { code: "6411", nom: "Salaires, appointements" }
+          - { code: "6412", nom: "Congés payés" }
+          - { code: "6413", nom: "Primes et gratifications" }
+          - { code: "6414", nom: "Indemnités et avantages divers" }
+          - { code: "644", nom: "Rémunération du travail de l'exploitant", agri_specifique: true }
+          - { code: "645", nom: "Cotisations de sécurité sociale et de prévoyance" }
+          - { code: "6451", nom: "Cotisations MSA (régime agricole)", agri_specifique: true }
+          - { code: "6452", nom: "Cotisations aux mutuelles" }
+          - { code: "6453", nom: "Cotisations aux caisses de retraites" }
+          - { code: "646", nom: "Cotisations sociales personnelles de l'exploitant (MSA chef d'exploitation)", agri_specifique: true }
+          - { code: "647", nom: "Autres cotisations sociales" }
+          - { code: "648", nom: "Autres charges de personnel" }
+      - code: "65"
+        nom: "Autres charges de gestion courante"
+        sous_comptes:
+          - { code: "651", nom: "Redevances pour concessions, brevets, licences, logiciels" }
+          - { code: "653", nom: "Rémunérations de l'activité des administrateurs et des gérants" }
+          - { code: "654", nom: "Pertes sur créances irrécouvrables" }
+          - { code: "655", nom: "Quote-part de résultat sur opérations faites en commun (GAEC, EARL)" }
+          - { code: "656", nom: "Pertes de change sur créances et dettes commerciales" }
+          - { code: "657", nom: "Valeurs comptables des biens vivants immobilisés cédés (cessions habituelles)", agri_specifique: true, note: "Créé par l'article 618-8 du PCG (ANC 2019-01) pour enregistrer les cessions habituelles de biens vivants immobilisés dans le résultat d'exploitation" }
+          - { code: "658", nom: "Pénalités et autres charges" }
+      - code: "66"
+        nom: "Charges financières"
+        sous_comptes:
+          - { code: "661", nom: "Charges d'intérêts" }
+          - { code: "6611", nom: "Intérêts des emprunts et dettes" }
+          - { code: "66111", nom: "Intérêts des emprunts fonciers agricoles", agri_specifique: true }
+          - { code: "6616", nom: "Intérêts bancaires (crédits de campagne)", agri_specifique: true }
+          - { code: "664", nom: "Pertes sur créances liées à des participations" }
+          - { code: "665", nom: "Escomptes accordés" }
+          - { code: "666", nom: "Pertes de change financières" }
+          - { code: "667", nom: "Charges sur cession d'éléments financiers" }
+          - { code: "668", nom: "Autres charges financières" }
+      - code: "67"
+        nom: "Charges exceptionnelles"
+        sous_comptes:
+          - { code: "672", nom: "Charges sur exercices antérieurs" }
+          - { code: "675", nom: "Valeurs comptables des éléments d'actif cédés (cessions non habituelles)" }
+          - { code: "6752", nom: "VCEAC - Immobilisations corporelles hors biens vivants" }
+          - { code: "6754", nom: "VCEAC - Biens vivants immobilisés (cessions non habituelles)", agri_specifique: true }
+          - { code: "678", nom: "Autres charges exceptionnelles" }
+      - code: "68"
+        nom: "Dotations aux amortissements, dépréciations et provisions"
+        sous_comptes:
+          - { code: "681", nom: "Dotations d'exploitation" }
+          - { code: "6811", nom: "Dotations aux amortissements sur immobilisations incorporelles et corporelles" }
+          - { code: "68114", nom: "Dotations aux amortissements - Biens vivants immobilisés", agri_specifique: true }
+          - { code: "6815", nom: "Dotations aux provisions d'exploitation" }
+          - { code: "6816", nom: "Dotations pour dépréciation des immobilisations" }
+          - { code: "6817", nom: "Dotations pour dépréciation des actifs circulants" }
+          - { code: "686", nom: "Dotations financières" }
+          - { code: "687", nom: "Dotations exceptionnelles" }
+      - code: "69"
+        nom: "Participation des salariés - Impôts sur les bénéfices et assimilés"
+        sous_comptes:
+          - { code: "691", nom: "Participation des salariés aux résultats" }
+          - { code: "695", nom: "Impôts sur les bénéfices" }
+          - { code: "696", nom: "Suppléments d'impôt sur les sociétés liés aux distributions" }
+          - { code: "698", nom: "Intégration fiscale" }
+          - { code: "699", nom: "Produits - Reports en arrière des déficits" }
+
+  # --------------------------------------------------------------------------
+  - code: "7"
+    nom: "Comptes de produits"
+    comptes:
+      - code: "70"
+        nom: "Ventes de produits fabriqués, prestations de services, marchandises"
+        sous_comptes:
+          - { code: "701", nom: "Ventes de produits finis" }
+          - { code: "7011", nom: "Ventes de produits végétaux (céréales, fruits, légumes, vigne, PPAM)", agri_specifique: true }
+          - { code: "7012", nom: "Ventes de produits animaux (lait, œufs, laine, miel)", agri_specifique: true }
+          - { code: "7013", nom: "Ventes de produits transformés (vins, fromages, conserves, huiles)", agri_specifique: true }
+          - { code: "702", nom: "Ventes de produits intermédiaires" }
+          - { code: "703", nom: "Ventes de produits résiduels (pailles, fumier, sous-produits)", agri_specifique: true }
+          - { code: "704", nom: "Ventes d'animaux", agri_specifique: true }
+          - { code: "7041", nom: "Ventes d'animaux adultes", agri_specifique: true }
+          - { code: "7042", nom: "Ventes d'animaux jeunes", agri_specifique: true }
+          - { code: "7045", nom: "Ventes d'autres animaux", agri_specifique: true }
+          - { code: "705", nom: "Études" }
+          - { code: "706", nom: "Prestations de services (travaux à façon agricoles facturés)", agri_specifique: true }
+          - { code: "707", nom: "Ventes de marchandises" }
+          - { code: "708", nom: "Produits des activités annexes" }
+          - { code: "7083", nom: "Locations diverses (gîtes ruraux, chambres d'hôtes, camping à la ferme)", agri_specifique: true }
+          - { code: "7088", nom: "Autres produits d'activités annexes (cessions d'approvisionnements, entraide)", agri_specifique: true }
+          - { code: "709", nom: "Rabais, remises et ristournes accordés" }
+      - code: "71"
+        nom: "Production stockée (ou déstockage)"
+        sous_comptes:
+          - { code: "713", nom: "Variation des stocks d'en-cours et de produits" }
+          - { code: "7133", nom: "Variation des en-cours de production de biens (avances aux cultures)", agri_specifique: true }
+          - { code: "7134", nom: "Variation des en-cours de production de services" }
+          - { code: "7135", nom: "Variation des stocks de produits agricoles (végétaux, animaux, transformés)", agri_specifique: true }
+          - { code: "7136", nom: "Variation d'inventaire des stocks animaux", agri_specifique: true }
+      - code: "72"
+        nom: "Production immobilisée"
+        sous_comptes:
+          - { code: "721", nom: "Immobilisations incorporelles produites par l'entité" }
+          - { code: "722", nom: "Immobilisations corporelles produites par l'entité" }
+          - { code: "724", nom: "Biens vivants immobilisés nés dans l'exploitation (animaux, plantations)", agri_specifique: true, note: "Article 618-9 et 618-11 du PCG : évaluation par méthode du coût de production" }
+          - { code: "726", nom: "Production autoconsommée par l'exploitant", agri_specifique: true }
+      - code: "74"
+        nom: "Subventions d'exploitation"
+        sous_comptes:
+          - { code: "741", nom: "Subventions d'exploitation" }
+          - { code: "7411", nom: "Remboursement forfaitaire de TVA agricole", agri_specifique: true }
+          - { code: "7413", nom: "Indemnités Fonds National de Garantie des Calamités Agricoles", agri_specifique: true }
+          - { code: "7415", nom: "Aides PAC - Paiements découplés (DPB, paiement redistributif, JA)", agri_specifique: true }
+          - { code: "7416", nom: "Aides PAC - Paiements couplés (PMTVA, aides animales/végétales)", agri_specifique: true }
+          - { code: "7417", nom: "Aides PAC - Écorégime et MAEC", agri_specifique: true }
+          - { code: "7418", nom: "Aides à la conversion et au maintien bio", agri_specifique: true }
+          - { code: "742", nom: "Subventions d'équilibre" }
+          - { code: "747", nom: "Quote-part des subventions d'investissement virée au résultat" }
+      - code: "75"
+        nom: "Autres produits de gestion courante"
+        sous_comptes:
+          - { code: "751", nom: "Redevances pour concessions, brevets, licences, logiciels" }
+          - { code: "752", nom: "Revenus des immeubles non affectés à des activités professionnelles" }
+          - { code: "754", nom: "Ristournes perçues des coopératives provenant des excédents", agri_specifique: true }
+          - { code: "755", nom: "Quote-part de résultat sur opérations faites en commun (GAEC, EARL)" }
+          - { code: "758", nom: "Indemnités et autres produits" }
+          - { code: "7587", nom: "Indemnités d'assurance (sinistres, calamités)", agri_specifique: true }
+      - code: "76"
+        nom: "Produits financiers"
+        sous_comptes:
+          - { code: "761", nom: "Produits de participations" }
+          - { code: "762", nom: "Produits des autres immobilisations financières" }
+          - { code: "763", nom: "Revenus des autres créances" }
+          - { code: "764", nom: "Revenus des valeurs mobilières de placement" }
+          - { code: "765", nom: "Escomptes obtenus" }
+          - { code: "766", nom: "Gains de change financiers" }
+          - { code: "767", nom: "Produits sur cession d'éléments financiers" }
+          - { code: "768", nom: "Autres produits financiers" }
+      - code: "77"
+        nom: "Produits exceptionnels"
+        sous_comptes:
+          - { code: "772", nom: "Produits sur exercices antérieurs" }
+          - { code: "775", nom: "Produits des cessions d'éléments d'actif (cessions non habituelles)" }
+          - { code: "7752", nom: "PCEA - Immobilisations corporelles hors biens vivants" }
+          - { code: "7754", nom: "PCEA - Biens vivants immobilisés (cessions non habituelles)", agri_specifique: true }
+          - { code: "777", nom: "Quote-part des subventions d'investissement virée au résultat" }
+          - { code: "778", nom: "Autres produits exceptionnels" }
+      - code: "78"
+        nom: "Reprises sur amortissements, dépréciations et provisions"
+        sous_comptes:
+          - { code: "781", nom: "Reprises d'exploitation" }
+          - { code: "786", nom: "Reprises financières" }
+          - { code: "787", nom: "Reprises exceptionnelles" }
+
+  # --------------------------------------------------------------------------
+  - code: "8"
+    nom: "Comptes spéciaux"
+    note: "Classe utilisée principalement pour les engagements hors bilan et les opérations de répartition."
+    comptes:
+      - code: "80"
+        nom: "Engagements"
+        sous_comptes:
+          - { code: "801", nom: "Engagements donnés par l'entité (avals, cautions, garanties)" }
+          - { code: "802", nom: "Engagements reçus par l'entité" }
+          - { code: "809", nom: "Contrepartie des engagements" }
+      - code: "88"
+        nom: "Résultat en instance d'affectation"
+      - code: "89"
+        nom: "Bilan"
+        sous_comptes:
+          - { code: "890", nom: "Bilan d'ouverture" }
+          - { code: "891", nom: "Bilan de clôture" }
+
+  # --------------------------------------------------------------------------
+  - code: "9"
+    nom: "Comptabilité analytique (comptabilité de gestion)"
+    note: >
+      La classe 9 n'est pas normée par le PCG : chaque entité peut
+      l'organiser librement pour sa comptabilité analytique. En
+      exploitation agricole, elle sert typiquement à ventiler par
+      atelier (cultures, élevage, atelier de transformation) ou par
+      parcelle / troupeau pour suivre la rentabilité fine.
+    incertain: true
+    raison: >
+      La classe 9 est laissée à la libre utilisation des entités par
+      le PCG. Aucune codification officielle ANC ne s'y applique.
+      Les exploitations agricoles utilisent souvent des référentiels
+      professionnels (CER France, CNCER, Chambre d'agriculture).
+    comptes: []
