@@ -15,9 +15,8 @@ import json
 import logging
 import os
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional
 
 from self_backup import _db_path, make_backup
 
@@ -55,7 +54,7 @@ def _encrypt_gpg(data: bytes, recipient: str) -> bytes:
     proc = subprocess.run(
         ["gpg", "--batch", "--yes", "--trust-model", "always",
          "--encrypt", "--recipient", recipient, "--output", "-"],
-        input=data, capture_output=True,
+        input=data, capture_output=True, check=False,
     )
     if proc.returncode != 0 or not proc.stdout:
         err = proc.stderr.decode("utf-8", "replace").strip()
@@ -68,7 +67,7 @@ def gpg_recipient_ok(recipient: str) -> bool:
     if not recipient:
         return False
     r = subprocess.run(["gpg", "--list-keys", recipient],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, check=False)
     return r.returncode == 0
 
 
@@ -108,7 +107,7 @@ def _sftp_makedirs(sftp, remote_dir: str) -> None:
         cur = (cur + "/" + part) if cur else (("/" + part) if absolute else part)
         try:
             sftp.stat(cur)
-        except IOError:
+        except OSError:
             sftp.mkdir(cur)
 
 
@@ -145,19 +144,19 @@ def _prune_remote(sftp, remote_dir: str, keep: int) -> int:
     try:
         names = [n for n in sftp.listdir(remote_dir)
                  if n.startswith("selffarm-backup-") and n.endswith(".zip" + REMOTE_SUFFIX)]
-    except IOError:
+    except OSError:
         return 0
     removed = 0
     for n in sorted(names, reverse=True)[keep:]:
         try:
             sftp.remove(f"{remote_dir.rstrip('/')}/{n}")
             removed += 1
-        except IOError:
+        except OSError:
             pass
     return removed
 
 
-def backup_to_sftp(version: str = "0.1.0-dev", keep: Optional[int] = None) -> dict:
+def backup_to_sftp(version: str = "0.1.0-dev", keep: int | None = None) -> dict:
     """Crée le backup, le chiffre (GPG), l'envoie en SFTP, applique la rétention,
     et mémorise la date/destination. Lève une exception en cas d'échec."""
     cfg = load_sftp_config()
@@ -186,7 +185,7 @@ def backup_to_sftp(version: str = "0.1.0-dev", keep: Optional[int] = None) -> di
             ssh.close()
 
     cfg.update({
-        "last_sftp_backup_utc": datetime.now(timezone.utc).isoformat(),
+        "last_sftp_backup_utc": datetime.now(UTC).isoformat(),
         "last_sftp_path": remote_path,
         "last_sftp_size": len(enc),
         "last_sftp_error": None,

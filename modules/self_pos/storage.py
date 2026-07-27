@@ -52,7 +52,7 @@ def save_produit(data: dict[str, Any]) -> dict[str, Any]:
     produit_id = data.get("id")
     with _conn() as c:
         if produit_id:
-            set_clause = ", ".join(f"{k} = ?" for k in payload.keys())
+            set_clause = ", ".join(f"{k} = ?" for k in payload)
             c.execute(
                 f"UPDATE pos_produit SET {set_clause}, updated_at = datetime('now') WHERE id = ?",
                 list(payload.values()) + [produit_id],

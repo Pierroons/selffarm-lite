@@ -125,7 +125,7 @@ def decrypt_blob(data: bytes, cipher: str) -> bytes:
         import subprocess
         proc = subprocess.run(
             ["gpg", "--batch", "--yes", "--decrypt"],
-            input=data, capture_output=True,
+            input=data, capture_output=True, check=False,
         )
         if proc.returncode != 0 or not proc.stdout:
             err = proc.stderr.decode("utf-8", "replace").strip()

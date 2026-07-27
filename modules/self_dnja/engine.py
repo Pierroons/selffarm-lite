@@ -46,24 +46,24 @@ SMIC_ANNUEL_BRUT_2026 = Decimal("21621.60")
 # (peut varier selon département / région) et non vérifié au texte officiel.
 # ⚠️ À CONFIRMER (CdC DNJA V3 / Région concernée) avant tout usage normatif.
 # NB : ce seuil s'applique au RDA *après* cotisations sociales exploitant (méthode PROAGRI).
-EBE_UTH_SEUIL_DNJA_NA_2026 = Decimal("17717")
+EBE_UTH_SEUIL_DNJA_NA_2026 = Decimal(17717)
 
 # Barème IR 2026 par part (simplifié, célibataire, sans réduction spécifique)
 IR_TRANCHES_2026 = [
-    (Decimal("11497"), Decimal("0")),       # tranche à 0 %
-    (Decimal("29315"), Decimal("0.11")),    # 11 %
-    (Decimal("83823"), Decimal("0.30")),    # 30 %
-    (Decimal("180294"), Decimal("0.41")),   # 41 %
-    (Decimal("99999999"), Decimal("0.45")), # 45 %
+    (Decimal(11497), Decimal(0)),       # tranche à 0 %
+    (Decimal(29315), Decimal("0.11")),    # 11 %
+    (Decimal(83823), Decimal("0.30")),    # 30 %
+    (Decimal(180294), Decimal("0.41")),   # 41 %
+    (Decimal(99999999), Decimal("0.45")), # 45 %
 ]
 
 
 def _impot_ir(base_imposable: Decimal) -> Decimal:
     """Calcul IR progressif simplifié (part unique célibataire)."""
     if base_imposable <= 0:
-        return Decimal("0")
-    impot = Decimal("0")
-    precedent = Decimal("0")
+        return Decimal(0)
+    impot = Decimal(0)
+    precedent = Decimal(0)
     for plafond, taux in IR_TRANCHES_2026:
         if base_imposable <= precedent:
             break
@@ -87,7 +87,7 @@ def _produit_activite_annee(activite: Activite, annee: int) -> Decimal:
         quantite = activite.quantite_annuelle
     else:
         # rendement_t_ha × surface_ha → conversion tonnes → kg (×1000)
-        quantite = (activite.rendement_t_ha or Decimal("0")) * activite.surface_ha * Decimal("1000")
+        quantite = (activite.rendement_t_ha or Decimal(0)) * activite.surface_ha * Decimal(1000)
 
     return (quantite * activite.prix_vente_ht * facteur).quantize(Decimal("0.01"))
 
@@ -103,20 +103,20 @@ def _charges_recurrentes_annee(h: Hypotheses, annee: int) -> Decimal:
     return sum(
         (c.montant_annuel_ht for c in h.charges_recurrentes
          if _charge_active(c, annee)),
-        Decimal("0"),
+        Decimal(0),
     )
 
 
 def _amortissements_annee(h: Hypotheses, annee: int) -> Decimal:
     """Somme des amortissements linéaires pour l'année donnée."""
-    total = Decimal("0")
+    total = Decimal(0)
     for imm in h.immobilisations:
         if annee < imm.annee_acquisition:
             continue
         age = annee - imm.annee_acquisition
         if age >= imm.duree_amortissement:
             continue
-        assiette = imm.montant_ht * (Decimal("100") - imm.subvention_pct) / Decimal("100")
+        assiette = imm.montant_ht * (Decimal(100) - imm.subvention_pct) / Decimal(100)
         total += (assiette / Decimal(imm.duree_amortissement)).quantize(Decimal("0.01"))
     return total
 
@@ -129,14 +129,14 @@ def _charges_sociales_annee(h: Hypotheses, annee: int) -> Decimal:
     if annee <= len(h.cotisations_msa.pct_exoneration):
         pct = h.cotisations_msa.pct_exoneration[annee - 1]
     else:
-        pct = Decimal("0")
-    exo = base * pct / Decimal("100")
+        pct = Decimal(0)
+    exo = base * pct / Decimal(100)
     return (base - exo).quantize(Decimal("0.01"))
 
 
 def _aides_revenu_annee(h: Hypotheses, annee: int) -> Decimal:
     """Aides versées cette année, uniquement celles comptées en revenu."""
-    total = Decimal("0")
+    total = Decimal(0)
     for aide in h.aides:
         if aide.annee_versement == annee and not aide.est_subvention_capital:
             total += aide.montant
@@ -149,12 +149,12 @@ def calculer(h: Hypotheses, include_enrichissements: bool = True) -> Previsionne
              h.candidat, h.commune, h.horizon_annees)
 
     lignes: list[LigneResultat] = []
-    prelevements_annuels = h.prelevements_mensuels * Decimal("12")
+    prelevements_annuels = h.prelevements_mensuels * Decimal(12)
 
     for annee in range(1, h.horizon_annees + 1):
         produits = sum(
             (_produit_activite_annee(a, annee) for a in h.activites),
-            Decimal("0"),
+            Decimal(0),
         )
         charges = _charges_recurrentes_annee(h, annee)
         amort = _amortissements_annee(h, annee)
@@ -181,12 +181,12 @@ def calculer(h: Hypotheses, include_enrichissements: bool = True) -> Previsionne
 
         # --- IR JA art 73 B (50 % abattement 5 premières années) ---
         base_imposable = resultat * Decimal("0.5") if h.article_73b_actif else resultat
-        base_imposable = max(base_imposable, Decimal("0"))
+        base_imposable = max(base_imposable, Decimal(0))
         ir = _impot_ir(base_imposable)
         resultat_net = (resultat - ir).quantize(Decimal("0.01"))
 
         # --- Revenu disponible mensuel (EBE - MSA - IR) / 12 ---
-        revenu_dispo_mensuel = ((ebe - social - ir) / Decimal("12")).quantize(Decimal("0.01"))
+        revenu_dispo_mensuel = ((ebe - social - ir) / Decimal(12)).quantize(Decimal("0.01"))
 
         lignes.append(LigneResultat(
             annee=annee,
@@ -258,16 +258,16 @@ def _calculer_marges_brutes(h: Hypotheses, ligne_n4: LigneResultat) -> list[Marg
     charges_variables_total = sum(
         (c.montant_annuel_ht for c in h.charges_recurrentes
          if c.categorie in categories_variables and _charge_active(c, ligne_n4.annee)),
-        Decimal("0"),
+        Decimal(0),
     )
     for act in h.activites:
         ca_act = _produit_activite_annee(act, ligne_n4.annee)
         if ca_total > 0:
             part_charges = (charges_variables_total * ca_act / ca_total).quantize(Decimal("0.01"))
         else:
-            part_charges = Decimal("0")
+            part_charges = Decimal(0)
         marge = (ca_act - part_charges).quantize(Decimal("0.01"))
-        taux = (marge / ca_act * Decimal("100")).quantize(Decimal("0.1")) if ca_act > 0 else Decimal("0")
+        taux = (marge / ca_act * Decimal(100)).quantize(Decimal("0.1")) if ca_act > 0 else Decimal(0)
         out.append(MargeBruteActivite(
             nom=act.nom,
             ca_annuel=ca_act,
@@ -280,10 +280,10 @@ def _calculer_marges_brutes(h: Hypotheses, ligne_n4: LigneResultat) -> list[Marg
 
 def _calculer_plan_financement(h: Hypotheses) -> PlanFinancement:
     """Plan de financement initial : besoins vs ressources."""
-    capex = sum((i.montant_ht for i in h.immobilisations), Decimal("0"))
+    capex = sum((i.montant_ht for i in h.immobilisations), Decimal(0))
     subv_capital = sum(
-        (i.montant_ht * i.subvention_pct / Decimal("100") for i in h.immobilisations),
-        Decimal("0"),
+        (i.montant_ht * i.subvention_pct / Decimal(100) for i in h.immobilisations),
+        Decimal(0),
     )
     total_besoins = (capex + h.bfr_besoin + h.tresorerie_securite).quantize(Decimal("0.01"))
 
@@ -291,11 +291,11 @@ def _calculer_plan_financement(h: Hypotheses) -> PlanFinancement:
     # Lus directement des aides DNJA (pas de re-split : les montants saisis font foi).
     dnja_acompte = sum(
         (a.montant for a in h.aides if "DNJA" in a.nom.upper() and a.annee_versement == 1),
-        Decimal("0"),
+        Decimal(0),
     )
     dnja_solde = sum(
         (a.montant for a in h.aides if "DNJA" in a.nom.upper() and a.annee_versement != 1),
-        Decimal("0"),
+        Decimal(0),
     )
     dnja_total = dnja_acompte + dnja_solde
     # Seul l'acompte (cash à l'installation) finance les besoins ; le solde, versé
@@ -348,21 +348,21 @@ def _calculer_plan_tresorerie(h: Hypotheses, lignes: list[LigneResultat]) -> lis
     solde_cum = h.tresorerie_securite
     for l in lignes:
         ca_annuel = l.produits_exploitation
-        charges_exp_mensuel = (l.charges_exploitation / Decimal("12")).quantize(Decimal("0.01"))
-        msa_mensuel = (l.charges_sociales / Decimal("12")).quantize(Decimal("0.01"))
+        charges_exp_mensuel = (l.charges_exploitation / Decimal(12)).quantize(Decimal("0.01"))
+        msa_mensuel = (l.charges_sociales / Decimal(12)).quantize(Decimal("0.01"))
         prelevements_mensuel = h.prelevements_mensuels.quantize(Decimal("0.01"))
 
         # CAPEX mensualisé : sorties cash à janvier de l'année d'acquisition
         # Part financée par DNJA/subvention → sortie cash réelle = montant - subv
-        capex_janvier = Decimal("0")
+        capex_janvier = Decimal(0)
         for imm in h.immobilisations:
             if imm.annee_acquisition == l.annee:
-                assiette_cash = imm.montant_ht * (Decimal("100") - imm.subvention_pct) / Decimal("100")
+                assiette_cash = imm.montant_ht * (Decimal(100) - imm.subvention_pct) / Decimal(100)
                 capex_janvier += assiette_cash
 
         for m in range(12):
-            entrees = Decimal("0")
-            sorties = Decimal("0")
+            entrees = Decimal(0)
+            sorties = Decimal(0)
 
             entrees += (ca_annuel * POND_CA[m]).quantize(Decimal("0.01"))
 
@@ -372,19 +372,15 @@ def _calculer_plan_tresorerie(h: Hypotheses, lignes: list[LigneResultat]) -> lis
                 # DNJA : split 80 % acompte à annee_versement + 20 % solde à annee_solde (sept)
                 if "DNJA" in nom_upper and m == 8:  # septembre
                     if aide.annee_versement == l.annee:
-                        acompte = aide.montant * Decimal(h.dnja_acompte_pct) / Decimal("100")
+                        acompte = aide.montant * Decimal(h.dnja_acompte_pct) / Decimal(100)
                         entrees += acompte.quantize(Decimal("0.01"))
                     if h.dnja_annee_solde == l.annee:
-                        solde = aide.montant * Decimal(100 - h.dnja_acompte_pct) / Decimal("100")
+                        solde = aide.montant * Decimal(100 - h.dnja_acompte_pct) / Decimal(100)
                         entrees += solde.quantize(Decimal("0.01"))
                     continue
                 if aide.annee_versement != l.annee:
                     continue
-                if "ACJA" in nom_upper and m == 9:  # octobre
-                    entrees += aide.montant
-                elif "CI-AB" in nom_upper and m == 3:  # avril
-                    entrees += aide.montant
-                elif ("CAB" in nom_upper or "ÉCO" in nom_upper) and m == 4:  # mai
+                if "ACJA" in nom_upper and m == 9 or "CI-AB" in nom_upper and m == 3 or ("CAB" in nom_upper or "ÉCO" in nom_upper) and m == 4:  # octobre
                     entrees += aide.montant
 
             sorties += charges_exp_mensuel + msa_mensuel + prelevements_mensuel
@@ -415,7 +411,7 @@ def _calculer_seuil_rentabilite(h: Hypotheses, ligne_n4: LigneResultat) -> Seuil
     charges_fixes_exploitation = sum(
         (c.montant_annuel_ht for c in h.charges_recurrentes
          if c.categorie in categories_fixes and _charge_active(c, ligne_n4.annee)),
-        Decimal("0"),
+        Decimal(0),
     )
     charges_fixes_total = (
         charges_fixes_exploitation + ligne_n4.amortissements + ligne_n4.charges_sociales
@@ -425,13 +421,13 @@ def _calculer_seuil_rentabilite(h: Hypotheses, ligne_n4: LigneResultat) -> Seuil
     ca = ligne_n4.produits_exploitation
     charges_variables = ligne_n4.charges_exploitation - charges_fixes_exploitation
     if ca > 0:
-        taux_marge_cv = ((ca - charges_variables) / ca * Decimal("100")).quantize(Decimal("0.1"))
+        taux_marge_cv = ((ca - charges_variables) / ca * Decimal(100)).quantize(Decimal("0.1"))
         ca_seuil = (charges_fixes_total / ((ca - charges_variables) / ca)).quantize(Decimal("0.01"))
-        couverture = (ca / ca_seuil * Decimal("100")).quantize(Decimal("0.1")) if ca_seuil > 0 else Decimal("0")
+        couverture = (ca / ca_seuil * Decimal(100)).quantize(Decimal("0.1")) if ca_seuil > 0 else Decimal(0)
     else:
-        taux_marge_cv = Decimal("0")
-        ca_seuil = Decimal("0")
-        couverture = Decimal("0")
+        taux_marge_cv = Decimal(0)
+        ca_seuil = Decimal(0)
+        couverture = Decimal(0)
 
     return SeuilRentabilite(
         charges_fixes_annuelles=charges_fixes_total,
@@ -446,13 +442,13 @@ def _calculer_ratios(h: Hypotheses, ligne_n4: LigneResultat) -> Ratios:
     ca = ligne_n4.produits_exploitation
     ebe = ligne_n4.ebe
     aides = ligne_n4.aides_revenu
-    prelevements = h.prelevements_mensuels * Decimal("12")
+    prelevements = h.prelevements_mensuels * Decimal(12)
 
     return Ratios(
-        taux_marge_ebe_pct=(ebe / ca * Decimal("100")).quantize(Decimal("0.1")) if ca > 0 else Decimal("0"),
+        taux_marge_ebe_pct=(ebe / ca * Decimal(100)).quantize(Decimal("0.1")) if ca > 0 else Decimal(0),
         ca_par_uth=(ca / h.uth).quantize(Decimal("0.01")),
-        poids_aides_pct=(aides / ca * Decimal("100")).quantize(Decimal("0.1")) if ca > 0 else Decimal("0"),
-        prelevements_sur_ebe_pct=(prelevements / ebe * Decimal("100")).quantize(Decimal("0.1")) if ebe > 0 else Decimal("0"),
+        poids_aides_pct=(aides / ca * Decimal(100)).quantize(Decimal("0.1")) if ca > 0 else Decimal(0),
+        prelevements_sur_ebe_pct=(prelevements / ebe * Decimal(100)).quantize(Decimal("0.1")) if ebe > 0 else Decimal(0),
     )
 
 
@@ -487,26 +483,24 @@ def _calculer_scenarios_stress(h: Hypotheses) -> list[ScenarioStress]:
 
 def _calculer_bilan_n4(h: Hypotheses, lignes: list[LigneResultat]) -> BilanSimplifie:
     """Bilan prévisionnel simplifié à fin N+4."""
-    annee_cible = h.horizon_annees
-
     # Actif
-    immos_brutes = sum((i.montant_ht for i in h.immobilisations), Decimal("0"))
-    amort_cumules = sum((l.amortissements for l in lignes), Decimal("0"))
+    immos_brutes = sum((i.montant_ht for i in h.immobilisations), Decimal(0))
+    amort_cumules = sum((l.amortissements for l in lignes), Decimal(0))
     immos_nettes = (immos_brutes - amort_cumules).quantize(Decimal("0.01"))
-    stocks = Decimal("5000")  # estimation fleurs CBD en cours de séchage/stockage
-    creances = Decimal("2000")  # clients en attente de paiement
+    stocks = Decimal(5000)  # estimation fleurs CBD en cours de séchage/stockage
+    creances = Decimal(2000)  # clients en attente de paiement
     # Trésorerie = cumul résultats - prélèvements - invests + aides capital
-    cumul_resultat = sum((l.resultat for l in lignes), Decimal("0"))
-    cumul_prelevements = sum((l.prelevements_annuels for l in lignes), Decimal("0"))
+    cumul_resultat = sum((l.resultat for l in lignes), Decimal(0))
+    cumul_prelevements = sum((l.prelevements_annuels for l in lignes), Decimal(0))
     tresorerie = max((cumul_resultat - cumul_prelevements + immos_brutes * Decimal("0.3")),
-                      Decimal("0")).quantize(Decimal("0.01"))
+                      Decimal(0)).quantize(Decimal("0.01"))
     total_actif = (immos_nettes + stocks + creances + tresorerie).quantize(Decimal("0.01"))
 
     # Passif — le capital exploitant est la variable d'ajustement : il absorbe
     # ce qui n'est ni dette ni subvention, pour que le bilan balance par
     # construction (capitaux propres = actif − dettes − subventions étalées).
     subventions_etalees = (immos_brutes * Decimal("0.35")).quantize(Decimal("0.01"))
-    dettes = Decimal("3000")
+    dettes = Decimal(3000)
     capital_exploitant = (total_actif - dettes - subventions_etalees).quantize(Decimal("0.01"))
     total_passif = (capital_exploitant + subventions_etalees + dettes).quantize(Decimal("0.01"))
 

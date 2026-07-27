@@ -14,7 +14,7 @@ import json
 import secrets
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -70,7 +70,7 @@ def register_device(label: str = "") -> str:
     device_id = uuid.uuid4().hex
     d = load_devices()
     d[device_id] = {
-        "paired_at": datetime.now(timezone.utc).isoformat(),
+        "paired_at": datetime.now(UTC).isoformat(),
         "label": (label or "Téléphone").strip()[:60],
         "last_seen": None,
     }
@@ -83,6 +83,6 @@ def touch_device(device_id: str) -> bool:
     d = load_devices()
     if device_id not in d:
         return False
-    d[device_id]["last_seen"] = datetime.now(timezone.utc).isoformat()
+    d[device_id]["last_seen"] = datetime.now(UTC).isoformat()
     save_devices(d)
     return True

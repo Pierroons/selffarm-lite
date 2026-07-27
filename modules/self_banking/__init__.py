@@ -16,6 +16,6 @@ from __future__ import annotations
 
 __version__ = "0.1.0-dev"
 
-from self_banking.models import Transaction, Releve, TypeMouvement
+from self_banking.models import Releve, Transaction, TypeMouvement
 
-__all__ = ["Transaction", "Releve", "TypeMouvement", "__version__"]
+__all__ = ["Releve", "Transaction", "TypeMouvement", "__version__"]

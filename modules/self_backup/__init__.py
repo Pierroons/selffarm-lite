@@ -20,9 +20,8 @@ import os
 import shutil
 import sqlite3
 import zipfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional
 
 log = logging.getLogger("self_backup")
 
@@ -58,13 +57,13 @@ def _schema_version(db_path: Path) -> int:
         conn.close()
 
 
-def _app_schema_version() -> Optional[int]:
+def _app_schema_version() -> int | None:
     """Schéma max que CETTE version de l'app sait gérer (dernière migration définie).
     None si indéterminable → on ne bloque pas (fallback permissif)."""
     try:
         from self_agri_book.storage import MIGRATIONS
         return max((v for v, _, _ in MIGRATIONS), default=0)
-    except Exception:
+    except Exception:  # noqa: BLE001 — module optionnel : absence ou erreur = pas de version
         return None
 
 
@@ -129,7 +128,7 @@ def make_backup(version: str = "0.1.0-dev") -> tuple[bytes, str]:
     sha256 = _file_sha256(db_path)
     db_size = db_path.stat().st_size
     stats = _stats_db(db_path)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     # PDF de factures émises archivés (documents originaux — conformité 10 ans + restore fidèle)
     fdir = _factures_dir()
@@ -269,6 +268,7 @@ def restore_from_bytes(zip_bytes: bytes, confirm_rollback: bool = False) -> dict
     # restauration DIFFÉRENCIÉE (union compta/facturation, remplacement état,
     # anti-rétrogradage). cf self_agri_book.restore_diff.
     import tempfile
+
     from self_agri_book.restore_diff import restore_differential
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tf:
         tf.write(db_bytes)
@@ -347,7 +347,7 @@ def _prune_snapshots(keep: int = 14) -> int:
     return removed
 
 
-def write_snapshot(version: str = "0.1.0-dev", keep: int = 14) -> Optional[Path]:
+def write_snapshot(version: str = "0.1.0-dev", keep: int = 14) -> Path | None:
     """Écrit un snapshot horodaté dans data_dir/backups/ + applique la rétention.
     Retourne le chemin, ou None si rien à sauvegarder (DB absente)."""
     try:
@@ -363,7 +363,7 @@ def write_snapshot(version: str = "0.1.0-dev", keep: int = 14) -> Optional[Path]
     return path
 
 
-def _last_snapshot_age_hours() -> Optional[float]:
+def _last_snapshot_age_hours() -> float | None:
     """Âge (heures) du snapshot le plus récent, ou None si aucun."""
     snaps = _snapshots()
     if not snaps:
@@ -371,7 +371,7 @@ def _last_snapshot_age_hours() -> Optional[float]:
     return (datetime.now().timestamp() - snaps[0].stat().st_mtime) / 3600.0
 
 
-def auto_snapshot_if_due(version: str = "0.1.0-dev", min_interval_hours: float = 20.0) -> Optional[Path]:
+def auto_snapshot_if_due(version: str = "0.1.0-dev", min_interval_hours: float = 20.0) -> Path | None:
     """Crée un snapshot si le dernier date de plus de `min_interval_hours` (ou aucun).
     Idempotent — sûr à appeler à chaque démarrage de l'app."""
     age = _last_snapshot_age_hours()
@@ -384,7 +384,7 @@ def auto_snapshot_if_due(version: str = "0.1.0-dev", min_interval_hours: float =
 EXTERNAL_SUBDIR = "SelfFarm-Backups"
 
 
-def _device_uuid(device: str) -> Optional[str]:
+def _device_uuid(device: str) -> str | None:
     """UUID d'un device via /dev/disk/by-uuid (best-effort, pour identifier le disque)."""
     byuuid = Path("/dev/disk/by-uuid")
     if not byuuid.exists():
@@ -482,7 +482,7 @@ def backup_to_external(mount_path: str, version: str = "0.1.0-dev", keep: int = 
     info = {m["path"]: m for m in list_external_mounts()}.get(mount_path, {})
     cfg = load_ext_config()
     cfg.update({
-        "last_external_backup_utc": datetime.now(timezone.utc).isoformat(),
+        "last_external_backup_utc": datetime.now(UTC).isoformat(),
         "last_external_path": str(dest),
         "disk_label": info.get("label"),
         "disk_uuid": info.get("uuid"),
@@ -566,7 +566,7 @@ CRON_MARKER = "# SELFFARM-AUTO-BACKUP"
 def _crontab_read() -> list[str]:
     import subprocess
     try:
-        r = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
+        r = subprocess.run(["crontab", "-l"], capture_output=True, text=True, check=False)
         return r.stdout.splitlines() if r.returncode == 0 else []
     except (FileNotFoundError, OSError):
         return []
@@ -578,7 +578,7 @@ def _crontab_write(lines: list[str]) -> None:
     subprocess.run(["crontab", "-"], input=content, text=True, check=True)
 
 
-def get_cron_schedule() -> Optional[dict]:
+def get_cron_schedule() -> dict | None:
     """Planif SELFFARM existante : {minute, hour, dow} ; sinon None."""
     for line in _crontab_read():
         if CRON_MARKER in line:
@@ -616,12 +616,12 @@ def clear_cron_schedule() -> None:
 
 
 # ── Santé des sauvegardes + rappel d'oubli (B3c) ─────────────────────────────
-def _parse_iso(s: Optional[str]) -> Optional[datetime]:
+def _parse_iso(s: str | None) -> datetime | None:
     if not s:
         return None
     try:
         dt = datetime.fromisoformat(s)
-        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+        return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
     except (ValueError, TypeError):
         return None
 
@@ -630,7 +630,7 @@ def backup_health(late_after_days: float = 2.0) -> dict:
     """État des sauvegardes externes/distantes pour le rappel d'oubli (B3c).
     Une cible « activée » est en alerte si sa dernière sauvegarde a échoué (manquée)
     ou date de plus de `late_after_days` jours (ou n'a jamais eu lieu)."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     def _target(enabled, last_ok_s, last_missed_s, label, extra=None):
         last_ok = _parse_iso(last_ok_s)
@@ -655,7 +655,7 @@ def backup_health(late_after_days: float = 2.0) -> dict:
     try:
         from self_backup.remote import load_sftp_config
         sc = load_sftp_config()
-    except Exception:
+    except Exception:  # noqa: BLE001 — sauvegarde distante facultative : on dégrade sans bloquer
         sc = {}
     sftp = _target(
         enabled=bool(sc.get("enabled")),

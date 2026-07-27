@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from self_aid.loader import filter_aides, load_all, total_enveloppe
 from self_aid.models import CategorieAide, FiltreRecherche
 

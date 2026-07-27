@@ -96,19 +96,19 @@ TVA_BRUTS_55 = TauxTvaAgri(
 )
 TVA_TRANSFORMES_10 = TauxTvaAgri(
     categorie=CategorieTvaAgri.STANDARD,
-    taux_pct=Decimal("10"),
+    taux_pct=Decimal(10),
     libelle="Produits agricoles non transformés pour usage professionnel / transformés",
     article_cgi="278 bis CGI",
 )
 TVA_STANDARD_20 = TauxTvaAgri(
     categorie=CategorieTvaAgri.STANDARD,
-    taux_pct=Decimal("20"),
+    taux_pct=Decimal(20),
     libelle="TVA normale (services, outillage, intrants hors chaîne alim)",
     article_cgi="278 CGI",
 )
 TVA_MICRO_BA_298BIS = TauxTvaAgri(
     categorie=CategorieTvaAgri.EXONERE,
-    taux_pct=Decimal("0"),
+    taux_pct=Decimal(0),
     libelle="Régime forfaitaire agricole — non-assujetti TVA",
     article_cgi="298 bis CGI",
 )
@@ -141,7 +141,7 @@ class ProduitAgriFactor(BaseModel):
 
     @property
     def montant_tva(self) -> Decimal:
-        return (self.montant_ht * self.tva.taux_pct / Decimal("100")).quantize(Decimal("0.01"))
+        return (self.montant_ht * self.tva.taux_pct / Decimal(100)).quantize(Decimal("0.01"))
 
     @property
     def montant_ttc(self) -> Decimal:

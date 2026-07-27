@@ -974,7 +974,7 @@ def export_fec(siren: str = "000000000") -> tuple[str, str]:
             return "0,00"
         try:
             return f"{Decimal(str(val)).quantize(Decimal('0.01'))}".replace(".", ",")
-        except Exception:
+        except Exception:  # noqa: BLE001 — formatage d'affichage : ne doit jamais lever
             return "0,00"
 
     for r in rows:

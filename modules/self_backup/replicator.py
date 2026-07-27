@@ -22,7 +22,7 @@ LEDGER_FILE = "ledger.ndjson"
 def _push(support_id: str, write_fn) -> dict:
     """Squelette commun : récupère le pending du support, écrit, marque répliqué.
     `write_fn(ndjson_str)` n'est appelé QUE s'il y a des événements à pousser."""
-    from self_agri_book.outbox import pending_for, mark_replicated, to_ndjson
+    from self_agri_book.outbox import mark_replicated, pending_for, to_ndjson
     pending = pending_for(support_id)
     if not pending:
         return {"support": support_id, "pushed": 0}
@@ -66,7 +66,7 @@ def replicate_to_sftp(cfg: dict) -> dict:
 def replicate_all() -> dict:
     """Réplique le ledger vers tous les supports PRÉSENTS (DD mémorisé + SFTP activé).
     Best-effort : un support injoignable n'empêche pas les autres."""
-    from self_backup import load_ext_config, list_external_mounts
+    from self_backup import list_external_mounts, load_ext_config
     from self_backup.remote import load_sftp_config
     out: dict = {}
 

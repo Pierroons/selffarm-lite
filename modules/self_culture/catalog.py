@@ -87,9 +87,9 @@ def find_by_id(varietes: list[Variete], variete_id: str) -> Variete | None:
 
 def familles_presentes(varietes: list[Variete]) -> list[FamilleBotanique]:
     """Retourne les familles botaniques distinctes du catalogue."""
-    return sorted(set(v.famille for v in varietes), key=lambda f: f.value)
+    return sorted({v.famille for v in varietes}, key=lambda f: f.value)
 
 
 def categories_presentes(varietes: list[Variete]) -> list[CategorieVariete]:
     """Retourne les catégories distinctes du catalogue."""
-    return sorted(set(v.categorie for v in varietes), key=lambda c: c.value)
+    return sorted({v.categorie for v in varietes}, key=lambda c: c.value)

@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 import json
-import os
 import sqlite3
 from datetime import date
 from decimal import Decimal
-from pathlib import Path
 
 import pytest
 
@@ -52,17 +50,17 @@ def test_save_ecriture_basic(isolated_db):
 
 def test_save_ecriture_dedup_on_source(isolated_db):
     """Deux saves consécutifs avec même (source_module, source_id) → 1 seule écriture."""
-    kwargs = dict(
-        date_operation=date(2026, 4, 26),
-        journal="VEN",
-        numero_piece="F-2026-0042",
-        libelle="Vente dédup test",
-        compte_debit="411",
-        compte_credit="701",
-        montant_ttc=Decimal("250.00"),
-        source_module="self_invoice",
-        source_id="F-2026-0042",
-    )
+    kwargs = {
+        "date_operation": date(2026, 4, 26),
+        "journal": "VEN",
+        "numero_piece": "F-2026-0042",
+        "libelle": "Vente dédup test",
+        "compte_debit": "411",
+        "compte_credit": "701",
+        "montant_ttc": Decimal("250.00"),
+        "source_module": "self_invoice",
+        "source_id": "F-2026-0042",
+    }
     eid1, created1 = storage.save_ecriture(**kwargs)
     eid2, created2 = storage.save_ecriture(**kwargs)
     assert created1 is True
@@ -72,17 +70,17 @@ def test_save_ecriture_dedup_on_source(isolated_db):
 
 def test_save_ecriture_dedup_can_be_bypassed(isolated_db):
     """allow_duplicate=True force une insertion même si la source existe."""
-    kwargs = dict(
-        date_operation=date(2026, 4, 26),
-        journal="VEN",
-        numero_piece="F-2026-9999",
-        libelle="dup",
-        compte_debit="411",
-        compte_credit="701",
-        montant_ttc=Decimal("10.00"),
-        source_module="self_invoice",
-        source_id="F-2026-9999",
-    )
+    kwargs = {
+        "date_operation": date(2026, 4, 26),
+        "journal": "VEN",
+        "numero_piece": "F-2026-9999",
+        "libelle": "dup",
+        "compte_debit": "411",
+        "compte_credit": "701",
+        "montant_ttc": Decimal("10.00"),
+        "source_module": "self_invoice",
+        "source_id": "F-2026-9999",
+    }
     eid1, _ = storage.save_ecriture(**kwargs)
     eid2, created2 = storage.save_ecriture(**kwargs, allow_duplicate=True)
     assert eid2 != eid1
@@ -91,15 +89,15 @@ def test_save_ecriture_dedup_can_be_bypassed(isolated_db):
 
 def test_save_ecriture_no_dedup_without_source(isolated_db):
     """Pas de source_module → chaque save crée une nouvelle écriture."""
-    kwargs = dict(
-        date_operation=date(2026, 4, 26),
-        journal="MAN",
-        numero_piece="MAN-001",
-        libelle="manuel sans source",
-        compte_debit="606",
-        compte_credit="512",
-        montant_ttc=Decimal("50.00"),
-    )
+    kwargs = {
+        "date_operation": date(2026, 4, 26),
+        "journal": "MAN",
+        "numero_piece": "MAN-001",
+        "libelle": "manuel sans source",
+        "compte_debit": "606",
+        "compte_credit": "512",
+        "montant_ttc": Decimal("50.00"),
+    }
     eid1, _ = storage.save_ecriture(**kwargs)
     eid2, created2 = storage.save_ecriture(**kwargs)
     assert eid1 != eid2
@@ -162,7 +160,7 @@ def test_list_ecritures_filter_by_source_module(isolated_db):
         libelle="invoice",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("100"),
+        montant_ttc=Decimal(100),
         source_module="self_invoice",
         source_id="F-A",
     )
@@ -173,7 +171,7 @@ def test_list_ecritures_filter_by_source_module(isolated_db):
         libelle="achat",
         compte_debit="6011",
         compte_credit="401",
-        montant_ttc=Decimal("50"),
+        montant_ttc=Decimal(50),
         source_module="self_achats",
         source_id="A-A",
     )
@@ -197,7 +195,7 @@ def test_balance_par_compte_aggregates_correctly(isolated_db):
             libelle=f"v{i}",
             compte_debit="411",
             compte_credit="701",
-            montant_ttc=Decimal("100"),
+            montant_ttc=Decimal(100),
             source_module="self_invoice",
             source_id=f"F-{i}",
         )
@@ -232,7 +230,7 @@ def test_stats_globales_filled(isolated_db):
             libelle=f"v{i}",
             compte_debit="411",
             compte_credit="701",
-            montant_ttc=Decimal("120"),
+            montant_ttc=Decimal(120),
             source_module="self_invoice",
             source_id=f"F-{i}",
         )
@@ -253,7 +251,7 @@ def test_resultat_data_calcule_benefice(isolated_db):
         libelle="grosse vente",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("1000"),
+        montant_ttc=Decimal(1000),
         source_module="self_invoice",
         source_id="F-1",
     )
@@ -265,7 +263,7 @@ def test_resultat_data_calcule_benefice(isolated_db):
         libelle="achat compost",
         compte_debit="6011",
         compte_credit="401",
-        montant_ttc=Decimal("200"),
+        montant_ttc=Decimal(200),
         source_module="self_achats",
         source_id="A-1",
     )
@@ -285,7 +283,7 @@ def test_resultat_data_calcule_deficit(isolated_db):
         libelle="petite vente",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("100"),
+        montant_ttc=Decimal(100),
         source_module="self_invoice",
         source_id="F-1",
     )
@@ -296,7 +294,7 @@ def test_resultat_data_calcule_deficit(isolated_db):
         libelle="gros achat",
         compte_debit="6011",
         compte_credit="401",
-        montant_ttc=Decimal("500"),
+        montant_ttc=Decimal(500),
         source_module="self_achats",
         source_id="A-1",
     )
@@ -315,7 +313,7 @@ def test_bilan_data_equilibre(isolated_db):
         libelle="vente",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("500"),
+        montant_ttc=Decimal(500),
         source_module="self_invoice",
         source_id="F-1",
     )
@@ -338,7 +336,7 @@ def test_export_fec_format_dgfip(isolated_db):
         compte_credit="701",
         montant_ttc=Decimal("100.00"),
         montant_ht=Decimal("100.00"),
-        montant_tva=Decimal("0"),
+        montant_tva=Decimal(0),
         source_module="self_invoice",
         source_id="F-1",
     )
@@ -364,7 +362,7 @@ def test_reset_demo_purge_all(isolated_db):
         libelle="à purger",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("10"),
+        montant_ttc=Decimal(10),
         source_module="self_invoice",
         source_id="F-1",
     )
@@ -446,7 +444,7 @@ def test_compteur_initialisation_depuis_historique(tmp_path, monkeypatch):
         libelle="vente démo",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("100"),
+        montant_ttc=Decimal(100),
         source_module="self_invoice",
         source_id="F-2026-3742",
     )
@@ -457,7 +455,7 @@ def test_compteur_initialisation_depuis_historique(tmp_path, monkeypatch):
         libelle="autre vente démo",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("200"),
+        montant_ttc=Decimal(200),
         source_module="self_invoice",
         source_id="F-2026-8421",
     )
@@ -529,7 +527,7 @@ def test_save_ecriture_calcule_hash_data(isolated_db):
         libelle="hash test",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("100"),
+        montant_ttc=Decimal(100),
         source_module="self_invoice",
         source_id="F-1",
     )
@@ -551,7 +549,7 @@ def test_chain_links_consecutive_ecritures(isolated_db):
         libelle="v1",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("100"),
+        montant_ttc=Decimal(100),
         source_module="self_invoice",
         source_id="F-1",
     )
@@ -562,7 +560,7 @@ def test_chain_links_consecutive_ecritures(isolated_db):
         libelle="v2",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("200"),
+        montant_ttc=Decimal(200),
         source_module="self_invoice",
         source_id="F-2",
     )
@@ -600,7 +598,7 @@ def test_verify_chain_detects_tampering(isolated_db):
         libelle="originale",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("100"),
+        montant_ttc=Decimal(100),
         source_module="self_invoice",
         source_id="F-1",
     )
@@ -611,7 +609,7 @@ def test_verify_chain_detects_tampering(isolated_db):
         libelle="suivante",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("200"),
+        montant_ttc=Decimal(200),
         source_module="self_invoice",
         source_id="F-2",
     )
@@ -634,7 +632,7 @@ def test_locked_ecriture_at_creation(isolated_db):
         libelle="locked at creation",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("100"),
+        montant_ttc=Decimal(100),
         source_module="self_invoice",
         source_id="F-LOCK",
         locked=True,
@@ -655,7 +653,7 @@ def test_lock_ecriture_post_creation(isolated_db):
         libelle="à verrouiller",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("50"),
+        montant_ttc=Decimal(50),
         source_module="self_invoice",
         source_id="F-LOCK2",
     )
@@ -684,7 +682,7 @@ def test_hash_pdf_stored(isolated_db):
         libelle="avec hash PDF",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("100"),
+        montant_ttc=Decimal(100),
         source_module="self_invoice",
         source_id="F-PDF",
         hash_pdf="abc123" * 10 + "abcd",  # 64 chars fake hash
@@ -706,7 +704,7 @@ def test_audit_log_created_on_ecriture(isolated_db):
         libelle="audited",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("100"),
+        montant_ttc=Decimal(100),
         source_module="self_invoice",
         source_id="F-1",
     )
@@ -738,7 +736,7 @@ def test_lock_action_audited(isolated_db):
         libelle="lock audit",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("10"),
+        montant_ttc=Decimal(10),
         source_module="self_invoice",
         source_id="F-AUDIT",
     )
@@ -760,7 +758,7 @@ def test_metadata_json_roundtrip(isolated_db):
         libelle="meta",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("10"),
+        montant_ttc=Decimal(10),
         source_module="self_invoice",
         source_id="F-META",
         metadata_json=json.dumps(meta),

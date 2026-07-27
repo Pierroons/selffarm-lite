@@ -9,8 +9,8 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
-
 from self_agri_book import storage
+
 from self_backup import make_backup, restore_from_bytes
 
 
@@ -93,7 +93,7 @@ def test_restore_creates_backup_of_old_db(isolated_db, tmp_path):
         libelle="ajout post-backup",
         compte_debit="411",
         compte_credit="701",
-        montant_ttc=Decimal("999"),
+        montant_ttc=Decimal(999),
         source_module="self_invoice",
         source_id="F-NEW",
     )
@@ -145,7 +145,7 @@ def test_roundtrip_backup_restore_preserves_data(isolated_db):
         libelle="parasite",
         compte_debit="606",
         compte_credit="401",
-        montant_ttc=Decimal("50"),
+        montant_ttc=Decimal(50),
         source_module="self_achats",
         source_id="A-X",
     )

@@ -43,8 +43,8 @@ class LigneEcriture(BaseModel):
 
     compte: str = Field(description="Code compte PCG (ex: '6011', '411001')")
     libelle: str
-    debit: Decimal = Field(default=Decimal("0"), ge=0)
-    credit: Decimal = Field(default=Decimal("0"), ge=0)
+    debit: Decimal = Field(default=Decimal(0), ge=0)
+    credit: Decimal = Field(default=Decimal(0), ge=0)
     piece_justificative: str | None = Field(
         default=None,
         description="Référence facture/ticket/bon",
@@ -91,7 +91,7 @@ class Exercice(BaseModel):
     cloture: bool = False
 
     @classmethod
-    def annee_civile(cls, annee: int) -> "Exercice":
+    def annee_civile(cls, annee: int) -> Exercice:
         return cls(
             annee=annee,
             date_debut=date(annee, 1, 1),

@@ -56,5 +56,20 @@ where = ["modules"]
 line-length = 100
 target-version = "py312"
 
+[tool.ruff.lint]
+# DTZ011 / DTZ005 — écartées en connaissance de cause.
+# Ces règles exigent une timezone explicite sur date.today() et datetime.now().
+# Elles sont justes pour un service multi-fuseaux ; elles ne le sont pas ici.
+# SelfFarm est local-first et mono-poste : « aujourd'hui » doit être la date
+# LOCALE de l'utilisateur, celle de sa machine. Passer par UTC daterait de la
+# veille toute saisie faite après 22 h en France — un relevé de ponte du soir
+# se retrouverait sur le mauvais jour. Figer Europe/Paris reviendrait par
+# ailleurs à réimplémenter date.today() en moins portable.
+#
+# DTZ007 — même famille : les relevés bancaires importés (parser SG) ne
+# portent aucun fuseau. Exiger %z dans strptime imposerait d'inventer une
+# information absente de la source.
+ignore = ["DTZ011", "DTZ005", "DTZ007"]
+
 [tool.pytest.ini_options]
 testpaths = ["modules"]

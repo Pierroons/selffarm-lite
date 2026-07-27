@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from self_agri_book.storage import _conn, init_db
 
@@ -27,7 +27,7 @@ def append_event(
 ) -> int:
     """Append un événement immuable dans le journal. Retourne sa `seq`."""
     init_db()
-    created_utc = datetime.now(timezone.utc).isoformat()
+    created_utc = datetime.now(UTC).isoformat()
     payload_json = json.dumps(payload, ensure_ascii=False, sort_keys=True)
     with _conn() as c:
         cur = c.execute(

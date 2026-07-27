@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from self_dnja.engine import calculer, EBE_UTH_SEUIL_DNJA_NA_2026
+from self_dnja.engine import EBE_UTH_SEUIL_DNJA_NA_2026, calculer
 from self_dnja.models import (
     Activite,
     Aide,
@@ -18,7 +18,6 @@ from self_dnja.models import (
     Hypotheses,
     Immobilisation,
     RegimeFiscal,
-    Salariat,
     StatutJuridique,
 )
 
@@ -26,27 +25,27 @@ EXAMPLES_DIR = Path(__file__).parent.parent.parent.parent / "examples"
 
 
 def _minimal_hyp(**overrides) -> Hypotheses:
-    base = dict(
-        candidat="Testeur",
-        date_installation=date(2026, 6, 1),
-        commune="Sainte-Foy",
-        departement="le departement",
-        statut_juridique=StatutJuridique.INDIVIDUEL,
-        regime_fiscal=RegimeFiscal.REEL_SIMPLIFIE,
-        horizon_annees=4,
-        activites=[
+    base = {
+        "candidat": "Testeur",
+        "date_installation": date(2026, 6, 1),
+        "commune": "Sainte-Foy",
+        "departement": "le departement",
+        "statut_juridique": StatutJuridique.INDIVIDUEL,
+        "regime_fiscal": RegimeFiscal.REEL_SIMPLIFIE,
+        "horizon_annees": 4,
+        "activites": [
             Activite(
                 nom="Maraîchage bio",
-                surface_ha=Decimal("1"),
-                quantite_annuelle=Decimal("2000"),
-                prix_vente_ht=Decimal("5"),
+                surface_ha=Decimal(1),
+                quantite_annuelle=Decimal(2000),
+                prix_vente_ht=Decimal(5),
                 unite_vente="kg",
                 bio=True,
                 annee_pleine_production=3,
                 montee_en_charge=[Decimal("0.3"), Decimal("0.6"), Decimal("1.0"), Decimal("1.0")],
             )
         ],
-    )
+    }
     base.update(overrides)
     return Hypotheses(**base)
 
@@ -69,8 +68,8 @@ def test_horizon_annees_respecte():
 def test_charges_recurrentes_soustraites_ebe():
     hyp = _minimal_hyp(
         charges_recurrentes=[
-            ChargeRecurrente(nom="Semences", montant_annuel_ht=Decimal("1000"), categorie="intrants"),
-            ChargeRecurrente(nom="Engrais", montant_annuel_ht=Decimal("500"), categorie="intrants"),
+            ChargeRecurrente(nom="Semences", montant_annuel_ht=Decimal(1000), categorie="intrants"),
+            ChargeRecurrente(nom="Engrais", montant_annuel_ht=Decimal(500), categorie="intrants"),
         ]
     )
     r = calculer(hyp)
@@ -85,10 +84,10 @@ def test_amortissement_linaire():
         immobilisations=[
             Immobilisation(
                 nom="Serre",
-                montant_ht=Decimal("4000"),
+                montant_ht=Decimal(4000),
                 annee_acquisition=1,
                 duree_amortissement=4,
-                subvention_pct=Decimal("0"),
+                subvention_pct=Decimal(0),
             )
         ]
     )
@@ -103,10 +102,10 @@ def test_amortissement_avec_subvention():
         immobilisations=[
             Immobilisation(
                 nom="Serre",
-                montant_ht=Decimal("4000"),
+                montant_ht=Decimal(4000),
                 annee_acquisition=1,
                 duree_amortissement=4,
-                subvention_pct=Decimal("40"),
+                subvention_pct=Decimal(40),
             )
         ]
     )
@@ -122,16 +121,16 @@ def test_amortissement_debute_annee_acquisition():
         immobilisations=[
             Immobilisation(
                 nom="Séchoir",
-                montant_ht=Decimal("2000"),
+                montant_ht=Decimal(2000),
                 annee_acquisition=3,
                 duree_amortissement=4,
-                subvention_pct=Decimal("0"),
+                subvention_pct=Decimal(0),
             )
         ]
     )
     r = calculer(hyp)
-    assert r.lignes[0].amortissements == Decimal("0")  # N+1 : pas encore acquis
-    assert r.lignes[1].amortissements == Decimal("0")  # N+2 : pas encore
+    assert r.lignes[0].amortissements == Decimal(0)  # N+1 : pas encore acquis
+    assert r.lignes[1].amortissements == Decimal(0)  # N+2 : pas encore
     assert r.lignes[2].amortissements == Decimal("500.00")  # N+3 : amort
     assert r.lignes[3].amortissements == Decimal("500.00")  # N+4 : amort
 
@@ -140,8 +139,8 @@ def test_cotisations_msa_exoneration_ja():
     hyp = _minimal_hyp(
         cotisations_msa=CotisationsMSA(
             exoneration_ja_active=True,
-            cotisation_base_annuelle=Decimal("4000"),
-            pct_exoneration=[Decimal("65"), Decimal("55"), Decimal("35"), Decimal("25")],
+            cotisation_base_annuelle=Decimal(4000),
+            pct_exoneration=[Decimal(65), Decimal(55), Decimal(35), Decimal(25)],
         )
     )
     r = calculer(hyp)
@@ -159,18 +158,18 @@ def test_cotisations_msa_sans_exoneration():
     hyp = _minimal_hyp(
         cotisations_msa=CotisationsMSA(
             exoneration_ja_active=False,
-            cotisation_base_annuelle=Decimal("4000"),
+            cotisation_base_annuelle=Decimal(4000),
         )
     )
     r = calculer(hyp)
     for l in r.lignes:
-        assert l.charges_sociales == Decimal("4000")
+        assert l.charges_sociales == Decimal(4000)
 
 
 def test_aide_revenu_integree_ebe():
     hyp = _minimal_hyp(
         aides=[
-            Aide(nom="DNJA", montant=Decimal("18000"), annee_versement=1, est_subvention_capital=False),
+            Aide(nom="DNJA", montant=Decimal(18000), annee_versement=1, est_subvention_capital=False),
         ]
     )
     r = calculer(hyp)
@@ -182,7 +181,7 @@ def test_subvention_capital_hors_resultat():
     """Les subventions de capital ne sont PAS comptées en aide revenu."""
     hyp = _minimal_hyp(
         aides=[
-            Aide(nom="Subv serre", montant=Decimal("5000"), annee_versement=1, est_subvention_capital=True),
+            Aide(nom="Subv serre", montant=Decimal(5000), annee_versement=1, est_subvention_capital=True),
         ]
     )
     r = calculer(hyp)
@@ -194,13 +193,13 @@ def test_ebe_uth_seuil_atteint():
         activites=[
             Activite(
                 nom="CBD bio",
-                surface_ha=Decimal("1"),
-                quantite_annuelle=Decimal("20"),
-                prix_vente_ht=Decimal("2500"),
+                surface_ha=Decimal(1),
+                quantite_annuelle=Decimal(20),
+                prix_vente_ht=Decimal(2500),
                 unite_vente="kg",
                 bio=True,
                 annee_pleine_production=3,
-                montee_en_charge=[Decimal("1"), Decimal("1"), Decimal("1"), Decimal("1")],
+                montee_en_charge=[Decimal(1), Decimal(1), Decimal(1), Decimal(1)],
             )
         ]
     )
@@ -223,12 +222,12 @@ def test_rendement_t_ha_conversion_en_kg():
         activites=[
             Activite(
                 nom="Chanvre industriel",
-                surface_ha=Decimal("2"),
+                surface_ha=Decimal(2),
                 rendement_t_ha=Decimal("1.5"),
-                prix_vente_ht=Decimal("3"),
+                prix_vente_ht=Decimal(3),
                 unite_vente="kg",
                 annee_pleine_production=2,
-                montee_en_charge=[Decimal("1"), Decimal("1"), Decimal("1"), Decimal("1")],
+                montee_en_charge=[Decimal(1), Decimal(1), Decimal(1), Decimal(1)],
             )
         ]
     )
@@ -241,8 +240,8 @@ def test_activite_sans_quantite_ni_rendement_echoue():
     with pytest.raises(ValueError, match="fournis soit"):
         Activite(
             nom="Incomplet",
-            surface_ha=Decimal("1"),
-            prix_vente_ht=Decimal("5"),
+            surface_ha=Decimal(1),
+            prix_vente_ht=Decimal(5),
             annee_pleine_production=1,
         )
 
@@ -286,7 +285,7 @@ def test_annee_fin_charge_ponctuelle_n1():
     hyp = _minimal_hyp(
         charges_recurrentes=[
             ChargeRecurrente(
-                nom="Constitution stock N1", montant_annuel_ht=Decimal("1000"),
+                nom="Constitution stock N1", montant_annuel_ht=Decimal(1000),
                 categorie="intrants", annee_demarrage=1, annee_fin=1,
             ),
         ]
@@ -302,7 +301,7 @@ def test_annee_fin_none_court_jusqu_horizon():
     """Sans annee_fin (None), la charge s'applique chaque année (comportement par défaut)."""
     hyp = _minimal_hyp(
         charges_recurrentes=[
-            ChargeRecurrente(nom="Récurrente", montant_annuel_ht=Decimal("500"), categorie="intrants"),
+            ChargeRecurrente(nom="Récurrente", montant_annuel_ht=Decimal(500), categorie="intrants"),
         ]
     )
     r = calculer(hyp)
@@ -315,7 +314,7 @@ def test_annee_fin_fenetre_n2_n3():
     hyp = _minimal_hyp(
         charges_recurrentes=[
             ChargeRecurrente(
-                nom="Fenêtre", montant_annuel_ht=Decimal("300"),
+                nom="Fenêtre", montant_annuel_ht=Decimal(300),
                 categorie="intrants", annee_demarrage=2, annee_fin=3,
             ),
         ]
@@ -332,8 +331,8 @@ def test_plan_financement_dnja_acompte_solde_sans_resplit():
     sans re-split 80/20, et seul l'acompte finance l'installation."""
     hyp = _minimal_hyp(
         aides=[
-            Aide(nom="DNJA acompte 80%", montant=Decimal("19600"), annee_versement=1, est_subvention_capital=True),
-            Aide(nom="DNJA solde 20%", montant=Decimal("4900"), annee_versement=4, est_subvention_capital=True),
+            Aide(nom="DNJA acompte 80%", montant=Decimal(19600), annee_versement=1, est_subvention_capital=True),
+            Aide(nom="DNJA solde 20%", montant=Decimal(4900), annee_versement=4, est_subvention_capital=True),
         ],
     )
     p = calculer(hyp).plan_financement
