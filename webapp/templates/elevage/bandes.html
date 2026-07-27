@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+{% block title %}Élevage — bandes &amp; mouvements · SelfFarm-Lite{% endblock %}
+
+{% block content %}
+
+<style>
+.elv-header {margin-bottom:20px;}
+.elv-header h1 {font-size:24px; color:var(--text-primary); font-family:'Fraunces',serif; font-weight:600; margin:0 0 4px 0; letter-spacing:-0.018em;}
+.elv-header h1 .accent {color:var(--accent-400); font-style:italic;}
+.elv-header .subtitle {font-size:12.5px; color:var(--text-secondary); max-width:680px; line-height:1.55;}
+
+.flash {padding:11px 15px; border-radius:8px; font-size:13px; margin-bottom:16px; line-height:1.5;}
+.flash.ok {background:rgba(74,222,128,0.09); border:1px solid rgba(74,222,128,0.26); color:#a7f3c0;}
+.flash.err {background:rgba(248,113,113,0.09); border:1px solid rgba(248,113,113,0.28); color:#fca5a5;}
+
+.card {border-radius:10px; border:1px solid var(--border-subtle); overflow:hidden; margin-bottom:18px;}
+.card-head {padding:10px 15px; background:rgba(22,101,52,0.07); border-bottom:1px solid var(--border-subtle); display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.card-head .t {font-size:13.5px; font-weight:600; color:var(--text-primary);}
+.card-head .m {font-size:11.5px; color:var(--text-muted);}
+.card-body {padding:16px 15px;}
+
+.grid {display:flex; gap:13px; flex-wrap:wrap; align-items:flex-end;}
+.f {display:flex; flex-direction:column; gap:5px;}
+.f label {font-size:10.5px; text-transform:uppercase; letter-spacing:0.45px; color:var(--text-muted); font-weight:600;}
+.f input, .f select {padding:9px 11px; border-radius:7px; border:1px solid var(--border-subtle); background:rgba(0,0,0,0.22); color:var(--text-primary); font-size:13.5px; font-family:inherit;}
+.f input:focus, .f select:focus {outline:none; border-color:var(--accent-400); background:rgba(0,0,0,0.30);}
+.f.w-sm input {width:100px;} .f.w-md input {width:170px;} .f.w-lg input {width:230px;}
+.btn {padding:10px 20px; border-radius:8px; border:none; background:var(--accent-400,#e0a458); color:#1a1207; font-size:13.5px; font-weight:640; cursor:pointer; font-family:inherit;}
+.btn:hover {filter:brightness(1.08);}
+.btn.ghost {background:transparent; border:1px solid var(--border-subtle); color:var(--text-secondary);}
+
+table.elv {width:100%; border-collapse:collapse; font-size:12.5px;}
+table.elv th {text-align:left; padding:7px 15px; font-size:10.5px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border-subtle);}
+table.elv td {padding:9px 15px; border-bottom:1px solid rgba(255,255,255,0.03); color:var(--text-secondary);}
+table.elv tr:last-child td {border-bottom:none;}
+table.elv td.nom {color:var(--text-primary); font-weight:500;}
+table.elv td.num {font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap;}
+
+.pill {font-size:10px; padding:2px 8px; border-radius:10px; white-space:nowrap;}
+.pill.act {background:rgba(74,222,128,0.10); color:#86efac; border:1px solid rgba(74,222,128,0.22);}
+.pill.fin {background:rgba(255,255,255,0.04); color:var(--text-muted); border:1px solid var(--border-subtle);}
+.pill.mort {background:rgba(248,113,113,0.10); color:#fca5a5; border:1px solid rgba(248,113,113,0.26);}
+.pill.ref {background:rgba(224,164,88,0.10); color:#f4c47a; border:1px solid rgba(224,164,88,0.25);}
+.pill.add {background:rgba(74,222,128,0.10); color:#86efac; border:1px solid rgba(74,222,128,0.22);}
+.empty {padding:28px 20px; text-align:center; color:var(--text-muted); font-size:13px;}
+.lnk {color:var(--accent-400); text-decoration:none;}
+</style>
+
+<div class="elv-header">
+  <h1>Élevage <span class="accent">— bandes &amp; mouvements</span></h1>
+  <p class="subtitle">
+    Le cheptel et son historique. <strong>L'effectif vivant n'est jamais saisi</strong> : il se déduit
+    des mouvements (initial − mortalités − réformes + ajouts), il ne peut donc pas diverger du
+    registre. Le relevé quotidien est sur <a href="/elevage" class="lnk">Ponte du jour</a>.
+  </p>
+</div>
+
+{% if ok %}<div class="flash ok">{{ ok }}</div>{% endif %}
+{% if erreur %}<div class="flash err">{{ erreur }}</div>{% endif %}
+
+<!-- ── Création / édition d'une bande ─────────────────────────────────── -->
+<div class="card">
+  <div class="card-head">
+    <span class="t">{% if bande_edit %}Modifier « {{ bande_edit.nom }} »{% else %}Nouvelle bande{% endif %}</span>
+    <span class="m">un lot d'animaux mis en place ensemble</span>
+    {% if bande_edit %}<span style="margin-left:auto;"><a href="/elevage/bandes" class="lnk" style="font-size:12px;">Annuler</a></span>{% endif %}
+  </div>
+  <div class="card-body">
+    <form method="post" action="/elevage/bandes">
+      {% if bande_edit %}<input type="hidden" name="id" value="{{ bande_edit.id }}">{% endif %}
+      <div class="grid">
+        <div class="f w-lg">
+          <label for="nom">Nom de la bande</label>
+          <input type="text" id="nom" name="nom" required placeholder="Pondeuses 2026"
+                 value="{{ bande_edit.nom if bande_edit else '' }}">
+        </div>
+        <div class="f">
+          <label for="espece">Espèce</label>
+          <select id="espece" name="espece">
+            {% for k, lib in especes %}
+            <option value="{{ k }}" {% if bande_edit and bande_edit.espece == k %}selected{% endif %}>{{ lib }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="f w-md">
+          <label for="race">Race <span style="text-transform:none; font-weight:400;">(facultatif)</span></label>
+          <input type="text" id="race" name="race" placeholder="Marans"
+                 value="{{ bande_edit.race or '' if bande_edit else '' }}">
+        </div>
+        <div class="f w-sm">
+          <label for="effectif_initial">Effectif</label>
+          <input type="number" id="effectif_initial" name="effectif_initial" min="1" step="1"
+                 inputmode="numeric" required value="{{ bande_edit.effectif_initial if bande_edit else '' }}">
+        </div>
+        <div class="f">
+          <label for="date_mise_en_place">Mise en place</label>
+          <input type="date" id="date_mise_en_place" name="date_mise_en_place"
+                 value="{{ bande_edit.date_mise_en_place if bande_edit else today }}">
+        </div>
+        <div class="f">
+          <label for="mode_elevage">Mode d'élevage</label>
+          <select id="mode_elevage" name="mode_elevage">
+            {% for k, lib in modes %}
+            <option value="{{ k }}" {% if bande_edit and bande_edit.mode_elevage == k %}selected{% endif %}>{{ lib }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% if bande_edit %}
+        <div class="f">
+          <label for="statut">Statut</label>
+          <select id="statut" name="statut">
+            <option value="active" {% if bande_edit.statut == 'active' %}selected{% endif %}>Active</option>
+            <option value="terminee" {% if bande_edit.statut == 'terminee' %}selected{% endif %}>Terminée</option>
+          </select>
+        </div>
+        {% endif %}
+        <button type="submit" class="btn">{% if bande_edit %}Enregistrer{% else %}Créer la bande{% endif %}</button>
+      </div>
+      <p style="margin:12px 0 0 0; font-size:11.5px; color:var(--text-muted);">
+        Le <strong>mode d'élevage</strong> figure sur l'étiquetage des œufs vendus — il conditionne
+        aussi l'affichage obligatoire en vente directe.
+      </p>
+    </form>
+  </div>
+</div>
+
+<!-- ── Déclarer un mouvement ──────────────────────────────────────────── -->
+{% if bandes %}
+<div class="card">
+  <div class="card-head">
+    <span class="t">Déclarer un mouvement</span>
+    <span class="m">mortalité, réforme ou ajout — alimente le registre d'élevage</span>
+  </div>
+  <div class="card-body">
+    <form method="post" action="/elevage/mouvement">
+      <div class="grid">
+        <div class="f">
+          <label for="mvt_bande">Bande</label>
+          <select id="mvt_bande" name="bande_id">
+            {% for b in bandes %}{% if b.statut == 'active' %}
+            <option value="{{ b.id }}">{{ b.nom }} — {{ b.effectif_vivant }} vivants</option>
+            {% endif %}{% endfor %}
+          </select>
+        </div>
+        <div class="f">
+          <label for="type_mouvement">Type</label>
+          <select id="type_mouvement" name="type_mouvement">
+            {% for k, lib in types_mouvement %}<option value="{{ k }}">{{ lib }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="f w-sm">
+          <label for="nombre">Nombre</label>
+          <input type="number" id="nombre" name="nombre" min="1" step="1" inputmode="numeric" required>
+        </div>
+        <div class="f">
+          <label for="date_mouvement">Date</label>
+          <input type="date" id="date_mouvement" name="date_mouvement" value="{{ today }}">
+        </div>
+        <div class="f w-lg">
+          <label for="motif">Motif <span style="text-transform:none; font-weight:400;">(facultatif)</span></label>
+          <input type="text" id="motif" name="motif" placeholder="Prédation, maladie, fin de ponte…">
+        </div>
+        <button type="submit" class="btn ghost">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Le cheptel ─────────────────────────────────────────────────────── -->
+<div class="card">
+  <div class="card-head">
+    <span class="t">Cheptel</span>
+    <span class="m">{{ bandes|length }} bande{{ 's' if bandes|length > 1 }} enregistrée{{ 's' if bandes|length > 1 }}</span>
+  </div>
+  {% if bandes %}
+  <table class="elv">
+    <thead>
+      <tr>
+        <th>Bande</th><th>Espèce</th><th>Mode</th><th>Mise en place</th>
+        <th class="num">Initial</th><th class="num">Vivant</th><th class="num">Pertes</th>
+        <th>Statut</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in bandes %}
+      <tr>
+        <td class="nom">
+          {{ b.nom }}
+          {% if b.race %}<span style="color:var(--text-muted); font-size:11.5px;"> · {{ b.race }}</span>{% endif %}
+        </td>
+        <td>{{ b.espece_label }}</td>
+        <td>{{ b.mode_label }}</td>
+        <td>{{ b.date_mise_en_place }}</td>
+        <td class="num">{{ b.effectif_initial }}</td>
+        <td class="num" style="color:var(--text-primary); font-weight:600;">{{ b.effectif_vivant }}</td>
+        <td class="num">
+          {% if b.pertes %}{{ b.pertes }}{% if b.taux_perte_pct is not none %}
+            <span style="color:var(--text-muted); font-size:11px;"> ({{ b.taux_perte_pct }} %)</span>{% endif %}
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          {% if b.statut == 'active' %}<span class="pill act">active</span>
+          {% else %}<span class="pill fin">terminée</span>{% endif %}
+        </td>
+        <td><a href="/elevage/bandes?edit={{ b.id }}" class="lnk" style="font-size:12px;">modifier</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">Aucune bande. Crée la première avec le formulaire ci-dessus.</div>
+  {% endif %}
+</div>
+
+<!-- ── Historique des mouvements ──────────────────────────────────────── -->
+{% if mouvements %}
+<div class="card">
+  <div class="card-head">
+    <span class="t">Derniers mouvements</span>
+    <span class="m">40 plus récents — le registre d'élevage se conserve 5 ans</span>
+  </div>
+  <table class="elv">
+    <thead><tr><th>Date</th><th>Bande</th><th>Type</th><th class="num">Nombre</th><th>Motif</th></tr></thead>
+    <tbody>
+      {% for m in mouvements %}
+      <tr>
+        <td>{{ m.date_mouvement }}</td>
+        <td class="nom">{{ m.bande_nom or '—' }}</td>
+        <td>
+          {% if m.type_mouvement == 'mortalite' %}<span class="pill mort">{{ m.type_label }}</span>
+          {% elif m.type_mouvement == 'reforme' %}<span class="pill ref">{{ m.type_label }}</span>
+          {% else %}<span class="pill add">{{ m.type_label }}</span>{% endif %}
+        </td>
+        <td class="num">{{ m.nombre }}</td>
+        <td>{{ m.motif or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<p style="margin-top:18px; font-size:11.5px; color:var(--text-muted); line-height:1.5;">
+  Le <strong>registre d'élevage</strong> — entrées et sorties, traitements, ordonnances, mortalités —
+  relève de l'arrêté du 5 juin 2000 et se conserve <strong>5 ans</strong>. SelfFarm en tient la partie
+  effectifs ; les traitements et ordonnances restent à consigner par ailleurs tant que le module ne
+  les couvre pas.
+</p>
+
+{% endblock %}

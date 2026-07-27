@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block title %}Élevage — ponte du jour · SelfFarm-Lite{% endblock %}
+
+{% block content %}
+
+<style>
+.elv-header {margin-bottom:20px;}
+.elv-header h1 {font-size:24px; color:var(--text-primary); font-family:'Fraunces',serif; font-weight:600; margin:0 0 4px 0; letter-spacing:-0.018em;}
+.elv-header h1 .accent {color:var(--accent-400); font-style:italic;}
+.elv-header .subtitle {font-size:12.5px; color:var(--text-secondary); max-width:660px; line-height:1.55;}
+
+.flash {padding:11px 15px; border-radius:8px; font-size:13px; margin-bottom:16px; line-height:1.5;}
+.flash.ok {background:rgba(74,222,128,0.09); border:1px solid rgba(74,222,128,0.26); color:#a7f3c0;}
+.flash.err {background:rgba(248,113,113,0.09); border:1px solid rgba(248,113,113,0.28); color:#fca5a5;}
+
+.elv-stats {display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;}
+.elv-stat {flex:1; min-width:132px; padding:12px 14px; border-radius:9px; background:var(--bg-card,rgba(255,255,255,0.02)); border:1px solid var(--border-subtle);}
+.elv-stat .k {font-size:10.5px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); font-weight:600; margin-bottom:5px;}
+.elv-stat .v {font-size:21px; color:var(--text-primary); font-weight:600; font-variant-numeric:tabular-nums;}
+.elv-stat .u {font-size:12px; color:var(--text-secondary); font-weight:400;}
+.elv-stat.alert {border-color:rgba(224,164,88,0.35); background:rgba(224,164,88,0.06);}
+.elv-stat.alert .v {color:#f4c47a;}
+
+/* ── Saisie du jour : l'écran est fait pour être utilisé debout, une main
+      occupée, en plein soleil. Gros contrôles, peu de champs, tout visible. ── */
+.saisie {border-radius:12px; border:1px solid rgba(224,164,88,0.30); background:rgba(224,164,88,0.05); padding:18px 20px; margin-bottom:24px;}
+.saisie h2 {font-size:15px; margin:0 0 3px 0; color:var(--text-primary); font-weight:600;}
+.saisie .hint {font-size:11.5px; color:var(--text-muted); margin-bottom:14px;}
+.saisie-grid {display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;}
+.f {display:flex; flex-direction:column; gap:5px;}
+.f label {font-size:10.5px; text-transform:uppercase; letter-spacing:0.45px; color:var(--text-muted); font-weight:600;}
+.f input, .f select {padding:12px 13px; border-radius:8px; border:1px solid var(--border-subtle); background:rgba(0,0,0,0.22); color:var(--text-primary); font-size:15px; font-family:inherit;}
+.f input:focus, .f select:focus {outline:none; border-color:var(--accent-400); background:rgba(0,0,0,0.30);}
+.f.big input {font-size:30px; font-weight:600; padding:12px 16px; width:150px; text-align:center; font-variant-numeric:tabular-nums;}
+.btn-go {padding:15px 30px; border-radius:9px; border:none; background:var(--accent-400,#e0a458); color:#1a1207; font-size:15px; font-weight:650; cursor:pointer; font-family:inherit;}
+.btn-go:hover {filter:brightness(1.08);}
+
+.card {border-radius:10px; border:1px solid var(--border-subtle); overflow:hidden; margin-bottom:16px;}
+.card-head {padding:10px 15px; background:rgba(22,101,52,0.07); border-bottom:1px solid var(--border-subtle); display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.card-head .t {font-size:13.5px; font-weight:600; color:var(--text-primary);}
+.card-head .m {font-size:11.5px; color:var(--text-muted);}
+.card-head .right {margin-left:auto;}
+
+table.elv {width:100%; border-collapse:collapse; font-size:12.5px;}
+table.elv th {text-align:left; padding:7px 15px; font-size:10.5px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border-subtle);}
+table.elv td {padding:9px 15px; border-bottom:1px solid rgba(255,255,255,0.03); color:var(--text-secondary);}
+table.elv tr:last-child td {border-bottom:none;}
+table.elv td.nom {color:var(--text-primary); font-weight:500;}
+table.elv td.num {font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap;}
+
+.pill {font-size:10px; padding:2px 8px; border-radius:10px; white-space:nowrap;}
+.pill.ok {background:rgba(74,222,128,0.10); color:#86efac; border:1px solid rgba(74,222,128,0.22);}
+.pill.todo {background:rgba(224,164,88,0.10); color:#f4c47a; border:1px solid rgba(224,164,88,0.25);}
+.pill.late {background:rgba(248,113,113,0.10); color:#fca5a5; border:1px solid rgba(248,113,113,0.26);}
+.empty {padding:34px 20px; text-align:center; color:var(--text-muted); font-size:13px; border:1px dashed var(--border-subtle); border-radius:10px;}
+.lnk {color:var(--accent-400); text-decoration:none;}
+</style>
+
+<div class="elv-header">
+  <h1>Élevage <span class="accent">— ponte du jour</span></h1>
+  <p class="subtitle">
+    Relevé quotidien, effectifs et alertes de fraîcheur. Le cheptel, les mortalités et les réformes
+    se gèrent sur <a href="/elevage/bandes" class="lnk">Bandes &amp; mouvements</a>.
+  </p>
+</div>
+
+{% if ok %}<div class="flash ok">{{ ok }}</div>{% endif %}
+{% if erreur %}<div class="flash err">{{ erreur }}</div>{% endif %}
+
+<div class="elv-stats">
+  <div class="elv-stat"><div class="k">Bandes actives</div><div class="v">{{ stats.nb_bandes }}</div></div>
+  <div class="elv-stat"><div class="k">Effectif vivant</div><div class="v">{{ stats.effectif_total }}</div></div>
+  <div class="elv-stat"><div class="k">Œufs sur 7 jours</div><div class="v">{{ stats.oeufs_7j }}</div></div>
+  <div class="elv-stat"><div class="k">Stock en lots</div><div class="v">{{ stats.stock_lots }} <span class="u">œufs</span></div></div>
+  <div class="elv-stat {% if stats.nb_alertes %}alert{% endif %}">
+    <div class="k">Lots à écouler</div><div class="v">{{ stats.nb_alertes }}</div>
+  </div>
+</div>
+
+{% if bandes %}
+<form class="saisie" method="post" action="/elevage/ponte">
+  <h2>Ramassage du jour</h2>
+  <p class="hint">
+    Le nombre d'œufs est le <strong>total ramassé</strong> ; casses et déclassés en font partie.
+    Re-saisir la même date <strong>corrige</strong> le relevé au lieu de le dupliquer.
+  </p>
+  <div class="saisie-grid">
+    {% if bandes|length > 1 %}
+    <div class="f">
+      <label for="bande_id">Bande</label>
+      <select id="bande_id" name="bande_id">
+        {% for b in bandes %}
+        <option value="{{ b.id }}">{{ b.nom }} — {{ b.effectif_vivant }} animaux</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% else %}
+    <input type="hidden" name="bande_id" value="{{ bandes[0].id }}">
+    {% endif %}
+
+    <div class="f big">
+      <label for="nb_oeufs">Œufs ramassés</label>
+      <input type="number" id="nb_oeufs" name="nb_oeufs" min="0" step="1"
+             inputmode="numeric" autofocus required placeholder="0">
+    </div>
+
+    <div class="f">
+      <label for="nb_casses">Casses</label>
+      <input type="number" id="nb_casses" name="nb_casses" min="0" step="1"
+             inputmode="numeric" value="0" style="width:88px;">
+    </div>
+
+    <div class="f">
+      <label for="nb_declasses" title="Sales, fêlés, hors calibre — pondus mais pas vendables au même circuit">Déclassés</label>
+      <input type="number" id="nb_declasses" name="nb_declasses" min="0" step="1"
+             inputmode="numeric" value="0" style="width:88px;">
+    </div>
+
+    <div class="f">
+      <label for="date_ponte">Date</label>
+      <input type="date" id="date_ponte" name="date_ponte" value="{{ today }}">
+    </div>
+
+    <button type="submit" class="btn-go">Enregistrer</button>
+  </div>
+</form>
+{% endif %}
+
+{% if alertes %}
+<div class="card">
+  <div class="card-head">
+    <span class="t">Lots à écouler en priorité</span>
+    <span class="m">délai réglementaire de 21 jours entre ponte et remise au consommateur</span>
+  </div>
+  <table class="elv">
+    <thead><tr><th>Bande</th><th>Période de ponte</th><th>Mode</th><th class="num">Œufs</th><th>Date limite</th><th>Reste</th></tr></thead>
+    <tbody>
+      {% for l in alertes %}
+      <tr>
+        <td class="nom">{{ l.bande_nom or '—' }}</td>
+        <td>{{ l.date_ponte_debut }} → {{ l.date_ponte_fin }}</td>
+        <td>{{ l.mode_elevage or '—' }}</td>
+        <td class="num">{{ l.nb_oeufs }}</td>
+        <td>{{ l.date_limite }}</td>
+        <td>
+          {% if l.jours_restants is not none and l.jours_restants < 0 %}
+            <span class="pill late">dépassé de {{ -l.jours_restants }} j</span>
+          {% else %}
+            <span class="pill todo">{{ l.jours_restants }} j</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if bandes %}
+<div class="card">
+  <div class="card-head">
+    <span class="t">Bandes en production</span>
+    <span class="m">taux calculé sur l'effectif vivant, sur les 7 derniers relevés</span>
+    <span class="right"><a href="/elevage/bandes" class="lnk" style="font-size:12px;">Gérer le cheptel →</a></span>
+  </div>
+  <table class="elv">
+    <thead>
+      <tr>
+        <th>Bande</th><th>Espèce</th><th>Mode</th>
+        <th class="num">Effectif</th><th class="num">Moy./jour</th>
+        <th class="num">Taux de ponte</th><th class="num">Vendables</th>
+        <th>Dernier relevé</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in bandes %}
+      <tr>
+        <td class="nom">
+          {{ b.nom }}
+          {% if b.race %}<span style="color:var(--text-muted); font-size:11.5px;"> · {{ b.race }}</span>{% endif %}
+        </td>
+        <td>{{ b.espece_label }}</td>
+        <td>{{ b.mode_label }}</td>
+        <td class="num">{{ b.effectif_vivant }}</td>
+        <td class="num">{% if b.moyenne_jour is not none %}{{ b.moyenne_jour }}{% else %}—{% endif %}</td>
+        <td class="num">{% if b.taux_ponte_pct is not none %}{{ b.taux_ponte_pct }} %{% else %}—{% endif %}</td>
+        <td class="num" title="Total ramassé moins casses et déclassés, sur les 7 derniers relevés">
+          {% if b.taux_vendable_pct is not none %}
+            {{ b.total_vendables }}<span style="color:var(--text-muted); font-size:11px;"> · {{ b.taux_vendable_pct }} %</span>
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          {% if b.saisi_aujourdhui %}<span class="pill ok">fait aujourd'hui</span>
+          {% elif b.derniere_saisie %}<span class="pill todo">{{ b.derniere_saisie }}</span>
+          {% else %}<span class="pill todo">jamais</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty">
+  Aucune bande enregistrée.<br>
+  <span style="font-size:12px;">Commence par créer ton lot d'animaux :
+  <a href="/elevage/bandes" class="lnk">Bandes &amp; mouvements</a>.</span>
+</div>
+{% endif %}
+
+<p style="margin-top:18px; font-size:11.5px; color:var(--text-muted); line-height:1.5;">
+  Le délai de 21 jours et l'affichage de la période de ponte et du mode d'élevage relèvent du régime
+  de la <strong>vente directe sous 250 poules</strong>. SelfFarm outille ce suivi mais
+  <strong>n'atteste d'aucune conformité</strong> : la déclaration préalable et le marquage du code
+  producteur restent à vérifier auprès de ta DDETSPP.
+</p>
+
+{% endblock %}
