@@ -74,6 +74,15 @@ secrets/
 *.key
 
 # Tests dev
+# Les tests ne servent qu'en développement : les embarquer gonfle l'image et
+# élargit la surface exposée pour rien. Leurs fixtures contiennent en outre des
+# données d'exemple qui n'ont pas à circuler dans une image publiée.
+tests/
+*/tests/
+**/tests/
+test_*.py
+conftest.py
+pytest.ini
 tests/__snapshots__/
 .coverage*
 
