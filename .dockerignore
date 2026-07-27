@@ -50,8 +50,10 @@ docs/
 !README.md
 !LICENSE
 
-# Données locales / cache (dev poste Pierroons)
-data/
+# Données locales / cache (runtime) — ancré à la racine, cf .gitignore :
+# les modules/*/data/ contiennent les données de référence du logiciel et
+# doivent être embarquées dans l'image.
+/data/
 ~/.selffarm/
 *.sqlite
 *.sqlite3

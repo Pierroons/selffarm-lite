@@ -13,10 +13,13 @@ dist/
 .coverage
 htmlcov/
 
-# Données locales
+# Données locales (runtime) — ancré à la racine : les data/ des modules
+# sont des DONNÉES DE RÉFÉRENCE du logiciel (plan comptable, catalogue
+# d'aides, catalogue de variétés), pas des données utilisateur. Sans elles
+# le dépôt et l'image publiée sont fonctionnellement vides.
 *.sqlite3
 *.db
-data/
+/data/
 exports/
 *.log
 
