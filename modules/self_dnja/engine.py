@@ -48,6 +48,28 @@ SMIC_ANNUEL_BRUT_2026 = Decimal("21621.60")
 # NB : ce seuil s'applique au RDA *après* cotisations sociales exploitant (méthode PROAGRI).
 EBE_UTH_SEUIL_DNJA_NA_2026 = Decimal(17717)
 
+# ── Bilan simplifié à fin d'horizon : ratios par défaut ──────────────────────
+#
+# Ces postes ne se calculent pas à partir des hypothèses saisies : ils sont
+# estimés. Auparavant codés en montants fixes — et calibrés sur une seule
+# filière —, ils sont désormais **dérivés du chiffre d'affaires** de la dernière
+# année, ce qui les rend au moins proportionnés à la taille de l'exploitation.
+#
+# ⚠️ Ce sont des ORDRES DE GRANDEUR, pas des références sectorielles. Un
+# maraîcher en vente directe encaisse comptant (créances proches de zéro) là où
+# un producteur livrant en gros porte 30 à 60 jours de CA. Toute exploitation
+# qui connaît ses vrais chiffres doit les saisir : les champs `stock_final_n`,
+# `creances_clients_n` et `dettes_court_terme_n` d'Hypotheses priment sur ces
+# ratios.
+RATIO_STOCK_FINAL_CA = Decimal("0.05")        # produits en stock à la clôture
+RATIO_CREANCES_CA = Decimal("0.05")           # ~18 jours de CA non encaissé
+RATIO_DETTES_CT_CA = Decimal("0.05")          # dettes fournisseurs et sociales
+
+# Part des immobilisations brutes supposée autofinancée (abonde la trésorerie)
+# et part financée par subvention d'équipement, étalée au passif.
+RATIO_AUTOFINANCEMENT_IMMOS = Decimal("0.30")
+RATIO_SUBVENTIONS_ETALEES_IMMOS = Decimal("0.35")
+
 # Barème IR 2026 par part (simplifié, célibataire, sans réduction spécifique)
 IR_TRANCHES_2026 = [
     (Decimal(11497), Decimal(0)),       # tranche à 0 %
@@ -453,12 +475,12 @@ def _calculer_ratios(h: Hypotheses, ligne_n4: LigneResultat) -> Ratios:
 
 
 def _calculer_scenarios_stress(h: Hypotheses) -> list[ScenarioStress]:
-    """Tests de résistance N+4 : CA -20 %, prix CBD -25 %, cumul."""
+    """Tests de résistance N+4 : volume −20 %, prix −25 %, cumul des deux."""
     scenarios: list[ScenarioStress] = []
 
     for nom, description, facteur_qte, facteur_prix in [
         ("CA -20 %", "Baisse du volume de ventes de 20 % (retard commercialisation)", Decimal("0.8"), Decimal("1.0")),
-        ("Prix CBD -25 %", "Chute des prix CBD (concurrence/surproduction)", Decimal("1.0"), Decimal("0.75")),
+        ("Prix -25 %", "Chute des prix de vente (concurrence, surproduction)", Decimal("1.0"), Decimal("0.75")),
         ("Cumul vol + prix −30 %", "Scénario pessimiste : vol -20 % + prix -15 %", Decimal("0.8"), Decimal("0.85")),
     ]:
         h_stress = h.model_copy(deep=True)
@@ -483,24 +505,35 @@ def _calculer_scenarios_stress(h: Hypotheses) -> list[ScenarioStress]:
 
 def _calculer_bilan_n4(h: Hypotheses, lignes: list[LigneResultat]) -> BilanSimplifie:
     """Bilan prévisionnel simplifié à fin N+4."""
+    # Chiffre d'affaires de la dernière année : assiette des postes estimés.
+    ca_final = lignes[-1].produits_exploitation if lignes else Decimal(0)
+
+    def _poste(saisi: Decimal | None, ratio: Decimal) -> Decimal:
+        """Valeur saisie si l'exploitation la connaît, sinon estimation sur le CA."""
+        if saisi is not None:
+            return Decimal(saisi).quantize(Decimal("0.01"))
+        return (ca_final * ratio).quantize(Decimal("0.01"))
+
     # Actif
     immos_brutes = sum((i.montant_ht for i in h.immobilisations), Decimal(0))
     amort_cumules = sum((l.amortissements for l in lignes), Decimal(0))
     immos_nettes = (immos_brutes - amort_cumules).quantize(Decimal("0.01"))
-    stocks = Decimal(5000)  # estimation fleurs CBD en cours de séchage/stockage
-    creances = Decimal(2000)  # clients en attente de paiement
-    # Trésorerie = cumul résultats - prélèvements - invests + aides capital
+    stocks = _poste(h.stock_final_n, RATIO_STOCK_FINAL_CA)
+    creances = _poste(h.creances_clients_n, RATIO_CREANCES_CA)
+    # Trésorerie = cumul résultats - prélèvements + part autofinancée des immos
     cumul_resultat = sum((l.resultat for l in lignes), Decimal(0))
     cumul_prelevements = sum((l.prelevements_annuels for l in lignes), Decimal(0))
-    tresorerie = max((cumul_resultat - cumul_prelevements + immos_brutes * Decimal("0.3")),
-                      Decimal(0)).quantize(Decimal("0.01"))
+    tresorerie = max(
+        cumul_resultat - cumul_prelevements + immos_brutes * RATIO_AUTOFINANCEMENT_IMMOS,
+        Decimal(0),
+    ).quantize(Decimal("0.01"))
     total_actif = (immos_nettes + stocks + creances + tresorerie).quantize(Decimal("0.01"))
 
     # Passif — le capital exploitant est la variable d'ajustement : il absorbe
     # ce qui n'est ni dette ni subvention, pour que le bilan balance par
     # construction (capitaux propres = actif − dettes − subventions étalées).
-    subventions_etalees = (immos_brutes * Decimal("0.35")).quantize(Decimal("0.01"))
-    dettes = Decimal(3000)
+    subventions_etalees = (immos_brutes * RATIO_SUBVENTIONS_ETALEES_IMMOS).quantize(Decimal("0.01"))
+    dettes = _poste(h.dettes_court_terme_n, RATIO_DETTES_CT_CA)
     capital_exploitant = (total_actif - dettes - subventions_etalees).quantize(Decimal("0.01"))
     total_passif = (capital_exploitant + subventions_etalees + dettes).quantize(Decimal("0.01"))
 

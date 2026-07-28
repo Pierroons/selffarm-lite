@@ -26,25 +26,30 @@ BASE_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(BASE_DIR / "modules"))
 sys.path.insert(0, str(BASE_DIR))
 
-from webapp import __version__
-from webapp.routes import home as home_module
-from webapp.routes import dnja as dnja_module
-from webapp.routes import aides as aides_module
-from webapp.routes import cultures as cultures_module
-from webapp.routes import elevage as elevage_module
-from webapp.routes import parcelles as parcelles_module
-from webapp.routes import invoice as invoice_module
-from webapp.routes import compta as compta_module
-from webapp.routes import backup as backup_module
-from webapp.routes import onboarding as onboarding_module
+from self_agri_book.exploitation import get_exploitation, is_onboarding_done
 
-from self_agri_book.exploitation import is_onboarding_done, get_exploitation
-from webapp import modules_catalog
+from webapp import __version__, modules_catalog
 from webapp.icons import icon_svg
 from webapp.modules_state import (
-    is_module_active, is_module_visible, get_view_mode, get_active_ids,
-    active_module_id, active_tab, first_visible_route, visible_tabs,
+    active_module_id,
+    active_tab,
+    first_visible_route,
+    get_active_ids,
+    get_view_mode,
+    is_module_active,
+    is_module_visible,
+    visible_tabs,
 )
+from webapp.routes import aides as aides_module
+from webapp.routes import backup as backup_module
+from webapp.routes import compta as compta_module
+from webapp.routes import cultures as cultures_module
+from webapp.routes import dnja as dnja_module
+from webapp.routes import elevage as elevage_module
+from webapp.routes import home as home_module
+from webapp.routes import invoice as invoice_module
+from webapp.routes import onboarding as onboarding_module
+from webapp.routes import parcelles as parcelles_module
 
 home_router = home_module.router
 dnja_router = dnja_module.router
@@ -58,12 +63,15 @@ backup_router = backup_module.router
 onboarding_router = onboarding_module.router
 
 from webapp.routes import roadmap as roadmap_module
+
 roadmap_router = roadmap_module.router
 
 from webapp.routes import pos as pos_module
+
 pos_router = pos_module.router
 
 from webapp.routes import modules as modules_routes
+
 modules_route_router = modules_routes.router
 
 # Variable d'environnement injectée comme global Jinja2 (visible dans tous templates)
@@ -95,8 +103,7 @@ def _fmt_kg(value) -> str:
     except (TypeError, ValueError):
         return "0"
     s = f"{n:.1f}"
-    if s.endswith(".0"):          # pas de décimale inutile — mais on ne rogne
-        s = s[:-2]                # jamais un zéro significatif (100.0 → 100)
+    s = s.removesuffix(".0")                # jamais un zéro significatif (100.0 → 100)
     return s.replace(".", ",")
 
 
@@ -144,6 +151,7 @@ async def lifespan(app: FastAPI):
     # Snapshot local automatique (B2) — best-effort, en arrière-plan (ne ralentit pas le boot)
     try:
         import threading
+
         from self_backup import auto_snapshot_if_due
         threading.Thread(
             target=lambda: auto_snapshot_if_due(version=__version__),
@@ -156,6 +164,7 @@ async def lifespan(app: FastAPI):
     # l'app. Best-effort, thread de fond.
     try:
         import threading
+
         from self_backup import backup_watcher
         threading.Thread(
             target=lambda: backup_watcher(version=__version__),
@@ -216,7 +225,7 @@ async def no_cache_service_worker(request: Request, call_next):
     le navigateur est forcé de re-fetcher le SW à chaque visite (pas de cache stale)."""
     resp = await call_next(request)
     p = request.url.path
-    if p.endswith("sw-mobile.js") or p.endswith("sw.js") or p.endswith("version.json"):
+    if p.endswith(("sw-mobile.js", "sw.js", "version.json")):
         resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
         resp.headers["Pragma"] = "no-cache"
         resp.headers["Expires"] = "0"

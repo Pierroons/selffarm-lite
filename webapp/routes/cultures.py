@@ -17,7 +17,6 @@ from datetime import date
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-
 from self_agri_book.exploitation import get_exploitation
 from self_culture.cultures import (
     get_varietes_for_datalist,
@@ -25,6 +24,7 @@ from self_culture.cultures import (
     list_plan_culture,
     stats_parcelles_saison,
 )
+
 from webapp import __version__
 
 log = logging.getLogger(__name__)

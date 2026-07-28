@@ -7,14 +7,14 @@ import re
 from pathlib import Path
 
 import yaml
-from fastapi import APIRouter, Form, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-
-from webapp import __version__
 from self_dnja.engine import calculer
 from self_dnja.models import Hypotheses
 from self_dnja.pdf import render_pdf
+
+from webapp import __version__
 
 router = APIRouter(prefix="/dnja", tags=["dnja"])
 
@@ -307,8 +307,6 @@ async def dnja_pdf(example: str):
     h = _load_example(example)
     result = calculer(h)
     # Fichier temporaire mémoire
-    import io
-    from self_dnja.pdf import TEMPLATES_DIR as DNJA_TMPL
 
     # Re-utilise la fonction render_pdf qui écrit sur disque
     tmp_path = Path(f"/tmp/selffarm-dnja-{example}.pdf")

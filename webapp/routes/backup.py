@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Request, UploadFile, File, Form
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
@@ -71,8 +71,13 @@ async def backup_index(request: Request):
             {"request": request, "version": __version__, **_DEMO_CONTEXT},
         )
     from self_backup import (
-        _db_path, _stats_db, list_external_mounts, load_ext_config,
-        _snapshots, _last_snapshot_age_hours, get_cron_schedule,
+        _db_path,
+        _last_snapshot_age_hours,
+        _snapshots,
+        _stats_db,
+        get_cron_schedule,
+        list_external_mounts,
+        load_ext_config,
     )
     from self_backup.remote import load_sftp_config
     db_path = _db_path()
@@ -109,8 +114,8 @@ async def backup_health_json():
     if h["alert"] and h["external"]["alert"]:
         try:
             retry_missed_backups(version=__version__, targets=("external",))
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception:  # best-effort, mais jamais silencieux
+            log.warning("Retry de sauvegarde externe échoué", exc_info=True)
         h = backup_health()
     return JSONResponse({
         "alert": h["alert"],
@@ -140,7 +145,7 @@ async def backup_demarrage_utiliser(mount_path: str = Form(...)):
     try:
         backup_to_external(mount_path, version=__version__)
         set_cron_schedule(hour=20)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         log.warning("Démarrage backup échoué : %s", e)
         return RedirectResponse(url="/backup/demarrage?err=1", status_code=303)
     return RedirectResponse(url="/?backup_ok=1", status_code=303)
@@ -191,7 +196,7 @@ async def backup_distant_test():
     res = test_sftp(cfg)
     cfg["last_test"] = {
         "ok": res["ok"], "message": res["message"],
-        "at": datetime.now(timezone.utc).isoformat(),
+        "at": datetime.now(UTC).isoformat(),
     }
     save_sftp_config(cfg)
     return RedirectResponse(url="/backup", status_code=303)
@@ -204,12 +209,12 @@ async def backup_distant_now():
     from self_backup.remote import backup_to_sftp, load_sftp_config, save_sftp_config
     try:
         backup_to_sftp(version=__version__)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         log.warning("Backup distant échoué : %s", e)
         cfg = load_sftp_config()
         cfg["last_test"] = {
             "ok": False, "message": f"Échec sauvegarde : {e}",
-            "at": datetime.now(timezone.utc).isoformat(),
+            "at": datetime.now(UTC).isoformat(),
         }
         save_sftp_config(cfg)
         return RedirectResponse(url="/backup?sftp_err=1", status_code=303)
@@ -318,7 +323,7 @@ async def backup_restore(request: Request, archive: UploadFile = File(...), conf
 async def backup_restaurer_page(request: Request):
     """Écran de restauration depuis un support détecté (DD) — scénario catastrophe."""
     _block_in_demo()
-    from self_backup import list_external_mounts, list_backups_on_mount
+    from self_backup import list_backups_on_mount, list_external_mounts
     supports = []
     for m in list_external_mounts():
         backups = list_backups_on_mount(m["path"])
@@ -341,7 +346,7 @@ async def backup_restaurer(request: Request, mount_path: str = Form(...), name: 
         raise HTTPException(status_code=400, detail=str(e))
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         log.exception("Restore depuis support échoué")
         raise HTTPException(status_code=500, detail=f"Erreur restore : {e}")
     if result.get("needs_confirmation"):

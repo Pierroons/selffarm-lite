@@ -16,8 +16,9 @@ Sémantique (cf project_selffarm_modes_modulaires) :
 """
 from __future__ import annotations
 
-from webapp import modules_catalog as cat
 from self_agri_book.exploitation import get_exploitation, save_exploitation
+
+from webapp import modules_catalog as cat
 
 
 def get_active_ids() -> set[str]:

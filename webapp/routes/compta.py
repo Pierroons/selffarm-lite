@@ -32,15 +32,15 @@ def _demo_only():
 
 try:
     from self_agri_book.storage import (
-        list_ecritures,
         balance_par_compte,
-        stats_globales,
-        save_ecriture,
-        find_ecriture_by_source,
-        reset_demo,
         bilan_data,
-        resultat_data,
         export_fec,
+        find_ecriture_by_source,
+        list_ecritures,
+        reset_demo,
+        resultat_data,
+        save_ecriture,
+        stats_globales,
     )
     STORAGE_OK = True
 except ImportError:
@@ -63,7 +63,7 @@ VENTES_FIXTURES = [
      "article_qte": 30, "article_unite": "flacon", "article_pu_ht": Decimal("13.60"),
      "client": "SARL Herboristerie des Tilleuls", "adresse": "8 rue des Lilas", "cp": "75011", "ville": "Paris",
      "siret": "111 222 333 44444", "tva": "FR 11 111222333", "email": "commandes@exemple.test",
-     "tva_pct": Decimal("20"), "facturable": True},
+     "tva_pct": Decimal(20), "facturable": True},
     {"libelle_compta": "Vente gros miel tilleul bio",
      "article_nom": "Miel de Tilleul Bio 500 g", "article_detail": "Récolte été 2026, palette 24 pots verre",
      "article_qte": 24, "article_unite": "pot", "article_pu_ht": Decimal("17.50"),
@@ -75,7 +75,7 @@ VENTES_FIXTURES = [
      "article_qte": 12, "article_unite": "flacon", "article_pu_ht": Decimal("15.00"),
      "client": "Savonnerie Artisanale du Coin", "adresse": "14 rue de la Rivière", "cp": "26000", "ville": "Valence",
      "siret": "333 444 555 66666", "tva": "FR 33 333444555", "email": "contact@savon-exemple.test",
-     "tva_pct": Decimal("20"), "facturable": True},
+     "tva_pct": Decimal(20), "facturable": True},
     {"libelle_compta": "Vente plants aromatiques bio printemps",
      "article_nom": "Plants Thym vulgaire bio", "article_detail": "Godet 9 cm — 18 semaines culture",
      "article_qte": 25, "article_unite": "plant", "article_pu_ht": Decimal("3.80"),
@@ -93,7 +93,7 @@ VENTES_FIXTURES = [
      "article_qte": 20, "article_unite": "flacon", "article_pu_ht": Decimal("21.00"),
      "client": "Herboristerie Le Chanvre Sage", "adresse": "7 place de la Fontaine", "cp": "34000", "ville": "Montpellier",
      "siret": "666 777 888 99999", "tva": "FR 66 666777888", "email": "pro@herbochanvre-exemple.test",
-     "tva_pct": Decimal("20"), "facturable": True},
+     "tva_pct": Decimal(20), "facturable": True},
     # --- Ventes B2C non-facturables (vente directe anonyme) ---
     {"libelle_compta": "Vente directe marché (tisanes + légumes)",
      "client": "Divers clients marché hebdo", "siret": None, "montant_ht": Decimal("240.00"),
@@ -118,16 +118,16 @@ def _vente_montant_ht(v: dict) -> Decimal:
 
 # Pool de fixtures d'achats fictifs (PPAM / maraîchage — cohérent avec les factures)
 ACHATS_FIXTURES = [
-    {"libelle": "Achat compost bio Herbex", "compte_debit": "6011", "montant_ht": Decimal("120.00"), "tva_pct": Decimal("20"), "fourn": "Herbex SAS"},
+    {"libelle": "Achat compost bio Herbex", "compte_debit": "6011", "montant_ht": Decimal("120.00"), "tva_pct": Decimal(20), "fourn": "Herbex SAS"},
     {"libelle": "Achat semences maraîchage bio", "compte_debit": "6011", "montant_ht": Decimal("85.00"), "tva_pct": Decimal("5.5"), "fourn": "Semaforma"},
     {"libelle": "Achat plants PPAM (lavande, thym)", "compte_debit": "6011", "montant_ht": Decimal("210.00"), "tva_pct": Decimal("5.5"), "fourn": "Pépinières Val de Loire"},
-    {"libelle": "Achat emballages tisanes (sachets kraft)", "compte_debit": "6061", "montant_ht": Decimal("45.00"), "tva_pct": Decimal("20"), "fourn": "Embalpack"},
-    {"libelle": "Achat flacons verre ambré 10 ml", "compte_debit": "6061", "montant_ht": Decimal("78.00"), "tva_pct": Decimal("20"), "fourn": "Cogefra"},
-    {"libelle": "Abonnement VIVEA formation (2e tranche)", "compte_debit": "6281", "montant_ht": Decimal("150.00"), "tva_pct": Decimal("20"), "fourn": "VIVEA"},
-    {"libelle": "Location parcelle 1 ha (trimestre)", "compte_debit": "613", "montant_ht": Decimal("250.00"), "tva_pct": Decimal("0"), "fourn": "M. Dupuis Bail rural"},
-    {"libelle": "Carburant tracteur (gasoil non routier)", "compte_debit": "6062", "montant_ht": Decimal("180.00"), "tva_pct": Decimal("20"), "fourn": "TotalEnergies"},
-    {"libelle": "Entretien tracteur (révision 100h)", "compte_debit": "615", "montant_ht": Decimal("320.00"), "tva_pct": Decimal("20"), "fourn": "Garage Delpech"},
-    {"libelle": "Certification bio Ecocert (annuelle)", "compte_debit": "622", "montant_ht": Decimal("550.00"), "tva_pct": Decimal("20"), "fourn": "Ecocert France"},
+    {"libelle": "Achat emballages tisanes (sachets kraft)", "compte_debit": "6061", "montant_ht": Decimal("45.00"), "tva_pct": Decimal(20), "fourn": "Embalpack"},
+    {"libelle": "Achat flacons verre ambré 10 ml", "compte_debit": "6061", "montant_ht": Decimal("78.00"), "tva_pct": Decimal(20), "fourn": "Cogefra"},
+    {"libelle": "Abonnement VIVEA formation (2e tranche)", "compte_debit": "6281", "montant_ht": Decimal("150.00"), "tva_pct": Decimal(20), "fourn": "VIVEA"},
+    {"libelle": "Location parcelle 1 ha (trimestre)", "compte_debit": "613", "montant_ht": Decimal("250.00"), "tva_pct": Decimal(0), "fourn": "M. Dupuis Bail rural"},
+    {"libelle": "Carburant tracteur (gasoil non routier)", "compte_debit": "6062", "montant_ht": Decimal("180.00"), "tva_pct": Decimal(20), "fourn": "TotalEnergies"},
+    {"libelle": "Entretien tracteur (révision 100h)", "compte_debit": "615", "montant_ht": Decimal("320.00"), "tva_pct": Decimal(20), "fourn": "Garage Delpech"},
+    {"libelle": "Certification bio Ecocert (annuelle)", "compte_debit": "622", "montant_ht": Decimal("550.00"), "tva_pct": Decimal(20), "fourn": "Ecocert France"},
 ]
 
 router = APIRouter(prefix="/compta", tags=["compta"])
@@ -214,18 +214,18 @@ def _compte_label(code: str) -> str:
 
 # Pool de fixtures de prélèvements bancaires récurrents
 PRELEVEMENTS_FIXTURES = [
-    {"libelle": "Prélèvement MSA cotisations (mensuel)", "compte_debit": "6451", "montant_ht": Decimal("350.00"), "tva_pct": Decimal("0"), "benef": "MSA"},
-    {"libelle": "Facture EDF électricité transformation", "compte_debit": "6061", "montant_ht": Decimal("85.00"), "tva_pct": Decimal("20"), "benef": "EDF Entreprises"},
-    {"libelle": "Prime assurance exploitation (trimestre)", "compte_debit": "616", "montant_ht": Decimal("100.00"), "tva_pct": Decimal("20"), "benef": "Groupama"},
-    {"libelle": "Abonnement téléphone + internet pro", "compte_debit": "6262", "montant_ht": Decimal("35.00"), "tva_pct": Decimal("20"), "benef": "Orange Pro"},
-    {"libelle": "Fermage trimestriel (foncier agricole)", "compte_debit": "6132", "montant_ht": Decimal("62.50"), "tva_pct": Decimal("0"), "benef": "M. Dupuis bail rural"},
+    {"libelle": "Prélèvement MSA cotisations (mensuel)", "compte_debit": "6451", "montant_ht": Decimal("350.00"), "tva_pct": Decimal(0), "benef": "MSA"},
+    {"libelle": "Facture EDF électricité transformation", "compte_debit": "6061", "montant_ht": Decimal("85.00"), "tva_pct": Decimal(20), "benef": "EDF Entreprises"},
+    {"libelle": "Prime assurance exploitation (trimestre)", "compte_debit": "616", "montant_ht": Decimal("100.00"), "tva_pct": Decimal(20), "benef": "Groupama"},
+    {"libelle": "Abonnement téléphone + internet pro", "compte_debit": "6262", "montant_ht": Decimal("35.00"), "tva_pct": Decimal(20), "benef": "Orange Pro"},
+    {"libelle": "Fermage trimestriel (foncier agricole)", "compte_debit": "6132", "montant_ht": Decimal("62.50"), "tva_pct": Decimal(0), "benef": "M. Dupuis bail rural"},
 ]
 
 # Frais bancaires récurrents
 FRAIS_BANQUE_FIXTURES = [
-    {"libelle": "Frais tenue de compte mensuels", "compte_debit": "6271", "montant_ht": Decimal("4.50"), "tva_pct": Decimal("0")},
-    {"libelle": "Cotisation carte CB pro (annuelle /12)", "compte_debit": "6271", "montant_ht": Decimal("8.00"), "tva_pct": Decimal("0")},
-    {"libelle": "Commission virement européen SEPA", "compte_debit": "6271", "montant_ht": Decimal("1.20"), "tva_pct": Decimal("0")},
+    {"libelle": "Frais tenue de compte mensuels", "compte_debit": "6271", "montant_ht": Decimal("4.50"), "tva_pct": Decimal(0)},
+    {"libelle": "Cotisation carte CB pro (annuelle /12)", "compte_debit": "6271", "montant_ht": Decimal("8.00"), "tva_pct": Decimal(0)},
+    {"libelle": "Commission virement européen SEPA", "compte_debit": "6271", "montant_ht": Decimal("1.20"), "tva_pct": Decimal(0)},
 ]
 
 
@@ -243,7 +243,7 @@ async def compta_generer_vente(request: Request):
 
     vente = random.choice(VENTES_FIXTURES)
     montant_ht = _vente_montant_ht(vente)
-    tva = (montant_ht * vente["tva_pct"] / Decimal("100")).quantize(Decimal("0.01"))
+    tva = (montant_ht * vente["tva_pct"] / Decimal(100)).quantize(Decimal("0.01"))
     ttc = (montant_ht + tva).quantize(Decimal("0.01"))
     today = date.today()
     # Préfixe V = B2B facturable, D = vente directe non-facturable
@@ -313,7 +313,7 @@ async def compta_generer_achat(request: Request):
         return JSONResponse({"error": "storage KO"}, status_code=503)
 
     achat = random.choice(ACHATS_FIXTURES)
-    tva = (achat["montant_ht"] * achat["tva_pct"] / Decimal("100")).quantize(Decimal("0.01"))
+    tva = (achat["montant_ht"] * achat["tva_pct"] / Decimal(100)).quantize(Decimal("0.01"))
     ttc = (achat["montant_ht"] + tva).quantize(Decimal("0.01"))
     today = date.today()
     numero = f"A-{today.year}-{random.randint(1, 9999):04d}"
@@ -370,11 +370,6 @@ async def compta_rejouer_derniere_vente(request: Request):
         })
 
     last = last_invoice[0]
-    try:
-        meta = json.loads(last.get("metadata_json") or "{}")
-    except Exception:
-        meta = {}
-
     eid, created = save_ecriture(
         date_operation=date.fromisoformat(last["date_operation"]),
         journal=last["journal"],
@@ -415,7 +410,7 @@ def _determiner_client_facture(ventes: list, clients_distincts: set) -> dict:
         # Un seul client — on prend ses infos depuis la première vente
         _, meta = ventes[0]
         return {
-            "nom": meta.get("client", list(clients_distincts)[0]),
+            "nom": meta.get("client", next(iter(clients_distincts))),
             "adresse": meta.get("client_adresse", "—"),
             "cp": meta.get("client_cp", "—"),
             "ville": meta.get("client_ville", "—"),
@@ -461,10 +456,10 @@ async def compta_bilan(request: Request):
     if not STORAGE_OK:
         raise HTTPException(503, "storage KO")
     data = bilan_data()
-    for groupe, lignes in data["actif"].items():
+    for lignes in data["actif"].values():
         for l in lignes:
             l["label"] = _enrich_libelle_compte(l["compte"])
-    for groupe, lignes in data["passif"].items():
+    for lignes in data["passif"].values():
         for l in lignes:
             l["label"] = _enrich_libelle_compte(l["compte"])
     return templates.TemplateResponse(
@@ -482,7 +477,7 @@ async def compta_integrite(request: Request):
     """
     if not STORAGE_OK:
         raise HTTPException(503, "storage KO")
-    from self_agri_book.storage import verify_chain, list_audit_log, list_ecritures
+    from self_agri_book.storage import list_audit_log, list_ecritures, verify_chain
     chain = verify_chain()
     audit_entries = list_audit_log(limit=50)
     # Pour chaque entrée audit, parse details_json si présent
@@ -561,9 +556,7 @@ async def compta_facture_du_journal(limit: int = 8):
         except Exception:
             meta = {}
         # Invoice (pool démo) et compta_manuel avec facturable=True sont retenus
-        if e.get("source_module") == "self_invoice":
-            ventes.append((e, meta))
-        elif meta.get("facturable") is True:
+        if e.get("source_module") == "self_invoice" or meta.get("facturable") is True:
             ventes.append((e, meta))
         if len(ventes) >= limit:
             break
@@ -598,18 +591,18 @@ async def compta_facture_du_journal(limit: int = 8):
 
     today = date.today()
     lignes = []
-    total_ht = Decimal("0")
-    total_tva = Decimal("0")
-    total_ttc = Decimal("0")
+    total_ht = Decimal(0)
+    total_tva = Decimal(0)
+    total_ttc = Decimal(0)
 
     # Collecte client unique si toutes les ventes sont pour le même, sinon "Clients divers"
     clients_distincts = set()
 
     for e, meta in ventes:
         ht = Decimal(e["montant_ht"]) if e.get("montant_ht") else Decimal(e["montant_ttc"])
-        tva = Decimal(e["montant_tva"]) if e.get("montant_tva") else Decimal("0")
+        tva = Decimal(e["montant_tva"]) if e.get("montant_tva") else Decimal(0)
         ttc = Decimal(e["montant_ttc"])
-        tva_pct = (tva / ht * Decimal("100")).quantize(Decimal("0.1")) if ht > 0 else Decimal("0")
+        tva_pct = (tva / ht * Decimal(100)).quantize(Decimal("0.1")) if ht > 0 else Decimal(0)
 
         # Infos article depuis metadata (ligne de facture = produit, pas écriture)
         article_nom = meta.get("article_nom")
@@ -652,8 +645,8 @@ async def compta_facture_du_journal(limit: int = 8):
     tva_par_taux: dict[str, Decimal] = {}
     for l in lignes:
         taux = f'{l["tva_pct"]:.1f}'
-        tva_par_taux.setdefault(taux, Decimal("0"))
-        tva_par_taux[taux] += (l["total_ht"] * l["tva_pct"] / Decimal("100")).quantize(Decimal("0.01"))
+        tva_par_taux.setdefault(taux, Decimal(0))
+        tva_par_taux[taux] += (l["total_ht"] * l["tva_pct"] / Decimal(100)).quantize(Decimal("0.01"))
 
     numero = f"FJ-{today.year}-{today.strftime('%m%d-%H%M')}"
     echeance = today + timedelta(days=30)
@@ -752,7 +745,7 @@ async def compta_importer_releve(request: Request):
             compte_credit="411",
             montant_ttc=Decimal(e["montant_ttc"]),
             montant_ht=Decimal(e["montant_ttc"]),  # Banking : pas de TVA
-            montant_tva=Decimal("0"),
+            montant_tva=Decimal(0),
             source_module="self_banking",
             source_id=lettrage_source_id,
             metadata_json=json.dumps({
@@ -766,7 +759,7 @@ async def compta_importer_releve(request: Request):
     # 2. Prélèvements récurrents (2-3 prélèvements aléatoires)
     prelevements_sample = random.sample(PRELEVEMENTS_FIXTURES, min(3, len(PRELEVEMENTS_FIXTURES)))
     for p in prelevements_sample:
-        tva = (p["montant_ht"] * p["tva_pct"] / Decimal("100")).quantize(Decimal("0.01"))
+        tva = (p["montant_ht"] * p["tva_pct"] / Decimal(100)).quantize(Decimal("0.01"))
         ttc = (p["montant_ht"] + tva).quantize(Decimal("0.01"))
         source_id = f"prlv-{random.randint(100000, 999999)}"
         save_ecriture(
@@ -798,7 +791,7 @@ async def compta_importer_releve(request: Request):
             compte_credit="512",
             montant_ttc=f["montant_ht"],
             montant_ht=f["montant_ht"],
-            montant_tva=Decimal("0"),
+            montant_tva=Decimal(0),
             source_module="self_banking",
             source_id=source_id,
             metadata_json=json.dumps({"type": "frais_bancaire"}),
@@ -954,7 +947,7 @@ def _to_decimal(value: str | None, default: str = "0") -> Decimal:
         raw = default
     try:
         return Decimal(raw).quantize(Decimal("0.01"))
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise ValueError(f"montant invalide : {value!r}") from exc
 
 
@@ -1020,7 +1013,7 @@ async def compta_saisie_post(request: Request, type_saisie: str):
     if montant_ht <= 0:
         return _err("Le montant HT doit être supérieur à zéro.")
 
-    montant_tva = (montant_ht * taux_tva / Decimal("100")).quantize(Decimal("0.01"))
+    montant_tva = (montant_ht * taux_tva / Decimal(100)).quantize(Decimal("0.01"))
     montant_ttc = (montant_ht + montant_tva).quantize(Decimal("0.01"))
 
     if type_saisie == "vente":
@@ -1045,7 +1038,7 @@ async def compta_saisie_post(request: Request, type_saisie: str):
         meta["tiers"] = tiers
 
     try:
-        eid, created = save_ecriture(
+        eid, _created = save_ecriture(
             date_operation=date_op,
             journal=journal,
             numero_piece=_numero_piece(journal),
@@ -1059,7 +1052,7 @@ async def compta_saisie_post(request: Request, type_saisie: str):
             source_id=f"{type_saisie}-{_numero_piece(journal)}",
             metadata_json=json.dumps(meta),
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return _err(f"Enregistrement impossible : {exc}")
 
     return RedirectResponse(url=f"/compta?saisie=ok&id={eid}", status_code=303)

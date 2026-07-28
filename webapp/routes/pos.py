@@ -19,19 +19,17 @@ from __future__ import annotations
 import json
 import logging
 import os
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
-
 from self_pos.chargement import list_chargement, replace_chargement
 from self_pos.collectifs import (
     create_depot,
     deactivate_collectif,
-    get_collectif,
     list_collectifs,
     list_sessions_collectif,
     save_collectif,
@@ -57,6 +55,7 @@ from self_pos.storage import (
     save_vente,
     toggle_produit,
 )
+
 from webapp import __version__
 
 log = logging.getLogger(__name__)
@@ -85,8 +84,8 @@ async def pos_index(request: Request):
     if os.environ.get("SELFFARM_ENV", "prod") == "demo" and not embed:
         return RedirectResponse("/pos/demo", status_code=302)
     seed_if_empty()  # idempotent — première visite seed le catalogue
-    from self_pos.stats import stats_globales_pos
     from self_agri_book.exploitation import get_exploitation
+    from self_pos.stats import stats_globales_pos
     exp = get_exploitation()
     seuil_jours = int(exp.get("stock_revue_jours", 7)) if exp else 7
     response = templates.TemplateResponse(
@@ -640,6 +639,7 @@ def _detect_lan_ips() -> list[dict]:
     Couvre tous les cas : box maison, PC hotspot, tel hotspot WiFi, USB tethering.
     """
     import socket
+
     import psutil
 
     SKIP_PREFIX = ("lo", "virbr", "docker", "br-", "veth", "tun", "tap")
@@ -713,8 +713,9 @@ async def api_pos_hotspot_status():
 @router.get("/api/pos/qr-code")
 async def api_pos_qr_code(url: str | None = None):
     """Génère un QR SVG de l'URL fournie (ou IP courante par défaut)."""
-    import segno
     from io import BytesIO
+
+    import segno
     if not url:
         ips = _detect_lan_ips()
         if not ips:
@@ -730,8 +731,8 @@ async def api_pos_qr_code(url: str | None = None):
 @router.post("/api/pos/pair")
 async def api_pos_pair(request: Request):
     """Appairage du coffre : le tel présente le jeton du QR, reçoit la clé de coffre."""
-    from self_pos.devices import consume_pair_token, register_device
     from self_backup.vault import vault_key_b64
+    from self_pos.devices import consume_pair_token, register_device
     try:
         body = await request.json()
     except Exception:
@@ -749,7 +750,7 @@ async def api_pos_pair(request: Request):
 @router.get("/pos/coffre/appairer", response_class=HTMLResponse)
 async def pos_coffre_appairer(request: Request):
     """Page PC : génère un jeton + QR pour appairer le coffre de sauvegarde d'un tel."""
-    from self_pos.devices import new_pair_token, load_devices
+    from self_pos.devices import load_devices, new_pair_token
     token = new_pair_token()
     ips = _detect_lan_ips()
     ip = ips[0]["ip"] if ips else "127.0.0.1"
@@ -780,14 +781,14 @@ async def api_pos_backup_manifest():
         "available": True,
         "sha256": _file_sha256(db),
         "db_size": db.stat().st_size,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
     }, headers=_POS_BACKUP_CORS)
 
 
 @router.get("/api/pos/backup/download")
 async def api_pos_backup_download():
     """Sert le backup courant CHIFFRÉ (clé de coffre) à déposer sur le tel."""
-    from self_backup import make_backup, _db_path, _file_sha256
+    from self_backup import _db_path, _file_sha256, make_backup
     from self_backup.vault import encrypt
     db = _db_path()
     if not db.exists():
@@ -806,9 +807,9 @@ async def api_pos_backup_download():
 async def api_pos_backup_restore_push(request: Request):
     """Le tel renvoie un backup chiffré (vault) → le PC déchiffre + restaure.
     Pour un PC neuf, le tel fournit aussi sa clé de coffre via X-Vault-Key."""
-    from self_pos.devices import touch_device
     from self_backup import restore_from_bytes
-    from self_backup.vault import decrypt, import_vault_key, has_vault_key
+    from self_backup.vault import decrypt, has_vault_key, import_vault_key
+    from self_pos.devices import touch_device
     device_id = request.headers.get("X-Device-Id", "")
     if device_id:
         touch_device(device_id)
@@ -819,8 +820,9 @@ async def api_pos_backup_restore_push(request: Request):
     if pushed_key and not has_vault_key():
         try:
             import_vault_key(pushed_key)
-        except Exception:
-            pass
+        except Exception:  # best-effort, mais tracé
+            log.warning("Import de la clé de coffre poussée par le mobile échoué",
+                        exc_info=True)
     try:
         zip_bytes = decrypt(blob)
     except Exception:
@@ -852,7 +854,7 @@ async def pos_session_chargement_save(request: Request, session_id: int):
     form = await request.form()
     # form contient des lignes formattées produit_X_charged, produit_X_qte
     lignes: list[dict[str, Any]] = []
-    for key in form.keys():
+    for key in form:
         if not key.startswith("produit_") or not key.endswith("_charged"):
             continue
         produit_id = key.replace("produit_", "").replace("_charged", "")

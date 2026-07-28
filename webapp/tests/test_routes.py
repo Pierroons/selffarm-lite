@@ -13,7 +13,7 @@ BASE = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(BASE / "modules"))
 sys.path.insert(0, str(BASE))
 
-from webapp.main import app  # noqa: E402
+from webapp.main import app
 
 
 @pytest.fixture

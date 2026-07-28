@@ -69,7 +69,20 @@ target-version = "py312"
 # DTZ007 — même famille : les relevés bancaires importés (parser SG) ne
 # portent aucun fuseau. Exiger %z dans strptime imposerait d'inventer une
 # information absente de la source.
-ignore = ["DTZ011", "DTZ005", "DTZ007"]
+#
+# B008 — faux positif sur FastAPI : `File(...)`, `Query(...)`, `Depends(...)`
+# en valeur par défaut d'argument SONT l'idiome du framework, pas un piège de
+# mutable partagé.
+ignore = ["DTZ011", "DTZ005", "DTZ007", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+# BLE001 — la couche web est une couche de présentation : une exception non
+# prévue doit dégrader l'affichage, jamais renvoyer une 500 à un agriculteur au
+# milieu d'un marché. Le `except Exception` y est délibéré.
+# ⚠️ Contrepartie non négociable : ces blocs LOGUENT. Un silence complet
+# (`except: pass`) reste un défaut — cf. les trois corrigés le 28/07/2026, dont
+# un retry de sauvegarde qui échouait sans laisser de trace.
+"webapp/**" = ["BLE001"]
 
 [tool.pytest.ini_options]
 testpaths = ["modules"]

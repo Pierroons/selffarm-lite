@@ -19,7 +19,7 @@ Principe directeur (cf project_selffarm_modes_modulaires) :
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 # Onglets de la sidebar (ordre = ordre d'affichage)
 TABS = (

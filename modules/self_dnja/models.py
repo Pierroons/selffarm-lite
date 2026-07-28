@@ -32,7 +32,7 @@ class StatutJuridique(StrEnum):
 
 
 class Activite(BaseModel):
-    """Une activité productive (ex : maraîchage bio, chanvre CBD)."""
+    """Une activité productive (ex : maraîchage bio, grandes cultures, élevage)."""
 
     nom: str
     surface_ha: Decimal = Field(ge=0, description="Surface exploitée en hectares")
@@ -141,31 +141,65 @@ class Salariat(BaseModel):
 
 
 class TempsTravail(BaseModel):
-    """Répartition annuelle des heures UTH (cible 1800 h/an pour 1 UTH)."""
+    """Répartition annuelle des heures UTH (cible 1800 h/an pour 1 UTH).
 
+    Les postes se déclarent librement dans `postes` : un éleveur y met « Traite »
+    et « Soins au troupeau », un arboriculteur « Taille » et « Éclaircissage ».
+    Les champs nommés qui suivent datent d'une version calibrée sur une seule
+    filière ; ils restent lus pour ne pas invalider les prévisionnels existants,
+    mais `postes` est la voie à utiliser.
+    """
+
+    postes: dict[str, int] = Field(
+        default_factory=dict,
+        description="Heures annuelles par poste, libellés libres. Ex: {'Traite': 900}",
+    )
+
+    # Champs historiques — conservés pour compatibilité ascendante.
     chanvre_culture: int = Field(default=0, ge=0, description="heures")
     transformation_huile: int = Field(default=0, ge=0)
     maraichage: int = Field(default=0, ge=0)
     vente_admin: int = Field(default=0, ge=0)
     autre: int = Field(default=0, ge=0)
 
+    _LIBELLES_HISTORIQUES = (
+        ("chanvre_culture", "Culture chanvre"),
+        ("transformation_huile", "Transformation"),
+        ("maraichage", "Maraîchage"),
+        ("vente_admin", "Vente et administratif"),
+        ("autre", "Autre"),
+    )
+
+    @property
+    def lignes(self) -> list[tuple[str, int]]:
+        """Postes à afficher : les libres d'abord, puis les historiques non nuls.
+
+        C'est cette propriété que consomment les documents, jamais les champs
+        directement — sans quoi un dossier d'éleveur listerait des postes de
+        chanvre à zéro heure.
+        """
+        out = [(nom, h) for nom, h in self.postes.items() if h]
+        out += [(lib, getattr(self, champ))
+                for champ, lib in self._LIBELLES_HISTORIQUES if getattr(self, champ)]
+        return out
+
     @property
     def total(self) -> int:
-        return self.chanvre_culture + self.transformation_huile + self.maraichage + self.vente_admin + self.autre
+        return sum(h for _, h in self.lignes)
 
 
 class EvenementCalendrier(BaseModel):
     """Un événement du calendrier cultural annuel."""
 
     mois: str = Field(description="Ex: 'mars', 'avril-mai', 'octobre'")
-    activite: str = Field(description="Ex: 'Semis chanvre', 'Récolte fleurs CBD'")
+    activite: str = Field(description="Ex: 'Semis', 'Désherbage', 'Récolte'")
     duree: str = Field(default="", description="Ex: '2 semaines', '1 jour'")
 
 
 class Hypotheses(BaseModel):
     """Bundle complet d'hypothèses pour un prévisionnel DNJA."""
 
-    candidat: str = Field(description="Nom du candidat (ex: 'Pierroons')")
+    candidat: str = Field(description="Nom du candidat à l'installation")
     date_installation: date
     adresse_exploitation: str | None = Field(default=None, description="Ex: '12 rue des Champs'")
     code_postal: str | None = Field(default=None, description="Ex: '33220'")
@@ -195,6 +229,25 @@ class Hypotheses(BaseModel):
     )
     temps_travail: TempsTravail | None = None
     calendrier_cultural: list[EvenementCalendrier] = Field(default_factory=list)
+
+    # --- Postes du bilan de clôture (facultatifs) ---
+    # Non renseignés, ils sont estimés en proportion du chiffre d'affaires de la
+    # dernière année (cf. RATIO_* dans engine.py). Ces estimations valent ce que
+    # vaut une moyenne : une exploitation qui connaît ses chiffres a tout intérêt
+    # à les saisir, en particulier les créances — quasi nulles en vente directe
+    # au comptant, très élevées en livraison à des grossistes.
+    stock_final_n: Decimal | None = Field(
+        default=None, ge=0,
+        description="Stock de produits à la clôture de la dernière année (€ HT)",
+    )
+    creances_clients_n: Decimal | None = Field(
+        default=None, ge=0,
+        description="Créances clients à la clôture de la dernière année (€)",
+    )
+    dettes_court_terme_n: Decimal | None = Field(
+        default=None, ge=0,
+        description="Dettes fournisseurs et sociales à la clôture (€)",
+    )
 
     # --- Composantes RDA (Annexe 4 CdC DNJA) ---
     annuites_emprunts_annuelles: Decimal = Field(
