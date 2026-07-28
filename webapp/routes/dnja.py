@@ -100,7 +100,7 @@ async def dnja_calcul(request: Request, example: str):
     h = _load_example(example)
     result = calculer(h)
     return templates.TemplateResponse(
-        "dnja/result.html",
+        "dnja/_result.html",
         {
             "request": request,
             "version": __version__,
@@ -122,7 +122,7 @@ async def dnja_editor_index(request: Request):
 async def dnja_editor_load(request: Request, slug: str):
     h = _load_example(slug)
     return templates.TemplateResponse(
-        "dnja/editor_form.html",
+        "dnja/_editor_form.html",
         {
             "request": request,
             "h": h,
@@ -180,7 +180,7 @@ async def dnja_editor_calcul(request: Request):
     h = await _apply_form_to_hypotheses(source_slug, form_data)
     result = calculer(h)
     return templates.TemplateResponse(
-        "dnja/result.html",
+        "dnja/_result.html",
         {
             "request": request,
             "result": result.model_dump(mode="json"),
@@ -290,7 +290,7 @@ async def dnja_compare_run(request: Request, a: str, b: str):
         synth.append("✓ B passe le seuil DNJA (A non)")
 
     return templates.TemplateResponse(
-        "dnja/compare_result.html",
+        "dnja/_compare_result.html",
         {
             "request": request,
             "a": {"slug": a, "label": examples[a]["label"], "result": ra.model_dump(mode="json")},
