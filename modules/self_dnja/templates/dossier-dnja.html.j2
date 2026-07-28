@@ -759,34 +759,14 @@ Barème dégressif d'exonération JA appliqué :</p>
 <table>
 <thead><tr><th>Activité</th><th>Heures/an</th><th>% total</th></tr></thead>
 <tbody>
-{% set total_h = hypotheses.temps_travail.chanvre_culture + hypotheses.temps_travail.transformation_huile + hypotheses.temps_travail.maraichage + hypotheses.temps_travail.vente_admin + hypotheses.temps_travail.autre %}
+{% set total_h = temps_travail_total %}
+{% for libelle, heures in temps_travail_lignes %}
 <tr>
-  <td>Culture chanvre</td>
-  <td>{{ hypotheses.temps_travail.chanvre_culture }} h</td>
-  <td>{% if total_h > 0 %}{{ (hypotheses.temps_travail.chanvre_culture / total_h * 100)|round(1) }} %{% endif %}</td>
+  <td>{{ libelle }}</td>
+  <td>{{ heures }} h</td>
+  <td>{% if total_h > 0 %}{{ (heures / total_h * 100)|round(1) }} %{% endif %}</td>
 </tr>
-<tr>
-  <td>Transformation huile CBD</td>
-  <td>{{ hypotheses.temps_travail.transformation_huile }} h</td>
-  <td>{% if total_h > 0 %}{{ (hypotheses.temps_travail.transformation_huile / total_h * 100)|round(1) }} %{% endif %}</td>
-</tr>
-<tr>
-  <td>Maraîchage</td>
-  <td>{{ hypotheses.temps_travail.maraichage }} h</td>
-  <td>{% if total_h > 0 %}{{ (hypotheses.temps_travail.maraichage / total_h * 100)|round(1) }} %{% endif %}</td>
-</tr>
-<tr>
-  <td>Vente + administratif</td>
-  <td>{{ hypotheses.temps_travail.vente_admin }} h</td>
-  <td>{% if total_h > 0 %}{{ (hypotheses.temps_travail.vente_admin / total_h * 100)|round(1) }} %{% endif %}</td>
-</tr>
-{% if hypotheses.temps_travail.autre > 0 %}
-<tr>
-  <td>Autre</td>
-  <td>{{ hypotheses.temps_travail.autre }} h</td>
-  <td>{% if total_h > 0 %}{{ (hypotheses.temps_travail.autre / total_h * 100)|round(1) }} %{% endif %}</td>
-</tr>
-{% endif %}
+{% endfor %}
 <tr class="total">
   <td>TOTAL</td>
   <td>{{ total_h }} h</td>

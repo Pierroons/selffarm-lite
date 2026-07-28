@@ -15,12 +15,11 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-
+from self_agri_book.exploitation import get_exploitation
 from self_culture.cultures import (
     delete_parcelle,
     delete_plan_culture,
@@ -32,7 +31,7 @@ from self_culture.cultures import (
     save_plan_culture,
     stats_parcelles_saison,
 )
-from self_agri_book.exploitation import get_exploitation
+
 from webapp import __version__
 
 log = logging.getLogger(__name__)
@@ -146,10 +145,10 @@ async def culture_new(
     parcelle_id: int,
     culture: str = Form(...),
     variete: str = Form(""),
-    surface_ha: Optional[float] = Form(None),
+    surface_ha: float | None = Form(None),
     date_semis_prev: str = Form(""),
     date_recolte_prev: str = Form(""),
-    rendement_kg_attendu: Optional[float] = Form(None),
+    rendement_kg_attendu: float | None = Form(None),
     mode_production: str = Form("ab"),
     notes: str = Form(""),
 ):

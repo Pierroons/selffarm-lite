@@ -7,10 +7,10 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-
-from webapp import __version__
 from self_aid.loader import filter_aides, load_all, total_enveloppe
 from self_aid.models import CategorieAide, FiltreRecherche
+
+from webapp import __version__
 
 router = APIRouter(prefix="/aides", tags=["aides"])
 

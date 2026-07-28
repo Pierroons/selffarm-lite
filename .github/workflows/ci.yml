@@ -35,7 +35,10 @@ jobs:
           pip install -e ".[facturx,dev]"
 
       - name: Lint (ruff)
-        run: ruff check modules/
+        # webapp/ inclus depuis le 28/07/2026 : le périmètre était limité à
+        # modules/, si bien que 124 erreurs y dormaient sans jamais remonter.
+        # Un contrôle qui ne couvre pas tout ne protège que ce qu'il regarde.
+        run: ruff check modules/ webapp/
 
       - name: Type check (mypy)
         run: mypy --ignore-missing-imports --no-strict-optional modules/ || true

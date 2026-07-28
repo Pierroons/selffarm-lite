@@ -15,9 +15,10 @@ import logging
 from datetime import date
 from typing import Any
 
-from self_culture.cultures import list_plan_culture, stats_parcelles_saison
 from self_agri_book.exploitation import get_exploitation
 from self_agri_book.storage import _conn, init_db
+from self_culture.cultures import list_plan_culture, stats_parcelles_saison
+
 from webapp.modules_state import is_module_active
 
 # Stats parcellaire vides quand la verticale culture n'est pas active (profil non-agri)
@@ -170,7 +171,7 @@ def _dernieres_ecritures(limit: int = 5) -> list[dict[str, Any]]:
         except (ValueError, TypeError):
             montant = 0.0
         cc = (r["compte_credit"] or "")
-        est_recette = cc.startswith("7") or cc.startswith("411")
+        est_recette = cc.startswith(("7", "411"))
         d_iso = r["date_operation"] or ""
         date_short = f"{d_iso[8:10]}/{d_iso[5:7]}" if len(d_iso) >= 10 else d_iso
         src = (r["source_module"] or "manuel").lower()

@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import io
 import json
+import logging
 import os
 import random
-import uuid
 from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -36,11 +35,11 @@ except ImportError:
 # (dé-doublonnage : plus de taux codés en dur dans le formulaire).
 try:
     from self_factur_x_agri.models import (
-        TVA_BRUTS_55,
-        TVA_TRANSFORMES_10,
-        TVA_STANDARD_20,
         LIBELLES_UOM_AGRI,
         NATURES_VENTE_AGRI,
+        TVA_BRUTS_55,
+        TVA_STANDARD_20,
+        TVA_TRANSFORMES_10,
     )
     TAUX_TVA = [
         {"pct": str(t.taux_pct), "libelle": t.libelle, "article_cgi": t.article_cgi}
@@ -82,6 +81,8 @@ except ImportError:  # fallback si le module agri n'est pas disponible
 # Maps code → valeur, réutilisés par les routes creer/démo + le hook compta.
 SYMBOLE_UOM = {u["code"]: u["symbole"] for u in UNITES_AGRI}
 COMPTE_PCG_PAR_NATURE = {n["code"]: n["compte_pcg"] for n in NATURES_VENTE}
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/invoice", tags=["invoice"])
 
@@ -172,7 +173,7 @@ REGIMES = {
         "label": "Franchise en base de TVA (Art. 293 B CGI)",
         "badge": "Franchise TVA · CA < 85 800 €",
         "abattement_73b": False,
-        "force_tva_pct": Decimal("0"),
+        "force_tva_pct": Decimal(0),
     },
     "micro-ba": {
         "slug": "micro-ba",
@@ -186,7 +187,7 @@ REGIMES = {
         "label": "Régime forfaitaire agricole (Art. 298 bis CGI)",
         "badge": "Forfaitaire agricole · non-assujetti TVA",
         "abattement_73b": False,
-        "force_tva_pct": Decimal("0"),  # non-assujetti → TVA non applicable
+        "force_tva_pct": Decimal(0),  # non-assujetti → TVA non applicable
         "mention_tva": "TVA non applicable — régime forfaitaire agricole, art. 298 bis du CGI",
     },
     "reel": {
@@ -231,9 +232,9 @@ def _generer_facture_data(regime_key: str | None = None) -> dict:
     tva_par_taux = {}
     for l in lignes:
         taux = f'{l["tva_pct"]:.1f}'
-        tva_par_taux.setdefault(taux, Decimal("0"))
-        tva_par_taux[taux] += (l["total_ht"] * l["tva_pct"] / Decimal("100")).quantize(Decimal("0.01"))
-    total_tva = sum(tva_par_taux.values()) if regime["slug"] != "franchise" else Decimal("0")
+        tva_par_taux.setdefault(taux, Decimal(0))
+        tva_par_taux[taux] += (l["total_ht"] * l["tva_pct"] / Decimal(100)).quantize(Decimal("0.01"))
+    total_tva = sum(tva_par_taux.values()) if regime["slug"] != "franchise" else Decimal(0)
     total_ttc = (total_ht + total_tva).quantize(Decimal("0.01"))
 
     today = date.today()
@@ -348,15 +349,15 @@ def _hook_compta_vente(data: dict, pdf_bytes: bytes | None = None) -> tuple[int 
         groupes: dict[str, dict] = {}
         for l in data["lignes"]:
             compte = l.get("compte_pcg", "701")
-            g = groupes.setdefault(compte, {"ht": Decimal("0"), "tva": Decimal("0")})
+            g = groupes.setdefault(compte, {"ht": Decimal(0), "tva": Decimal(0)})
             g["ht"] += l["total_ht"]
-            g["tva"] += (l["total_ht"] * l["tva_pct"] / Decimal("100")).quantize(Decimal("0.01"))
+            g["tva"] += (l["total_ht"] * l["tva_pct"] / Decimal(100)).quantize(Decimal("0.01"))
 
         first_eid: int | None = None
         created_any = False
         for compte, g in groupes.items():
             ht = g["ht"]
-            tva = g["tva"] if regime_slug != "franchise" else Decimal("0")
+            tva = g["tva"] if regime_slug != "franchise" else Decimal(0)
             ttc = (ht + tva).quantize(Decimal("0.01"))
             libelle = f"Vente {compte} — {client_nom} ({nom_commercial})"
             eid, created = compta_save_ecriture(
@@ -464,7 +465,8 @@ async def invoice_creer(request: Request):
             pu_ht = Decimal(str(form.get(f"ligne_{i}_pu_ht", "0") or "0"))
             tva_pct_raw = form.get(f"ligne_{i}_tva_pct", "20")
             tva_pct = Decimal(str(tva_pct_raw or "20"))
-        except Exception:
+        except Exception:  # ligne illisible : on l'ignore, en le disant
+            log.warning("Ligne de facture %s ignorée (saisie invalide)", i, exc_info=True)
             continue
         if regime["force_tva_pct"] is not None:
             tva_pct = regime["force_tva_pct"]
@@ -493,9 +495,9 @@ async def invoice_creer(request: Request):
     tva_par_taux: dict[str, Decimal] = {}
     for l in lignes:
         taux = f'{l["tva_pct"]:.1f}'
-        tva_par_taux.setdefault(taux, Decimal("0"))
-        tva_par_taux[taux] += (l["total_ht"] * l["tva_pct"] / Decimal("100")).quantize(Decimal("0.01"))
-    total_tva = sum(tva_par_taux.values()) if regime["slug"] != "franchise" else Decimal("0")
+        tva_par_taux.setdefault(taux, Decimal(0))
+        tva_par_taux[taux] += (l["total_ht"] * l["tva_pct"] / Decimal(100)).quantize(Decimal("0.01"))
+    total_tva = sum(tva_par_taux.values()) if regime["slug"] != "franchise" else Decimal(0)
     total_ttc = (total_ht + total_tva).quantize(Decimal("0.01"))
 
     # --- DATES & NUMÉRO ---

@@ -413,7 +413,7 @@ def _produits_pos() -> list[dict]:
         return []
     try:
         return list_produits(actifs_only=True)
-    except Exception:  # noqa: BLE001 — idem
+    except Exception:
         return []
 
 

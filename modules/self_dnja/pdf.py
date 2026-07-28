@@ -51,8 +51,22 @@ def render_pdf(result: PrevisionnelDnja, out_path: Path) -> Path:
             "valeur_reserve": reserve_qte * float(a["prix_vente_ht"]),
         })
 
+    # Le template reçoit des dicts, pas les modèles Pydantic : les propriétés
+    # calculées (TempsTravail.lignes) n'y survivent pas. On les résout ici.
+    tt = payload["hypotheses"].get("temps_travail") or {}
+    tt_lignes = [(nom, h) for nom, h in (tt.get("postes") or {}).items() if h]
+    tt_lignes += [(lib, tt[champ]) for champ, lib in (
+        ("chanvre_culture", "Culture chanvre"),
+        ("transformation_huile", "Transformation"),
+        ("maraichage", "Maraîchage"),
+        ("vente_admin", "Vente et administratif"),
+        ("autre", "Autre"),
+    ) if tt.get(champ)]
+
     html_str = template.render(
         hypotheses=payload["hypotheses"],
+        temps_travail_lignes=tt_lignes,
+        temps_travail_total=sum(h for _, h in tt_lignes),
         lignes=payload["lignes"],
         version=payload["version"],
         genere_le=payload["genere_le"],

@@ -23,18 +23,17 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-
 from self_agri_book.exploitation import (
-    save_exploitation,
-    mark_onboarding_done,
-    is_onboarding_done,
     get_exploitation,
+    is_onboarding_done,
+    mark_onboarding_done,
+    save_exploitation,
 )
+
 from webapp import __version__
 
 log = logging.getLogger(__name__)
@@ -89,7 +88,7 @@ def _clear_form_state(request: Request) -> None:
     request.session.pop(SESSION_KEY, None)
 
 
-def _persist_to_db(updates: dict, request: Optional[Request] = None) -> None:
+def _persist_to_db(updates: dict, request: Request | None = None) -> None:
     """Persiste les modifications en BDD si possible, sinon laisse en session.
 
     Cas gérés :
