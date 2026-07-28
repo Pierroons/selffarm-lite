@@ -1,2 +1,10 @@
-# Empreintes obsolètes après réécriture d'historique (OPSEC 2026-06-29).
-# Vidé : tout le contenu désanonymisant a été purgé, plus rien à allowlister.
+# Aucune empreinte allowlistée.
+#
+# L'historique a été réécrit le 2026-07-28 (git-filter-repo) : 14 fichiers
+# purgés, 2 messages de commit et 20 chaînes de texte réécrits sur les
+# 89 commits. Il ne reste rien à mettre en liste d'exception — si gitleaks
+# signale quelque chose, c'est une vraie fuite, pas un faux positif hérité.
+#
+# ⚠️ Le job CI peut rester rouge tant que GitHub n'a pas collecté les objets
+# devenus orphelins après le force-push : ils restent atteignables par SHA et
+# le runner les récupère au checkout. Purge demandée au support GitHub.
