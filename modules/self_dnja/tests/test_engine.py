@@ -29,7 +29,7 @@ def _minimal_hyp(**overrides) -> Hypotheses:
         "candidat": "Testeur",
         "date_installation": date(2026, 6, 1),
         "commune": "Sainte-Foy",
-        "departement": "le departement",
+        "departement": "Gironde",
         "statut_juridique": StatutJuridique.INDIVIDUEL,
         "regime_fiscal": RegimeFiscal.REEL_SIMPLIFIE,
         "horizon_annees": 4,
