@@ -85,4 +85,6 @@ ignore = ["DTZ011", "DTZ005", "DTZ007", "B008"]
 "webapp/**" = ["BLE001"]
 
 [tool.pytest.ini_options]
-testpaths = ["modules"]
+# webapp inclus depuis le 28/07/2026 : ces tests existaient mais n'étaient
+# jamais exécutés, et 17 sur 18 échouaient sans que rien ne le signale.
+testpaths = ["modules", "webapp"]
