@@ -69,9 +69,7 @@
     <label style="display: block; font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Zone</label>
     <select name="zone" style="width: 100%;">
       <option value="">Toutes</option>
-      <option value="le departement">le departement</option>
-      <option value="NA">Nouvelle-Aquitaine</option>
-      <option value="France">France entière</option>
+      {% for z in zones %}<option value="{{ z }}">{{ z }}</option>{% endfor %}
     </select>
   </div>
 </form>

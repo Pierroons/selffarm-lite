@@ -15,12 +15,28 @@ log = logging.getLogger("self-aid")
 
 DATA_DIR = Path(__file__).parent / "data"
 
+# Les aides départementales dépendent du territoire : les versionner
+# reviendrait à publier où l'on est installé. Elles vivent donc ici, hors
+# dépôt (voir .gitignore), et s'ajoutent aux aides nationales quand le
+# dossier existe. Un dépôt fraîchement cloné fonctionne sans.
+LOCAL_DIR = DATA_DIR / "local"
+
 
 def load_all(data_dir: Path | None = None) -> list[Aide]:
-    """Charge toutes les aides depuis les fichiers YAML du dossier data/."""
-    directory = data_dir or DATA_DIR
+    """Charge les aides nationales, plus les aides locales si elles existent.
+
+    Un `data_dir` explicite court-circuite les deux — c'est ce dont les tests
+    ont besoin pour travailler sur un jeu maîtrisé.
+    """
+    if data_dir is not None:
+        sources = [data_dir]
+    else:
+        sources = [DATA_DIR]
+        if LOCAL_DIR.is_dir():
+            sources.append(LOCAL_DIR)
+
     aides: list[Aide] = []
-    for yaml_file in sorted(directory.glob("*.yaml")):
+    for yaml_file in sorted(f for d in sources for f in d.glob("*.yaml")):
         with yaml_file.open("r", encoding="utf-8") as f:
             raw = yaml.safe_load(f)
         bundle = BaseAides.model_validate(raw)

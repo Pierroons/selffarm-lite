@@ -73,7 +73,7 @@ class Source(BaseModel):
 class Aide(BaseModel):
     """Un dispositif d'aide publique structuré pour consultation par profil."""
 
-    id: str = Field(description="Identifiant court unique (ex: dnja-2026)")
+    id: str = Field(description="Identifiant court unique (ex: acja-2026)")
     nom: str
     categorie: CategorieAide
     montant: Montant

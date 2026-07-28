@@ -164,7 +164,8 @@ python -m self_aid.cli search --bio --zone Dordogne
 - `modules/self_culture/` — parcellaire + cultures (cartographie IGN cadastre)
 - `modules/self_backup/` — sauvegarde / restauration ZIP signée SHA256
 - `modules/self_factur_x_agri/` — Factur-X agricole (TVA, UOM HAR/TNE)
-- `modules/self_aid/data/aides-agri-2026.yaml` — aides JA 2026
+- `modules/self_aid/data/aides-agri-2026.yaml` — aides JA nationales et régionales 2026
+  (les aides départementales se placent dans `data/local/`, non versionné)
   sourcées officiellement avec date de vérification
 - `modules/self_agri_book/data/pcg-agricole-2026.yaml` — **Plan comptable
   agricole officiel 2026** (9 classes, 396 comptes, 133 agri-spécifiques)

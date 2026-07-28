@@ -20,9 +20,9 @@ statuts (salariat, demandeur d'emploi, étudiant, artiste-auteur…).
 
 ```bash
 self-aid list
-self-aid show dnja-2026
+self-aid show acja-2026
 self-aid search --statut ja-installation
-self-aid search --bio --zone le departement
+self-aid search --bio --zone France
 self-aid search --mot-cle chanvre
 self-aid search --categorie credit_impot
 ```
@@ -46,11 +46,15 @@ Chaque aide est un bloc sous la clé `aides:` avec :
 3. Mettre `date_maj_vu` à la date de vérification
 4. Citer l'extrait officiel qui justifie le montant
 
-## Dataset initial — 12 aides JA 2026
+## Dataset versionné — 15 aides JA nationales et régionales 2026
+
+Les aides **départementales** (conseil départemental, montants DNJA
+régionalisés) dépendent du territoire : elles se placent dans
+`data/local/`, que le dépôt ne versionne pas. Le loader additionne
+les deux dossiers.
 
 | ID | Nom | Montant |
 |---|---|---|
-| dnja-2026 | Dotation Nouveaux et Jeunes Agriculteurs | 15 000 – 34 500 € |
 | aita-diagnostic-na-2026 | AITA diagnostic NA | 599,25 € |
 | aita-etude-eco-na-2026 | AITA étude économique NA | 599,25 € |
 | acja-2026 | ACJA (aide complémentaire revenu JA) | 4 300 – 4 469 €/an |
@@ -60,7 +64,6 @@ Chaque aide est un bloc sous la clé `aides:` avec :
 | ci-hve-2026 | Crédit d'impôt HVE | 2 500 € |
 | dep-73-cgi-2026 | Déduction pour Épargne de Précaution | 0 – 50 585 €/ex |
 | exo-msa-ja-2026 | Exo cotisations MSA JA | 944 – 4 089 €/an |
-| aides-cd-departement-2026 | Aides CD le departement (volet agri) | 0 – N/A |
 | cab-bio-2026 | Aide à la Conversion AB | 44 – 900 €/ha/an |
 
 Enveloppe cumulée indicative pour un profil JA bio 1 ha : **82 000 – 92 500 €

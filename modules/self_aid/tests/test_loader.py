@@ -29,19 +29,24 @@ def test_ids_uniques():
 
 
 def test_aide_nationale_presente():
+    """Les tests ne ciblent que des aides VERSIONNÉES.
+
+    Les aides départementales vivent dans data/local/, hors dépôt : un test
+    qui en dépend passe sur le poste de son auteur et échoue partout ailleurs.
+    """
     aides = load_all()
     ids = {a.id for a in aides}
-    assert "dnja-2026" in ids
+    assert "acja-2026" in ids
 
 
 def test_filter_par_statut_ja_installation():
     aides = load_all()
     f = FiltreRecherche(statut="ja-installation")
     filtered = filter_aides(aides, f)
-    # DNJA, ACJA, exo MSA JA, AITA diagnostic et étude éco doivent matcher
+    # ACJA, exo MSA JA, article 73 B, prêt d'honneur… doivent matcher
     assert len(filtered) >= 3
     ids = {a.id for a in filtered}
-    assert "dnja-2026" in ids
+    assert "acja-2026" in ids
 
 
 def test_filter_par_categorie_credit_impot():
@@ -55,11 +60,11 @@ def test_filter_par_categorie_credit_impot():
 
 def test_filter_par_zone_nationale():
     aides = load_all()
-    f = FiltreRecherche(zone="le departement")
+    f = FiltreRecherche(zone="France")
     filtered = filter_aides(aides, f)
     assert len(filtered) > 0
     for a in filtered:
-        assert any("departement" in z.lower() or "france" in z.lower() or "na" in z.lower()
+        assert any("france" in z.lower() or "na" in z.lower() or "ue" in z.lower()
                    for z in a.zones_applicables)
 
 
@@ -71,13 +76,16 @@ def test_filter_mot_cle_chanvre():
     assert "chanvre-couple-2026" in ids
 
 
-def test_cumul_dnja_acja_declare_mutuellement():
-    """DNJA doit déclarer ACJA comme cumulable et inversement."""
+def test_cumul_declare_mutuellement():
+    """Un cumul déclaré d'un côté doit l'être de l'autre.
+
+    Paire choisie parmi les aides versionnées : ACJA et l'écorégime bio.
+    """
     aides = load_all()
-    dnja = next(a for a in aides if a.id == "dnja-2026")
     acja = next(a for a in aides if a.id == "acja-2026")
-    assert "acja-2026" in dnja.cumul_possible_avec
-    assert "dnja-2026" in acja.cumul_possible_avec
+    eco = next(a for a in aides if a.id == "ecoregime-bio-2026")
+    assert "ecoregime-bio-2026" in acja.cumul_possible_avec
+    assert "acja-2026" in eco.cumul_possible_avec
 
 
 def test_total_enveloppe_coherente():

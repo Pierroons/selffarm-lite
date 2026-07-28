@@ -22,6 +22,20 @@ def _fmt_num(x: float) -> str:
     return f"{x:,.0f}".replace(",", " ")
 
 
+def _zones(aides) -> list[str]:
+    """Zones réellement présentes dans les aides chargées.
+
+    La liste était écrite en dur dans le template, avec un département nommé —
+    ce qui revenait à publier le territoire de l'utilisateur, et devenait faux
+    dès qu'on ajoutait une aide d'ailleurs. Elle se déduit maintenant des
+    données : le dossier local de chacun fait apparaître ses propres zones.
+    """
+    vues = {z for a in aides for z in a.zones_applicables}
+    # France et l'échelon européen en dernier : ce sont les plus larges.
+    ordre = {"UE": 2, "France": 1}
+    return sorted(vues, key=lambda z: (ordre.get(z, 0), z))
+
+
 @router.get("", response_class=HTMLResponse)
 async def aides_index(request: Request):
     aides = load_all()
@@ -38,6 +52,7 @@ async def aides_index(request: Request):
             "cumul_min": _fmt_num(mn),
             "cumul_max": _fmt_num(mx),
             "categories": [c.value for c in CategorieAide],
+            "zones": _zones(aides),
         },
     )
 
