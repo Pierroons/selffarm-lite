@@ -44,7 +44,10 @@ jobs:
         run: mypy --ignore-missing-imports --no-strict-optional modules/ || true
 
       - name: Run pytest
-        run: pytest modules/ -v --cov=modules --cov-report=term-missing
+        # webapp/ inclus depuis le 28/07/2026 : ses tests existaient mais
+        # n'étaient jamais exécutés, et 17 sur 18 échouaient en silence.
+        # Ils couvrent notamment la génération du dossier DNJA en PDF.
+        run: pytest modules/ webapp/ -v --cov=modules --cov=webapp --cov-report=term-missing
 
   yaml-validate:
     name: Valide YAML data

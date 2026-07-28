@@ -1,25 +1,13 @@
-"""Tests smoke pour les routes webapp SelfFarm-Lite."""
+"""Tests smoke des routes webapp SelfFarm-Lite.
+
+La fixture `client`, l'isolation de la base et l'onboarding sont dans
+conftest.py. Ces tests s'appuient sur le seul scénario d'exemple versionné :
+les scénarios nominatifs ne sortent pas du poste de leur auteur.
+"""
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
-import pytest
-from fastapi.testclient import TestClient
-
-# Setup PYTHONPATH
-BASE = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(BASE / "modules"))
-sys.path.insert(0, str(BASE))
-
-from webapp.main import app
-
-
-@pytest.fixture
-def client():
-    return TestClient(app)
-
+from webapp.tests.conftest import SCENARIO_DEMO
 
 # ---------- Home ----------
 
@@ -31,9 +19,9 @@ def test_home_200(client):
 
 
 def test_home_mentions_aides_count(client):
+    """Le tableau de bord expose le compteur d'aides éligibles."""
     r = client.get("/")
-    # Doit afficher le compteur d'aides dans la tuile
-    assert "aides agricoles 2026" in r.text
+    assert "aides éligibles" in r.text
 
 
 # ---------- DNJA ----------
@@ -41,18 +29,18 @@ def test_home_mentions_aides_count(client):
 def test_dnja_index_200(client):
     r = client.get("/dnja")
     assert r.status_code == 200
-    assert "Simulateur DNJA" in r.text
-    assert "Scénarios disponibles" in r.text
+    assert "SelfDNJA" in r.text
+    assert "Simulateur prévisionnel" in r.text
 
 
 def test_dnja_index_contient_scenarios(client):
+    """Le scénario public est listé — les nominatifs sont filtrés hors machine perso."""
     r = client.get("/dnja")
-    assert "CHAMBRE" in r.text or "chambre" in r.text.lower()
-    assert "PERSO" in r.text or "perso" in r.text.lower()
+    assert "Démo publique" in r.text or SCENARIO_DEMO in r.text
 
 
 def test_dnja_calcul_chambre(client):
-    r = client.get("/dnja/calcul?example=hypotheses-pierroons-chambre")
+    r = client.get(f"/dnja/calcul?example={SCENARIO_DEMO}")
     assert r.status_code == 200
     assert "EBE/UTH" in r.text
     assert "Télécharger PDF" in r.text
@@ -66,7 +54,7 @@ def test_dnja_calcul_scenario_inconnu_404(client):
 
 
 def test_dnja_pdf(client):
-    r = client.get("/dnja/pdf?example=hypotheses-pierroons-chambre")
+    r = client.get(f"/dnja/pdf?example={SCENARIO_DEMO}")
     assert r.status_code == 200
     assert r.headers.get("content-type") == "application/pdf"
     assert len(r.content) > 10000  # PDF non vide
@@ -79,9 +67,10 @@ def test_dnja_compare_index(client):
 
 
 def test_dnja_compare_run(client):
+    """Smoke test du rendu comparatif — un seul scénario versionné, comparé à lui-même."""
     r = client.get(
         "/dnja/compare/run",
-        params={"a": "hypotheses-pierroons-chambre", "b": "hypotheses-pierroons-perso"},
+        params={"a": SCENARIO_DEMO, "b": SCENARIO_DEMO},
     )
     assert r.status_code == 200
     assert "Scénario A" in r.text
@@ -97,7 +86,7 @@ def test_dnja_editor_index(client):
 def test_dnja_editor_load(client):
     r = client.get(
         "/dnja/editor/load",
-        params={"slug": "hypotheses-pierroons-chambre"},
+        params={"slug": SCENARIO_DEMO},
     )
     assert r.status_code == 200
     assert "Activités" in r.text
@@ -108,7 +97,7 @@ def test_dnja_editor_load(client):
 def test_aides_index_200(client):
     r = client.get("/aides")
     assert r.status_code == 200
-    assert "Catalogue d'aides" in r.text or "aides agricoles 2026" in r.text
+    assert "Catalogue des aides" in r.text
 
 
 def test_aides_filter_mot_cle(client):
@@ -140,10 +129,10 @@ def test_aides_detail_inconnu_404(client):
 def test_parcelles_index(client):
     r = client.get("/parcelles")
     assert r.status_code == 200
-    assert "Parcellaire IGN" in r.text
+    assert "Tes parcelles" in r.text
 
 
 def test_parcelles_carto(client):
     r = client.get("/parcelles/carto")
     assert r.status_code == 200
-    assert "Leaflet" in r.text or "leaflet" in r.text.lower()
+    assert "Carte parcellaire IGN" in r.text
