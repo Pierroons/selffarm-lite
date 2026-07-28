@@ -1,59 +1,15 @@
-# Base de données des aides agricoles JA — le departement, Nouvelle-Aquitaine, 2026
-# Généré : 22 avril 2026 — 03:30 (Europe/Paris)
-# Profil de référence : JA bio, installation en zone défavorisée, maraîchage diversifié
+# Base de données des aides agricoles — installation JA, 2026.
 #
-# Règle d'autorité (référentiel reference_sources_officielles_myself.md) :
-#   Légifrance > BOFiP > service-public > mesdemarches.agriculture
-#   > FranceAgriMer > MSA > régional > départemental
+# Ce fichier ne contient que les aides NATIONALES et RÉGIONALES, dont les
+# montants et conditions sont les mêmes pour tout le monde. Les aides
+# départementales (conseils départementaux, montants DNJA régionalisés)
+# dépendent de ton territoire : place-les dans data/local/, qui n'est pas
+# versionné. Le loader additionne les deux.
 #
-# Ne jamais citer un blog/site marchand comme autorité. Chaque entrée = 1 source primaire datée.
+# Sources : chaque aide porte son lien officiel dans le champ `source`.
+# Cadence de vérification : 1er et 15 du mois (voir SelfJustice).
 
 aides:
-
-  - id: dnja-2026
-    nom: "Dotation Nouveaux et Jeunes Agriculteurs (DNJA) — volet Jeune Agriculteur"
-    categorie: installation
-    montant:
-      type: variable
-      valeur_min: 15000
-      valeur_max: 34500
-      unite: "€"
-      detail:
-        base_zone_defavorisee: 15000
-        bonif_hors_cadre_familial: 5500
-        bonif_bio_min: 4000
-        bonif_bio_max: 10000
-        volet_outil_production_min: 4300
-        volet_outil_production_max: 28300
-    conditions:
-      age_max: 40
-      zone: [zone-defavorisee]
-      formation: [niveau-4-agricole, niveau-4-toutes-specialites-avec-experience]
-      autres:
-        - "Plan d'Entreprise (PE) sur 4 ans validé par la CDOA"
-        - "Première installation (jamais obtenu DJA/DNJA antérieure)"
-        - "Affiliation MSA à titre principal/exclusif"
-        - "Dépôt du dossier avant la veille du 41e anniversaire"
-    zones_applicables: [NA, le departement]
-    cumul_possible_avec:
-      - aita-diagnostic-na-2026
-      - aita-etude-eco-na-2026
-      - acja-2026
-      - ci-ab-2026
-      - dep-73-cgi-2026
-      - exo-msa-ja-2026
-      - cab-bio-2026
-      - ecoregime-bio-2026
-      - chanvre-couple-2026
-    exclut: []
-    statut_cible: [ja-installation]
-    source:
-      url: https://les-aides.nouvelle-aquitaine.fr/economie-et-emploi/installation-dotation-nouveaux-et-jeunes-agriculteurs-dnja
-      autorite: nouvelle-aquitaine.fr
-      date_maj_vu: "2026-04-22"
-      extrait_citation: "Zone défavorisée : 15 000 € ; Zone de plaine : 13 000 € ; Zone de montagne : 17 000 € ; Installation hors cadre familial : +5 500 € ; Agriculture biologique : +4 000 € ou +10 000 € selon superficies"
-    notes: "le departement = zone défavorisée simple (ZSCN). Le volet 'outil de production' dépend du plan d'investissement — à chiffrer avec le PE. Âge à vérifier : âge limite JA à vérifier avant le dépôt."
-
   - id: aita-diagnostic-na-2026
     nom: "AITA Nouvelle-Aquitaine — Accompagnement individuel pré-installation : diagnostic"
     categorie: installation-accompagnement
@@ -71,7 +27,7 @@ aides:
         - "Candidat à l'installation accompagné par un organisme sélectionné AAP régional"
         - "Une seule mobilisation par candidat"
         - "Passage par le PAIT (Point Accueil Installation Transmission)"
-    zones_applicables: [NA, le departement]
+    zones_applicables: [NA]
     cumul_possible_avec: [dnja-2026, aita-etude-eco-na-2026, acja-2026]
     exclut: []
     statut_cible: [ja-pre-installation]
@@ -100,7 +56,7 @@ aides:
         - "Étude réalisée par un organisme agréé par la Région"
         - "Passage préalable par le PAIT"
         - "Indispensable pour DJA/DNJA (mention officielle depuis 01/06/2023)"
-    zones_applicables: [NA, le departement]
+    zones_applicables: [NA]
     cumul_possible_avec: [dnja-2026, aita-diagnostic-na-2026, acja-2026]
     exclut: []
     statut_cible: [ja-pre-installation]
@@ -130,7 +86,7 @@ aides:
         - "Première installation dans l'année de la demande ou dans les 5 années civiles précédentes"
         - "Activer au moins un DPB ou fraction de DPB"
         - "Déclaration PAC entre 1er avril et 18 mai 2026"
-    zones_applicables: [France, le departement]
+    zones_applicables: [France]
     cumul_possible_avec: [dnja-2026, dep-73-cgi-2026, exo-msa-ja-2026, ecoregime-bio-2026, chanvre-couple-2026, cab-bio-2026, ci-ab-2026]
     exclut: []
     statut_cible: [ja-installation]
@@ -158,7 +114,7 @@ aides:
       autres:
         - "Exploitation certifiée AB (règlement UE 2018/848) pour tout ou partie des surfaces"
         - "Engagement de 100% des surfaces admissibles dans une voie d'accès"
-    zones_applicables: [France, le departement]
+    zones_applicables: [France]
     cumul_possible_avec: [dnja-2026, acja-2026, cab-bio-2026, chanvre-couple-2026, dep-73-cgi-2026, ci-ab-2026]
     exclut: []
     statut_cible: [agriculteur-bio]
@@ -187,7 +143,7 @@ aides:
         - "Teneur THC < 0,3 %"
         - "Étiquettes semences à transmettre à la DDT"
         - "Déclaration TéléPAC culture 'CHV'/'CHF'"
-    zones_applicables: [France, le departement]
+    zones_applicables: [France]
     cumul_possible_avec: [dnja-2026, acja-2026, ecoregime-bio-2026, cab-bio-2026, dep-73-cgi-2026, ci-ab-2026]
     exclut: []
     statut_cible: [agriculteur-chanvre]
@@ -214,7 +170,7 @@ aides:
         - "Au moins 40 % des recettes issues d'activités certifiées AB au 31/12"
         - "Plafond de minimis agricole : 20 000 € sur 3 exercices glissants"
         - "Somme CI-AB + CAB + MAB ≤ 5 000 €"
-    zones_applicables: [France, le departement]
+    zones_applicables: [France]
     cumul_possible_avec: [dnja-2026, acja-2026, ecoregime-bio-2026, dep-73-cgi-2026, exo-msa-ja-2026]
     exclut: []
     statut_cible: [agriculteur-bio]
@@ -239,7 +195,7 @@ aides:
         - "Une seule fois sur la durée d'existence"
         - "Plafond minimis agricole 20 000 € / 3 exercices"
         - "Somme CI-HVE + CI-AB ≤ 5 000 €"
-    zones_applicables: [France, le departement]
+    zones_applicables: [France]
     cumul_possible_avec: [dnja-2026, acja-2026, dep-73-cgi-2026]
     exclut: []
     statut_cible: [agriculteur-hve]
@@ -267,7 +223,7 @@ aides:
         - "Régime réel d'imposition (micro-BA EXCLU)"
         - "Sommes épargnées sur compte dédié ou affectées à stocks/créances/investissements pro"
         - "Réintégration obligatoire dans les 10 exercices suivants"
-    zones_applicables: [France, le departement]
+    zones_applicables: [France]
     cumul_possible_avec: [dnja-2026, acja-2026, ci-ab-2026, ci-hve-2026, ecoregime-bio-2026, cab-bio-2026]
     exclut: [regime-micro-ba]
     statut_cible: [agriculteur-reel]
@@ -298,7 +254,7 @@ aides:
         - "Âge 18-40 ans à l'affiliation MSA (+1 an par enfant à charge ou service national)"
         - "Chef d'exploitation ATP ou ATE"
         - "Exclusions : IJ Amexa, RCO, Atexa, CSG, CRDS, formation pro, FMSE"
-    zones_applicables: [France, le departement]
+    zones_applicables: [France]
     cumul_possible_avec: [dnja-2026, acja-2026, ci-ab-2026, dep-73-cgi-2026, ecoregime-bio-2026, cab-bio-2026]
     exclut: []
     statut_cible: [ja-installation]
@@ -308,33 +264,6 @@ aides:
       date_maj_vu: "2026-04-22"
       extrait_citation: "Dégressif 65 % (4 089 €) / 55 % (3 460 €) / 35 % (2 202 €) / 25 % (1 573 €) / 15 % (944 €)"
     notes: "Page MAJ 23 mars 2026. L'exo ne couvre PAS ATEXA (~350 €/an) ni RCO — plancher résiduel ~800 €/an."
-
-  - id: aides-cd-departement-2026
-    nom: "Aides Conseil Départemental le departement — volet agricole"
-    categorie: departemental
-    montant:
-      type: variable
-      valeur_min: 0
-      valeur_max: 0
-      unite: "€"
-      detail:
-        dispositifs_publies:
-          - "Foires et concours d'animaux"
-          - "Comices agricoles (priorité éleveurs)"
-          - "Investissements collectifs CUMA"
-    conditions:
-      zone: [le departement]
-      autres: ["Dispositifs ciblés élevage/collectif, pas d'aide installation individuelle publiée"]
-    zones_applicables: [le departement]
-    cumul_possible_avec: [dnja-2026, aita-diagnostic-na-2026]
-    exclut: []
-    statut_cible: [agriculteur-departement]
-    source:
-      url: https://www.example.org/guide-des-aides
-      autorite: departement.example
-      date_maj_vu: "2026-04-22"
-      extrait_citation: "3 dispositifs agricoles au guide des aides CD 23 : foires/concours, comices, CUMA"
-    notes: "Aucun dispositif CBD ou maraîchage bio individuel publié. À confirmer directement au service agriculture du conseil départemental. Ne pas compter dessus dans le PE."
 
   - id: cab-bio-2026
     nom: "Aide à la Conversion en Agriculture Biologique (CAB) — PAC 2026"
@@ -361,7 +290,7 @@ aides:
         - "Engagement de 5 ans"
         - "Surface minimale : 1 ha (sauf cultures spéciales)"
         - "Cumul écorégime bio possible"
-    zones_applicables: [France, le departement]
+    zones_applicables: [France]
     cumul_possible_avec: [dnja-2026, acja-2026, ecoregime-bio-2026, chanvre-couple-2026, dep-73-cgi-2026, exo-msa-ja-2026]
     exclut: []
     statut_cible: [agriculteur-conversion-bio]
@@ -432,7 +361,7 @@ aides:
       autorite: Initiative France (réseau national labellisé)
       date_maj_vu: "2026-04-24"
       extrait_citation: "Prêt personnel à taux zéro, sans garantie, de 3 000 à 50 000 €, selon plateforme locale."
-    notes: "Initiative le departement = plateforme locale. Pratiques courantes 5-12 k€ pour création JA. Demande effectuée avant installation officielle."
+    notes: "Initiative departement = plateforme locale. Pratiques courantes 5-12 k€ pour création JA. Demande effectuée avant installation officielle."
 
   - id: nacre-adie-microcredit-2026
     nom: "Microcrédit agricole ADIE (accompagnement + financement)"

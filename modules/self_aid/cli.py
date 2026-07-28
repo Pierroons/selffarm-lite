@@ -3,9 +3,9 @@ CLI pour self-aid.
 
 Usage:
     self-aid list
-    self-aid show dnja-2026
+    self-aid show acja-2026
     self-aid search --statut ja-installation
-    self-aid search --bio --zone le departement
+    self-aid search --bio --zone France
 """
 
 from __future__ import annotations

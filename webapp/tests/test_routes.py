@@ -113,10 +113,11 @@ def test_aides_filter_statut(client):
     assert "aide(s) trouvée" in r.text
 
 
-def test_aides_detail_dnja(client):
-    r = client.get("/aides/dnja-2026")
+def test_aides_detail_aide_nationale(client):
+    # Aide versionnée : les départementales vivent dans data/local/, hors dépôt.
+    r = client.get("/aides/acja-2026")
     assert r.status_code == 200
-    assert "Dotation" in r.text
+    assert "Aide Complémentaire" in r.text
 
 
 def test_aides_detail_inconnu_404(client):
