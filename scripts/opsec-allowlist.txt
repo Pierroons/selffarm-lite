@@ -35,3 +35,10 @@ zxcvbn\.js$	dictionnaire de mots de passe courants (bibliothèque tierce)
 # le sien n'apprend rien, ils y sont tous. Une liste complète est le contraire
 # d'un marqueur — c'est l'entrée UNIQUE qui en serait un.
 ^webapp/templates/onboarding/step_3_localisation\.html$	liste des 101 départements
+
+# ── Listes de mots (diceware, dictionnaires) ────────────────────────────────
+# Une wordlist française contient des mots communs qui sont aussi des noms
+# propres ou des toponymes. Aucune ici pour l'instant : la section est
+# reprise à l'identique dans les deux dépôts pour que l'écart entre eux
+# reste lisible.
+zxcvbn\.js$	dictionnaire de mots de passe courants (bibliothèque tierce)
