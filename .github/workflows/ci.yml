@@ -1,10 +1,14 @@
 name: CI
 
+# 🔑 Aucun filtre de branche. La liste disait `dev` quand la branche de travail
+# s'appelle `develop` : ruff, pytest et les validations YAML ne se sont lancés
+# sur AUCUN commit de cette branche, et rien ne le signalait — seul gitleaks
+# tournait, et son vert passait pour celui de la CI entière. Une liste de
+# branches à tenir à jour finit toujours par diverger du nom réel, et le trou
+# qu'elle ouvre est invisible.
 on:
   push:
-    branches: [main, dev]
   pull_request:
-    branches: [main]
 
 jobs:
   test:
@@ -16,10 +20,10 @@ jobs:
         python-version: ['3.12', '3.13']
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
 
       - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -53,9 +57,9 @@ jobs:
     name: Valide YAML data
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
       - name: Setup Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
           python-version: '3.12'
       - name: Install deps

@@ -5,15 +5,16 @@ name: gitleaks (OPSEC)
 # faux positifs historiques : .gitleaksignore.
 # Step direct (binaire) → pas de dépendance licence/API comme gitleaks-action.
 on:
+  # Même raison que dans ci.yml : la liste était juste ici, elle ne l'était pas
+  # à côté, et rien ne rend visible l'écart entre les deux.
   push:
-    branches: [develop, main]
   pull_request:
 
 jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
         with:
           fetch-depth: 0   # historique complet (baseline .gitleaksignore appliqué)
       - name: Install gitleaks
