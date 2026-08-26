@@ -4,7 +4,7 @@
 # --- Web framework + serveur ASGI ---
 fastapi==0.136.0
 uvicorn[standard]==0.45.0      # inclut uvloop, httptools, watchfiles, websockets
-python-multipart==0.0.26       # upload de fichiers (import retour marché, etc.)
+python-multipart==0.0.32       # upload de fichiers (import retour marché, etc.)
 itsdangerous==2.2.0            # SessionMiddleware Starlette (wizard onboarding)
 
 # --- Templates ---
