@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# audit-opsec.sh — les quatre angles morts de gitleaks.
+# audit-opsec.sh — les six angles morts de gitleaks.
 #
 # gitleaks cherche des SECRETS (clés, tokens, mots de passe) et le fait bien.
 # Il ne cherche pas les données PERSONNELLES, et surtout il ne regarde pas :
@@ -8,21 +8,34 @@
 #   2. les messages de commit                — aucun scanner ne les lit
 #   3. les fichiers disparus du HEAD         — ils dorment dans l'historique
 #   4. les métadonnées de documents          — DOCX et PDF portent un auteur
+#   5. le CORPS d'un document bureautique    — `git grep -I` saute les binaires
+#   6. les surfaces de la forge              — release, description : hors git
 #
-# Ce sont exactement les quatre endroits où dormaient les fuites de l'audit
-# du 28 juillet 2026 : un username système dans six fichiers d'historique, un
+# Les quatre premiers sont les endroits où dormaient les fuites de l'audit du
+# 28 juillet 2026 : un username système dans six fichiers d'historique, un
 # brief privé orphelin, un code postal publié par le message qui le masquait,
-# et un nom de domaine dans un corps de commit.
+# et un nom de domaine dans un corps de commit. Les deux derniers sont arrivés
+# le 24/08/2026, avec leurs propres mesures — et l'en-tête ne les avait jamais
+# vus : il annonçait quatre angles morts pour sept étages implémentés.
 #
-# ── Trois modes, et pourquoi le plus précoce est le plus important ──────────
+# ── Quatre modes, et pourquoi le plus précoce est le plus important ─────────
 #
-#   (aucun)     audit complet — tout l'historique. Appelé par le pre-push.
+#   --worktree  ce qui est écrit sur le disque, pas encore indexé. Aucun hook
+#               ne l'appelle : c'est le mode de la relecture avant commit.
 #   --staged    fichiers indexés seulement. Appelé par le pre-commit.
 #   --message F motifs dans le fichier de message. Appelé par le commit-msg.
+#   (aucun)     audit complet — tout l'historique. Appelé par le pre-push.
 #
-# L'écart de coût entre les deux premiers est le vrai sujet. Une donnée
-# arrêtée au pre-commit se corrige en dix secondes : le fichier n'est même
-# pas commité. La même donnée arrêtée au pre-push est déjà dans l'historique
+# --worktree existe parce qu'un fichier écrit mais pas encore ajouté n'était vu
+# par AUCUN des trois autres. Un agent de relecture a dû appliquer les motifs à
+# la main sur onze fichiers le 14/08/2026 : ce qui marche une fois et ne marche
+# plus le jour où personne n'y pense. Un contrôle qui dépend de la vigilance de
+# celui qui le lance n'est pas un contrôle.
+#
+# L'écart de coût entre ces modes est le vrai sujet. Une donnée arrêtée au
+# worktree se corrige d'un coup d'éditeur — elle n'est même pas indexée. Une
+# donnée arrêtée au pre-commit se corrige en dix secondes : le fichier n'est
+# même pas commité. La même donnée arrêtée au pre-push est déjà dans l'historique
 # local — il faut un rebase. Et si elle est passée, il faut git-filter-repo,
 # re-signer les tags, force-pusher, purger le registre d'images et demander
 # à GitHub de collecter les objets orphelins. Le rapport est de un à mille.
@@ -55,19 +68,63 @@ ALLOWLIST="$ROOT/scripts/opsec-allowlist.txt"
 
 MODE="full"
 MSGFILE=""
+RANGE=""
 VERBOSE=0
 case "${1:-}" in
-  --staged)  MODE="staged" ;;
-  --message) MODE="message"; MSGFILE="${2:-}" ;;
-  --verbose) VERBOSE=1 ;;
-  "")        ;;
-  # Sans ce refus, une faute de frappe tombe en mode complet et rend un vert :
-  # « ✓ Rien à signaler » sur un audit qui n'était pas celui demandé.
+  --staged)   MODE="staged" ;;
+  --worktree) MODE="worktree" ;;
+  --message)  MODE="message"; MSGFILE="${2:-}" ;;
+  --verbose)  VERBOSE=1 ;;
+  # Borne les contrôles d'historique (2, 4, 5) aux commits d'une plage, au lieu
+  # de tout le dépôt. Sans lui, le pre-push rougissait sur un passé DÉJÀ publié,
+  # qu'aucun envoi ne peut ni aggraver ni corriger : l'audit bloquait chaque
+  # envoi jusqu'à réécriture de l'historique, donc on le contournait.
+  --range)    RANGE="${2:-}"
+              [ -n "$RANGE" ] || { printf '\033[31m✗ --range attend une plage (ex. @{u}..HEAD)\033[0m\n' >&2; exit 2; } ;;
+              # La validité de la plage est mesurée plus bas, une fois ROOT connu.
+  "")         ;;
+  # Sans ce refus, une faute de frappe tombait en mode complet et rendait un
+  # vert : « ✓ Rien à signaler » sur un audit qui n'était pas celui demandé.
+  # Mesuré le 14/08/2026 avec --worktree avant qu'il existe.
   # printf et non red() : les fonctions d'affichage sont définies plus bas.
-  *)         printf '\033[31m✗ Argument inconnu : %s\033[0m\n' "$1" >&2
-             echo "  Modes : --staged | --message <fichier> | (aucun)" >&2
-             exit 2 ;;
+  *)          printf '\033[31m✗ Argument inconnu : %s\033[0m\n' "$1" >&2
+              echo "  Modes : --worktree | --staged | --message <fichier> | --range <plage> | (aucun)" >&2
+              exit 2 ;;
 esac
+
+# 🔑 Une plage INVALIDE ne vaut pas une plage vide, et rien ne les distinguait.
+#
+# Après une réécriture d'historique, le SHA que porte le distant n'existe plus
+# ici : `git rev-list <distant>..HEAD` sort en « Invalid revision range », la
+# liste de commits reste vide, et les contrôles 2, 4 et 5 annonçaient alors
+# « aucun commit dans le périmètre » suivi d'un vert. Autrement dit l'audit se
+# taisait exactement au moment du force-push — le seul où TOUT est nouveau pour
+# le distant et doit être relu en entier. Mesuré le 26/08/2026 sur ce dépôt.
+#
+# On mesure donc la plage avant de s'en servir. Invalide, on ne rend pas vert :
+# on retombe sur l'historique complet, ce qui est précisément le bon périmètre
+# quand le distant ne partage plus rien avec nous, et on le DIT.
+if [ -n "$RANGE" ] && ! git -C "$ROOT" rev-list "$RANGE" >/dev/null 2>&1; then
+  printf '\033[1;33m!\033[0m plage « %s » inutilisable ici — le distant ne la partage plus.\n' "$RANGE"
+  echo "  Historique réécrit : tout est nouveau pour le distant. Audit COMPLET."
+  echo
+  RANGE=""
+fi
+
+# Ce qui sépare vraiment les modes n'est pas leur nom : c'est de travailler sur
+# une LISTE DE FICHIERS ou sur l'HISTORIQUE. Les contrôles 4 et 5 (messages,
+# orphelins) n'ont de sens que dans le second cas.
+case "$MODE" in staged|worktree) PAR_CIBLES=1 ;; *) PAR_CIBLES=0 ;; esac
+
+# D'où vient le contenu d'une cible. En mode staged c'est l'index — ce qui est
+# sur le disque n'y est pas forcément. Partout ailleurs, le disque.
+contenu() {
+  if [ "$MODE" = "staged" ]; then
+    git -C "$ROOT" show ":$1" 2>/dev/null
+  else
+    cat "$ROOT/$1" 2>/dev/null
+  fi
+}
 
 # Une cible vit dans l'index en mode staged, sur le disque ailleurs.
 lisible() {
@@ -78,10 +135,35 @@ lisible() {
   fi
 }
 
+# Un binaire n'a pas de contenu à greper — encore faut-il le dire de façon
+# stable. `grep -I` sur un PIPE juge sur le premier bloc qu'il reçoit : une
+# séquence UTF-8 coupée à la frontière du buffer suffit à lui faire déclarer
+# binaire un fichier de texte, et le verdict change avec l'ordonnancement du
+# producteur. Mesuré le 21 août 2026 sur les deux fichiers de langue du lab, les
+# plus riches en accents : zéro, un ou deux fichiers sautés d'une exécution à
+# l'autre, à contenu rigoureusement identique. Un audit qui écarte au hasard les
+# fichiers les plus chargés en texte rédigé est un faux vert.
+# On applique donc le critère de git lui-même, qui ne dépend d'aucun buffer :
+# un octet NUL dans les huit premiers kilo-octets.
+binaire() {
+  local n
+  n=$(contenu "$1" | head -c 8000 | tr -dc '\000' | wc -c)
+  [ "${n:-0}" -gt 0 ]
+}
+
 FOUND=0
+# `note` dit qu'un contrôle n'a rien pu mesurer. Ça ne vaut pas ✗ — ça
+# interdirait de commiter ce que l'allowlist écarte volontairement — mais ça ne
+# vaut pas ✓ non plus : le verdict final doit pouvoir le distinguer.
+SANS_OBJET=0
 red()  { printf '\033[31m%s\033[0m\n' "$1"; }
 ok()   { printf '  \033[32m✓\033[0m %s\n' "$1"; }
 warn() { printf '  \033[31m✗\033[0m %s\n' "$1"; FOUND=1; }
+# Ni vert ni rouge : ce qui doit se voir sans faire échouer. Un audit sans objet
+# n'est pas une fuite, mais il ne mérite pas la coche d'une passe complète — et
+# le signaler en ✗ interdirait de commiter les fichiers que l'allowlist écarte,
+# à commencer par ce script.
+note() { printf '  \033[33m•\033[0m %s\n' "$1"; }
 
 # grep rend 0 s'il trouve, 1 s'il ne trouve pas, et 2 ou plus si le motif est
 # invalide ou la lecture impossible. Tester « rc != 0 » confond donc « rien
@@ -171,6 +253,21 @@ if [ "$MODE" = "staged" ]; then
   echo "▸ Audit OPSEC (fichiers indexés) — ${#MOTIFS[@]} motifs"
   mapfile -t CIBLES < <(git -c core.quotepath=false -C "$ROOT" diff --cached --name-only --diff-filter=ACMR)
   [ ${#CIBLES[@]} -eq 0 ] && { ok "rien d'indexé"; exit 0; }
+elif [ "$MODE" = "worktree" ]; then
+  echo "▸ Audit OPSEC (travail en cours) — ${#MOTIFS[@]} motifs"
+  # Tout ce qui n'est pas encore poussé : modifié, indexé, ou jamais tracké.
+  # Un fichier peut figurer dans deux listes — un ajout partiel diffère de sa
+  # version disque — d'où le sort -u.
+  mapfile -t CIBLES < <(
+    {
+      git -c core.quotepath=false -C "$ROOT" diff --name-only --diff-filter=ACMR
+      git -c core.quotepath=false -C "$ROOT" diff --cached --name-only --diff-filter=ACMR
+      git -c core.quotepath=false -C "$ROOT" ls-files --others --exclude-standard
+    } | sort -u | grep .
+  )
+  # Un working tree propre n'est pas un audit réussi : c'est un audit sans
+  # objet. Le dire, plutôt que rendre un vert obtenu sur une liste vide.
+  [ ${#CIBLES[@]} -eq 0 ] && { ok "aucun fichier modifié ni intracké — rien à auditer"; exit 0; }
 else
   echo "▸ Audit OPSEC — ${#MOTIFS[@]} motifs, ${#EXCLUDES[@]} exclusions"
 fi
@@ -189,23 +286,53 @@ elif [ "$MODE" = "staged" ]; then
   else
     warn "secret dans l'index — détail : gitleaks protect --staged -v"
   fi
+elif [ "$MODE" = "worktree" ]; then
+  # `protect --staged` ne lit que l'index : sur un fichier jamais indexé il
+  # rendrait un vert alors qu'il n'a rien regardé — l'alarme morte, dans le
+  # script écrit pour la traquer. `detect --no-git` est le seul mode qui
+  # regarde un fichier tel qu'il est sur le disque, d'où le passage un par un.
+  SEC=0
+  for f in "${CIBLES[@]}"; do
+    [ -f "$ROOT/$f" ] || continue
+    gitleaks detect --no-git --source "$ROOT/$f" -c "$ROOT/.gitleaks.toml" \
+      --no-banner --redact >/dev/null 2>&1 || { warn "$f — secret détecté"; SEC=1; }
+  done
+  [ "$SEC" = "0" ] && ok "aucun secret dans les ${#CIBLES[@]} fichier(s) en cours"
 else
+  # Le périmètre de ce contrôle suit --range, comme les contrôles 2, 4 et 5.
+  # Sans --log-opts, `detect` scanne l'historique COMPLET pendant que le reste du
+  # rapport annonce une plage : il rendait rouge sur une plage propre, à cause de
+  # secrets antérieurs déjà publiés. Un contrôle bloquant qui crie pour autre chose
+  # que ce qu'il annonce s'apprend par cœur, puis se contourne. Mesuré le 23/08/2026
+  # sur origin/main..dev — gitleaks disait « no leaks found », le rapport disait
+  # « secret détecté ».
+  GL_PORTEE=()
+  [ -n "$RANGE" ] && GL_PORTEE=(--log-opts "$RANGE")
   if gitleaks detect --source "$ROOT" -c "$ROOT/.gitleaks.toml" \
-       --no-banner --redact >/dev/null 2>&1; then
-    ok "aucun secret"
+       "${GL_PORTEE[@]}" --no-banner --redact >/dev/null 2>&1; then
+    ok "aucun secret${RANGE:+ dans les commits à publier ($RANGE)}"
   else
-    warn "secret détecté — détail : gitleaks detect -v"
+    warn "secret détecté — détail : gitleaks detect${RANGE:+ --log-opts \"$RANGE\"} -v"
   fi
 fi
 
 # ── 2. Données personnelles dans le contenu ────────────────────────────────
 echo
-if [ "$MODE" = "staged" ]; then
-  echo "2. Données personnelles — contenu indexé"
+if [ "$PAR_CIBLES" = "1" ]; then
+  if [ "$MODE" = "staged" ]; then
+    echo "2. Données personnelles — contenu indexé"
+  else
+    echo "2. Données personnelles — contenu sur le disque"
+  fi
   C2=0
   EXAMINES=0
   for f in "${CIBLES[@]}"; do
-    exclu "$f" && continue
+    # L'exclusion se dit, comme le saut d'un binaire : une cible qui quitte le
+    # compte en silence ne se distingue pas d'une cible lue et propre.
+    if exclu "$f"; then
+      echo "       ↷ $f — écarté par l'allowlist"
+      continue
+    fi
     # Un fichier qu'on ne peut pas ouvrir n'est pas un fichier propre. Sans ce
     # test, une cible illisible tombait dans le `continue` du binaire et
     # rejoignait le compte des examinés sans avoir été lue une seule fois.
@@ -214,27 +341,53 @@ if [ "$MODE" = "staged" ]; then
       C2=1
       continue
     fi
-    # Binaire : le grep n'a pas de sens, le contrôle 3 s'en charge.
-    git -C "$ROOT" show ":$f" 2>/dev/null | grep -qI . || continue
+    # Binaire : le grep n'a pas de sens, le contrôle 3 s'en charge. Le saut se
+    # dit — un fichier qui disparaît du compte sans être nommé ne se distingue
+    # pas d'un fichier lu et propre.
+    if binaire "$f"; then
+      echo "       ↷ $f — binaire, contenu non grepé (voir contrôle 3)"
+      continue
+    fi
     EXAMINES=$((EXAMINES + 1))
     for m in "${MOTIFS[@]}"; do
-      if git -C "$ROOT" show ":$f" 2>/dev/null | cherche "$m"; then
+      if contenu "$f" | cherche "$m"; then
         warn "$f — contient « $m »"
-        git -C "$ROOT" show ":$f" 2>/dev/null | grep -in -e "$m" | head -2 | sed 's/^/       /'
+        contenu "$f" | grep -in -e "$m" | head -2 | sed 's/^/       /'
         C2=1
         break
       fi
     done
   done
-  # Le compte est celui des lectures réussies, jamais celui de la liste.
-  [ "$C2" = "0" ] && ok "aucun motif dans les $EXAMINES fichier(s) réellement lus"
+  # Le compte est celui des lectures réussies, jamais celui de la liste. Et zéro
+  # lecture n'est pas un audit réussi : c'est un audit sans objet, qui doit se
+  # lire comme tel plutôt que sous la même coche verte qu'une passe complète.
+  if [ "$C2" = "0" ]; then
+    if [ "$EXAMINES" = "0" ]; then
+      note "aucun fichier lu — toutes les cibles ont été écartées ou sont binaires"
+      SANS_OBJET=1
+    else
+      ok "aucun motif dans les $EXAMINES fichier(s) réellement lus"
+    fi
+  fi
 else
   # On scanne TOUS les commits, pas le HEAD : corriger un fichier ne retire
   # pas ce qu'il contenait hier. C'est ce qui distingue ce contrôle de gitleaks.
-  echo "2. Données personnelles — contenu de l'historique complet"
-  mapfile -t REVS < <(git -C "$ROOT" rev-list --all)
+  if [ -n "$RANGE" ]; then
+    echo "2. Données personnelles — contenu des commits à publier ($RANGE)"
+    mapfile -t REVS < <(git -C "$ROOT" rev-list "$RANGE")
+  else
+    echo "2. Données personnelles — contenu de l'historique complet"
+    mapfile -t REVS < <(git -C "$ROOT" rev-list --all)
+  fi
+  # Une plage vide ne se mesure pas : le dire, plutôt que rendre un vert que
+  # rien ne distingue d'un vert obtenu sur des commits réellement lus.
+  if [ "${#REVS[@]}" = "0" ]; then
+    ok "aucun commit dans le périmètre — rien n'a été lu"
+    REVS=()
+  fi
   C2=0
   for m in "${MOTIFS[@]}"; do
+    [ "${#REVS[@]}" = "0" ] && break
     hits=$(git -C "$ROOT" grep -Iil -e "$m" "${REVS[@]}" | cut -d: -f2- | sort -u)
     rc=${PIPESTATUS[0]}
     if [ "$rc" -gt 1 ]; then
@@ -252,7 +405,9 @@ else
     n=$(printf '%s' "$reste" | grep -c . || true)
     [ "${n:-0}" != "0" ] && { warn "« $m » — $n fichier(s)"; C2=1; }
   done
-  [ "$C2" = "0" ] && ok "aucun motif dans le contenu"
+  # Muet si la plage est vide : le « rien n'a été lu » plus haut suffit, et
+  # deux verts de suite dont l'un affirme plus que l'autre finissent mal lus.
+  [ "$C2" = "0" ] && [ "${#REVS[@]}" != "0" ] && ok "aucun motif dans le contenu"
 fi
 
 # ── 3. Métadonnées des binaires ────────────────────────────────────────────
@@ -263,21 +418,44 @@ echo "3. Métadonnées des fichiers binaires"
 if ! command -v exiftool >/dev/null 2>&1; then
   warn "exiftool absent — sudo apt install libimage-exiftool-perl"
 else
-  if [ "$MODE" = "staged" ]; then
+  if [ "$PAR_CIBLES" = "1" ]; then
     mapfile -t BINS < <(printf '%s\n' "${CIBLES[@]}" | grep -iE '\.(png|jpe?g|webp|tiff?|pdf|docx|xlsx|odt)$' || true)
   else
     mapfile -t BINS < <(git -C "$ROOT" ls-files -- \
       '*.png' '*.jpg' '*.jpeg' '*.webp' '*.tif' '*.tiff' \
       '*.pdf' '*.docx' '*.xlsx' '*.odt' 2>/dev/null)
   fi
+  # `ls-files` ne voit que le HEAD. Un binaire retiré il y a six mois garde ses
+  # métadonnées dans l'historique, et c'est justement là que dorment les
+  # captures d'écran et les documents de travail. En mode complet on parcourt
+  # donc les blobs de l'historique, dédoublonnés, extraits en temporaire.
+  TMPMETA=""
+  if [ "$PAR_CIBLES" = "0" ]; then
+    TMPMETA=$(mktemp -d)
+    trap 'rm -rf "$TMPMETA"' EXIT
+    mapfile -t BINS < <(
+      git -C "$ROOT" rev-list --objects --all 2>/dev/null \
+        | awk 'NF>=2 {sha=$1; $1=""; sub(/^ /,""); print sha"\t"$0}' \
+        | grep -iE '\.(png|jpe?g|webp|tiff?|pdf|docx|xlsx|odt)$' \
+        | sort -u -t$'\t' -k1,1)
+  fi
   META=""
   for f in "${BINS[@]:-}"; do
     [ -n "${f:-}" ] || continue
-    [ -f "$ROOT/$f" ] || continue
+    if [ -n "$TMPMETA" ]; then
+      blob="${f%%$'\t'*}"; chemin="${f#*$'\t'}"
+      exclu "$chemin" && continue
+      cible="$TMPMETA/${blob}.${chemin##*.}"
+      git -C "$ROOT" cat-file blob "$blob" > "$cible" 2>/dev/null || continue
+      f="$chemin"
+    else
+      [ -f "$ROOT/$f" ] || continue
+      cible="$ROOT/$f"
+    fi
     brut=$(exiftool -s -S -Artist -Creator -Author -LastModifiedBy -Company \
              -Software -Comment -UserComment -XPAuthor -Copyright \
              -GPSPosition -HostComputer -OwnerName -SerialNumber \
-             "$ROOT/$f" 2>/dev/null | grep -v '^$' || true)
+             "$cible" 2>/dev/null | grep -v '^$' || true)
     while IFS= read -r ligne; do
       [ -z "$ligne" ] && continue
       suspecte "$ligne" && META="${META}  $f : ${ligne}"$'\n'
@@ -293,11 +471,16 @@ else
 fi
 
 # ── 4 et 5 : historique seulement ──────────────────────────────────────────
-if [ "$MODE" != "staged" ]; then
+if [ "$PAR_CIBLES" = "0" ]; then
   echo
-  echo "4. Messages de commit (sujets et corps)"
+  if [ -n "$RANGE" ]; then
+    echo "4. Messages de commit à publier ($RANGE)"
+    MESSAGES=$(git -C "$ROOT" log "$RANGE" --format='%s%n%b')
+  else
+    echo "4. Messages de commit (sujets et corps)"
+    MESSAGES=$(git -C "$ROOT" log --all --format='%s%n%b')
+  fi
   C4=0
-  MESSAGES=$(git -C "$ROOT" log --all --format='%s%n%b')
   for m in "${MOTIFS[@]}"; do
     n=$(printf '%s' "$MESSAGES" | grep -ic -e "$m"); rc=$?
     if [ "$rc" -gt 1 ]; then
@@ -312,15 +495,56 @@ if [ "$MODE" != "staged" ]; then
       [ "$VERBOSE" = "1" ] && printf '%s' "$MESSAGES" | grep -i -e "$m" | head -3 | sed 's/^/       /'
     fi
   done
-  [ "$C4" = "0" ] && ok "aucun motif dans les messages"
+  # Les motifs ci-dessus cherchent des données NOMINATIVES. Un secret, lui,
+  # n'a aucune forme reconnaissable — sauf sa longueur. Le 17/04/2026, un jeton
+  # de 32 hex est parti dans un sujet de commit ; il y est resté quatre mois,
+  # actif sur le serveur, pendant que gitleaks rendait vert : il lit les
+  # patchs, jamais les messages. Personne ne regardait cette surface.
+  #
+  # Une chaîne hexadécimale de 32 ou 64 caractères est soit un identifiant
+  # d'objet git — parfaitement légitime dans un message — soit un secret. Git
+  # sait dire lequel : on lui demande.
+  while read -r cand; do
+    [ -z "$cand" ] && continue
+    git -C "$ROOT" cat-file -e "$cand" 2>/dev/null && continue   # objet git connu
+    warn "chaîne de ${#cand} caractères hexadécimaux dans un message, inconnue de git"
+    echo "       ${cand:0:6}… — si c'est un secret, il est publié : tourne-le."
+    echo "       Le message ne se corrige que par réécriture d'historique."
+    C4=1
+  done < <(printf '%s' "$MESSAGES" | grep -ioE '\b[0-9a-f]{32}\b|\b[0-9a-f]{64}\b' | sort -u)
+
+  [ "$C4" = "0" ] && ok "aucun motif ni secret dans les messages"
 
   # Le filtre le plus utile de tous : c'est là que dorment les documents de
   # travail, briefs privés et captures qu'on a « rangés » d'un git rm.
   echo
-  echo "5. Fichiers orphelins (dans l'historique, absents du HEAD)"
+  # Le périmètre de ce contrôle suit --range comme les contrôles 2 et 4. Sans
+  # lui, le pre-push rougissait sur des blobs publiés depuis des mois, qu'aucun
+  # envoi ne peut ni aggraver ni corriger : il bloquait TOUT jusqu'à la
+  # réécriture de l'historique, donc il se contournait — et un garde-fou qu'on
+  # contourne par habitude ne garde plus rien. Le commentaire de --range
+  # annonçait déjà ce bornage ; le code ne l'appliquait pas (mesuré le 21/08).
+  #
+  # Borné, il attrape ce qu'un envoi AJOUTE vraiment : un fichier sali puis
+  # supprimé dans la même série de commits laisse son blob dans l'historique
+  # poussé. L'audit complet, sans --range, continue de voir tout le passé —
+  # c'est lui qui sert au chantier de réécriture, et c'est sa place.
+  if [ -n "$RANGE" ]; then
+    echo "5. Fichiers orphelins supprimés par les commits à publier ($RANGE)"
+    PORTEE=("$RANGE")
+  else
+    echo "5. Fichiers orphelins (dans l'historique, absents du HEAD)"
+    PORTEE=(--all)
+  fi
+  # `ls-files` ne lit que l'index de la branche courante : sur un dépôt à
+  # plusieurs branches, un fichier vivant sur `develop` était compté orphelin —
+  # et surtout l'inverse, un vrai orphelin passait pour vivant. On compare à
+  # l'union de toutes les refs locales, seule définition juste de « encore là ».
   ORPH=$(comm -23 \
-    <(git -C "$ROOT" log --all --diff-filter=D --name-only --format='' | sort -u | grep . ) \
-    <(git -C "$ROOT" ls-files | sort -u) || true)
+    <(git -C "$ROOT" log "${PORTEE[@]}" --diff-filter=D --name-only --format='' | sort -u | grep . ) \
+    <(git -C "$ROOT" for-each-ref --format='%(refname)' refs/heads refs/remotes \
+        | while IFS= read -r r; do git -C "$ROOT" ls-tree -r --name-only "$r"; done \
+        | sort -u) || true)
   ORPH_N=$(printf '%s' "$ORPH" | grep -c . || true)
   C5=0
   if [ "${ORPH_N:-0}" != "0" ]; then
@@ -332,7 +556,7 @@ if [ "$MODE" != "staged" ]; then
       # souvent le propre. Et la comparaison porte sur le chemin ENTIER — un
       # `grep -F " brief.md"` non ancré matche « mon brief.md » et fait juger
       # l'orphelin sur le contenu d'un autre fichier.
-      mapfile -t BLOBS < <(git -C "$ROOT" rev-list --all --objects \
+      mapfile -t BLOBS < <(git -C "$ROOT" rev-list "${PORTEE[@]}" --objects \
         | awk -v p="$f" 'index($0, " ") > 0 && substr($0, index($0, " ") + 1) == p { print $1 }' \
         | sort -u)
       [ ${#BLOBS[@]} -eq 0 ] && continue
@@ -349,17 +573,142 @@ if [ "$MODE" != "staged" ]; then
   [ "$C5" = "0" ] && ok "$ORPH_N orphelin(s), aucun ne porte de motif"
 fi
 
+# ── 6 : le TEXTE des documents, sur tout l'historique ──────────────────────
+#
+# L'étape 2 lit le contenu avec `git grep -I`, qui saute les binaires par
+# construction. L'étape 3 lit les métadonnées, et seulement celles des fichiers
+# du HEAD. Entre les deux, un trou : le CORPS d'un document bureautique, dans
+# l'historique. Mesuré le 24/08/2026 sur un dépôt privé — deux DOCX y portaient
+# un nom de domaine d'infrastructure et un chemin serveur, invisibles aux cinq
+# étages. Un « ✓ métadonnées » ne dit rien de ce qui est écrit dans la page.
+#
+# Dédoublonné par blob : un document présent dans quarante commits s'extrait
+# une fois.
+if [ "$PAR_CIBLES" = "0" ]; then
+  echo
+  echo "6. Texte des documents bureautiques (historique complet)"
+  DOCS=$(git -C "$ROOT" rev-list --objects "${PORTEE[@]}" 2>/dev/null \
+         | awk 'NF>=2 {sha=$1; $1=""; sub(/^ /,""); print sha"\t"$0}' \
+         | grep -iE '\.(docx|odt|pptx|xlsx|pdf)$' | sort -u -t$'\t' -k1,1 || true)
+  DOC_N=$(printf '%s' "$DOCS" | grep -c . || true)
+  C6=0
+  if [ "${DOC_N:-0}" = "0" ]; then
+    ok "aucun document bureautique dans l'historique"
+  else
+    while IFS=$'\t' read -r blob chemin; do
+      [ -z "$blob" ] && continue
+      exclu "$chemin" && continue
+      texte=$(git -C "$ROOT" cat-file blob "$blob" 2>/dev/null | python3 -c '
+import sys, zipfile, io, re, subprocess
+brut = sys.stdin.buffer.read()
+try:
+    if brut[:4] == b"%PDF":
+        p = subprocess.run(["pdftotext", "-", "-"], input=brut,
+                           capture_output=True, timeout=30)
+        sys.stdout.write(p.stdout.decode("utf-8", "ignore"))
+    else:
+        z = zipfile.ZipFile(io.BytesIO(brut))
+        out = []
+        for n in z.namelist():
+            if n.endswith(".xml") or n.endswith(".rels"):
+                out.append(re.sub(r"<[^>]+>", " ", z.read(n).decode("utf-8", "ignore")))
+        sys.stdout.write(" ".join(out))
+except Exception:
+    pass
+' 2>/dev/null || true)
+      if [ -z "$texte" ]; then
+        warn "$chemin (blob ${blob:0:8}) — texte non extractible, NON contrôlé"
+        C6=1; continue
+      fi
+      for m in "${MOTIFS[@]}"; do
+        if printf '%s' "$texte" | grep -qi -e "$m"; then
+          warn "$chemin — contient « $m » (blob ${blob:0:8})"
+          C6=1; break
+        fi
+      done
+    done <<< "$DOCS"
+    [ "$C6" = "0" ] && ok "$DOC_N document(s) lu(s), aucun ne porte de motif"
+  fi
+fi
+
+# ── 7 : les surfaces de la forge, hors de git ───────────────────────────────
+#
+# Un corps de release, un titre, une description de dépôt : du texte libre,
+# publié, indexé, et dans AUCUN dépôt. Aucun étage ci-dessus ne peut le voir —
+# ils lisent tous des objets git. Mesuré le 24/08/2026 : un corps de release
+# nommait un répertoire d'infrastructure, un autre décrivait le métier de
+# l'auteur avec assez de précision pour réduire l'ensemble d'anonymat.
+#
+# Étage réseau : sans `gh` ou sans accès, il le DIT plutôt que de rendre vert.
+if [ "$PAR_CIBLES" = "0" ]; then
+  echo
+  echo "7. Surfaces de la forge (releases, description, topics)"
+  # Ne dériver un dépôt QUE d'une URL github.com. Sans ce test, un remote local
+  # produisait un « dépôt » qui est un chemin disque, et les appels échouaient.
+  ORIG=$(git -C "$ROOT" remote get-url origin 2>/dev/null || true)
+  case "$ORIG" in
+    *github.com[:/]*) DEPOT=$(printf '%s' "$ORIG" | sed -E 's#^.*github\.com[:/]##; s#\.git$##') ;;
+    *) DEPOT="" ;;
+  esac
+  if ! command -v gh >/dev/null 2>&1; then
+    note "gh absent — surfaces de la forge NON contrôlées"
+    SANS_OBJET=1
+  elif [ -z "$DEPOT" ]; then
+    note "pas de remote GitHub — cet étage ne s'applique pas ici"
+  else
+    # ⚠️ `gh api` en échec écrit son JSON d'erreur sur STDOUT. Sans tester le
+    # code de retour, l'étage comptait « 13 lignes de texte libre » qui étaient
+    # treize lignes de « Not Found » — un vert obtenu sur une erreur. Chaque
+    # appel est donc gardé, et un seul échec rend l'étage sans objet.
+    LIBRE=""
+    APPELS_OK=0
+    for req in "repos/$DEPOT/releases|.[] | .name, .body, (.assets[]?.name)" \
+               "repos/$DEPOT|.description, .homepage, (.topics[]?)" \
+               "repos/$DEPOT/issues?state=all|.[] | .title, .body"; do
+      chemin="${req%%|*}"; filtre="${req#*|}"
+      if out=$(gh api "$chemin" --jq "$filtre" 2>/dev/null); then
+        LIBRE="${LIBRE}${out}"$'\n'
+        APPELS_OK=$((APPELS_OK + 1))
+      fi
+    done
+    if [ "$APPELS_OK" = "0" ]; then LIBRE=""; fi
+    if [ -z "$LIBRE" ]; then
+      note "aucun texte libre récupéré — vérifie l'accès réseau et gh auth"
+      SANS_OBJET=1
+    else
+      C7=0
+      for m in "${MOTIFS[@]}"; do
+        if printf '%s' "$LIBRE" | grep -qi -e "$m"; then
+          warn "« $m » dans une release, une issue ou la description de $DEPOT"
+          warn "  → ces textes s'éditent sans réécriture : gh release edit / gh repo edit"
+          C7=1
+        fi
+      done
+      [ "$C7" = "0" ] && ok "$(printf '%s' "$LIBRE" | grep -c .) ligne(s) de texte libre, aucun motif"
+    fi
+  fi
+fi
+
 # ── Verdict ─────────────────────────────────────────────────────────────────
 echo
-if [ "$FOUND" = "0" ]; then
+if [ "$FOUND" = "0" ] && [ "$SANS_OBJET" = "0" ]; then
   printf '\033[32m✓ Rien à signaler.\033[0m\n'
+  exit 0
+fi
+if [ "$FOUND" = "0" ]; then
+  printf '\033[33m• Audit sans objet — aucun contenu n'"'"'a été lu.\033[0m\n'
+  echo "  Le vert ci-dessus ne porte sur rien : vérifie les lignes ↷ et, si une"
+  echo "  entrée d'allowlist écarte plus large que sa raison, resserre-la."
   exit 0
 fi
 red "✗ Audit en échec — voir ci-dessus."
 echo
-if [ "$MODE" = "staged" ]; then
+if [ "$MODE" = "worktree" ]; then
+  echo "  Rien n'est indexé ni commité : corrige le fichier, c'est tout."
+  echo "  C'est le moment le moins cher de toute la chaîne."
+elif [ "$MODE" = "staged" ]; then
   echo "  Rien n'est encore commité : corrige le fichier et refais git add."
-  echo "  C'est le moment où la correction coûte le moins cher."
+  echo "  ⚠ --staged lit l'index : après correction, refais git add."
 else
   echo "  Un motif trouvé dans le CONTENU ou les MESSAGES ne se corrige pas"
   echo "  au HEAD : il faut réécrire l'historique (git-filter-repo), re-signer"
