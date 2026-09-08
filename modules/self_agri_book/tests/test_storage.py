@@ -767,3 +767,91 @@ def test_metadata_json_roundtrip(isolated_db):
     assert found is not None
     parsed = json.loads(found["metadata_json"])
     assert parsed == meta
+
+
+# ---------------- conversion du registre de migrations (0.1.x → 0.2.0) ----------------
+
+def _base_au_format_ancien(db_file):
+    """Fabrique une base telle qu'en produisait 0.1.x.
+
+    On laisse le code bâtir le schéma, puis on rétrograde le seul registre :
+    fabriquer les tables à la main donnerait une base qui n'a jamais existé, et
+    le test passerait sur un cas qui ne se produit pas.
+    """
+    from self_culture import cultures
+
+    storage.init_db()
+    # 1 et 2 seulement : en 0.1.x le renommage en `parcelles` n'existait pas.
+    storage.apply_module_migrations("self_culture", cultures.CULTURE_MIGRATIONS[:2])
+
+    c = sqlite3.connect(str(db_file))
+    lignes = list(c.execute("SELECT module, version, name, applied_at FROM _schema_migrations"))
+    c.execute("DROP TABLE _schema_migrations")
+    c.executescript("""
+        CREATE TABLE _schema_migrations (
+            version INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+    """)
+    # L'inverse du déménagement : self_culture 1 et 2 étaient 5 et 6.
+    inverse = {("self_culture", 1): 5, ("self_culture", 2): 6}
+    for module, version, name, applied in lignes:
+        c.execute(
+            "INSERT OR IGNORE INTO _schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
+            (inverse.get((module, version), version), name, applied),
+        )
+    c.commit()
+    c.close()
+
+
+def test_registre_ancien_converti_au_format_namespace(isolated_db):
+    """0.2.0 interroge `WHERE module = ?` : sans conversion, une base d'avant lève
+    `no such column: module` et plus aucune migration ne s'applique (prod, 08/09/2026)."""
+    _base_au_format_ancien(isolated_db)
+    storage.init_db()
+    with storage._conn() as c:
+        colonnes = {r[1] for r in c.execute("PRAGMA table_info(_schema_migrations)")}
+        assert "module" in colonnes
+        noyau = [r[0] for r in c.execute(
+            "SELECT version FROM _schema_migrations WHERE module='self_agri_book' ORDER BY version")]
+        culture = [r[0] for r in c.execute(
+            "SELECT version FROM _schema_migrations WHERE module='self_culture' ORDER BY version")]
+    # create_parcelle et create_plan_culture ont déménagé : 5 et 6 de la suite
+    # globale sont 1 et 2 de self_culture. Le noyau garde ses numéros.
+    assert culture == [1, 2]
+    assert 5 not in noyau and 6 not in noyau
+    assert {1, 2, 3, 4, 7, 16}.issubset(set(noyau))
+
+
+def test_registre_ancien_garde_une_trace(isolated_db):
+    """Une conversion de registre ne se relit pas : l'ancien doit rester lisible."""
+    _base_au_format_ancien(isolated_db)
+    storage.init_db()
+    with storage._conn() as c:
+        garde = c.execute(
+            "SELECT COUNT(*) FROM sqlite_master WHERE name='_schema_migrations_avant_0_2_0'"
+        ).fetchone()[0]
+    assert garde == 1
+
+
+def test_conversion_idempotente(isolated_db):
+    """Rejouer init_db ne doit ni redoubler les lignes ni écraser la trace."""
+    _base_au_format_ancien(isolated_db)
+    storage.init_db()
+    with storage._conn() as c:
+        avant = c.execute("SELECT COUNT(*) FROM _schema_migrations").fetchone()[0]
+    storage.init_db()
+    with storage._conn() as c:
+        apres = c.execute("SELECT COUNT(*) FROM _schema_migrations").fetchone()[0]
+    assert avant == apres
+
+
+def test_base_neuve_ne_declenche_pas_la_conversion(isolated_db):
+    """Sur une base créée par 0.2.0, il n'y a rien à convertir."""
+    storage.init_db()
+    with storage._conn() as c:
+        trace = c.execute(
+            "SELECT COUNT(*) FROM sqlite_master WHERE name='_schema_migrations_avant_0_2_0'"
+        ).fetchone()[0]
+    assert trace == 0

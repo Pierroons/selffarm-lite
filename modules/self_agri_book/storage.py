@@ -351,6 +351,46 @@ def _conn():
         conn.close()
 
 
+# Les deux migrations qui ont changé de maison en 0.2.0 : parcelle et plan_culture
+# étaient 5 et 6 de la suite globale, elles sont 1 et 2 de self_culture. Le noyau
+# a gardé ses numéros, d'où le trou 5-6 dans MIGRATIONS ci-dessus.
+_MIGRATIONS_DEMENAGEES: dict[int, tuple[str, int]] = {
+    5: ("self_culture", 1),
+    6: ("self_culture", 2),
+}
+
+
+def _convertir_registre_migrations() -> None:
+    """Passe `_schema_migrations` du format d'avant 0.2.0 au format namespacé.
+
+    Jusqu'en 0.1.x le registre portait (version, name, applied_at), numérotés
+    d'une seule suite pour toute la base. Depuis, chaque module tient la sienne
+    et `_apply_migrations` interroge `WHERE module = ?` : sur une base ancienne
+    la requête lève `no such column: module`, plus aucune migration ne
+    s'applique, et toute page qui lit les données rend 500. Constaté en
+    production le 08/09/2026 — la sonde /healthz répondait 200 pendant ce temps,
+    elle ne touche pas aux données.
+
+    Idempotent : ne fait rien sur une base neuve ni sur une base déjà convertie.
+    L'ancien registre est conservé sous `_schema_migrations_avant_0_2_0` — une
+    conversion de registre ne se relit pas, autant garder de quoi la vérifier.
+    """
+    with _conn() as c:
+        colonnes = {r[1] for r in c.execute("PRAGMA table_info(_schema_migrations)")}
+        if not colonnes or "module" in colonnes:
+            return
+        anciennes = list(c.execute("SELECT version, name, applied_at FROM _schema_migrations"))
+        c.execute("ALTER TABLE _schema_migrations RENAME TO _schema_migrations_avant_0_2_0")
+        c.executescript(SCHEMA_SQL)
+        for version, name, applied_at in anciennes:
+            module, nouvelle = _MIGRATIONS_DEMENAGEES.get(version, ("self_agri_book", version))
+            c.execute(
+                "INSERT INTO _schema_migrations (module, version, name, applied_at) VALUES (?, ?, ?, ?)",
+                (module, nouvelle, name, applied_at),
+            )
+        log.info("Registre de migrations converti : %d entrée(s) reprises", len(anciennes))
+
+
 def init_db() -> None:
     """Crée la DB + schéma noyau si absents puis applique les migrations du noyau.
 
@@ -360,6 +400,9 @@ def init_db() -> None:
     """
     with _conn() as c:
         c.executescript(SCHEMA_SQL)
+    # Avant les migrations, pas après : c'est _apply_migrations qui casse sur
+    # l'ancien registre.
+    _convertir_registre_migrations()
     _apply_migrations("self_agri_book", MIGRATIONS)
     log.info("Compta DB initialisée : %s", _db_path())
 
