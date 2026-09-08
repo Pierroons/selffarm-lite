@@ -27,16 +27,15 @@ dependencies = [
     "jinja2>=3.1",
     "weasyprint>=62.0",
     "fastapi>=0.110,<1.0",
-    # Starlette 1.0.0 introduit un breakpoint sur Jinja2Templates (cache key dict)
-    # → épinglé < 1.0 tant que Starlette ne republie pas de fix
-    #
-    # ⚠️ Ce plafond nous laisse CVE-2026-54283 (request.form() ignore max_fields et
-    # max_part_size pour application/x-www-form-urlencoded, donc un DoS par formulaire),
-    # corrigée seulement en 1.3.1. Mesuré le 23/08/2026 : monter à 1.6.0 fait échouer
-    # 15 tests de webapp/tests/test_routes.py (TypeError: unhashable). En attendant, le
-    # corps des requêtes est borné par nginx. L'autre CVE de la branche, CVE-2026-48818
-    # (UNC dans StaticFiles), ne vise que Windows — sans objet ici.
-    "starlette>=0.40,<1.0",
+    # Starlette >= 1.0 impose TemplateResponse(request, name, context). L'ordre
+    # historique faisait arriver le contexte à la place du nom du template
+    # (TypeError: unhashable type: 'dict') — ce n'était pas un bug de Starlette,
+    # donc le plafond n'avait pas de terme. Les 52 appels de webapp/routes ont été
+    # migrés le 08/09/2026 : la suite passe 18/18 sur 0.52.1, 1.3.1 et 1.6.0.
+    # Lever le plafond referme CVE-2026-54283 (request.form() ignore max_fields et
+    # max_part_size, DoS par formulaire) et CVE-2026-48818 (UNC dans StaticFiles,
+    # Windows seulement — mais une cible Windows est au programme).
+    "starlette>=1.3.1",
     "uvicorn[standard]>=0.27",
     "sqlalchemy>=2.0",
     "python-dateutil>=2.9",

@@ -47,9 +47,8 @@ async def home(request: Request):
         }
 
     return templates.TemplateResponse(
-        "home.html",
+        request, "home.html",
         {
-            "request": request,
             "version": __version__,
             "active_page": "home",
             "stats": stats,

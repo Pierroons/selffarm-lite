@@ -293,8 +293,8 @@ async def invoice_index(request: Request):
         factures = []
 
     return templates.TemplateResponse(
-        "invoice/index.html",
-        {"request": request, "version": __version__, "factures": factures},
+        request, "invoice/index.html",
+        {"version": __version__, "factures": factures},
     )
 
 
@@ -405,9 +405,8 @@ async def invoice_nouvelle_form(request: Request):
     except Exception:
         next_numero = f"F-{today.year}-0001"
     return templates.TemplateResponse(
-        "invoice/form.html",
+        request, "invoice/form.html",
         {
-            "request": request,
             "today": today.isoformat(),
             "echeance_default": (today + timedelta(days=30)).isoformat(),
             "regimes": REGIMES,

@@ -43,7 +43,7 @@ Dark natif (cohérent préférences utilisateur customtkinter dark). Tailwind CS
 ## Stack
 
 - **FastAPI** 0.136
-- **Starlette** < 1.0 (épinglé — breakpoint Jinja2Templates sur 1.0.0)
+- **Starlette** >= 1.3.1 (plafond levé le 08/09/2026 : `TemplateResponse` migré)
 - **Jinja2** 3.1
 - **htmx** 1.9.12 (CDN)
 - **Tailwind CSS** (CDN)

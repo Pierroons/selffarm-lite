@@ -58,9 +58,8 @@ async def parcelles_index(request: Request):
     """Page principale Production : liste parcelles + plan culture saison."""
     saison = _current_saison()
     return templates.TemplateResponse(
-        "parcelles/index.html",
+        request, "parcelles/index.html",
         {
-            "request": request,
             "version": __version__,
             "parcelles": list_parcelles(),
             "plans": list_plan_culture(saison=saison),
@@ -75,8 +74,8 @@ async def parcelles_index(request: Request):
 async def parcelles_carto(request: Request):
     """Page Carte parcellaire dans le layout SelfFarm (iframe sur /embed)."""
     return templates.TemplateResponse(
-        "parcelles/carto.html",
-        {"request": request, "version": __version__},
+        request, "parcelles/carto.html",
+        {"version": __version__},
     )
 
 

@@ -140,7 +140,7 @@ python -m self_aid.cli search --bio --zone Dordogne
 | Couche | Choix |
 |---|---|
 | Langage | Python 3.13 (3.11 min sur Raspberry Pi) |
-| API | FastAPI + Starlette `<1.0` (pinné — bug jinja2 TemplateResponse sur 1.0) |
+| API | FastAPI + Starlette `>=1.3.1` |
 | Validation données | Pydantic v2 (+ `model_validator` pour équilibre D/C) |
 | BDD | SQLite local (1 fichier par utilisateur) |
 | Front | HTML + htmx (server-rendered, pas de SPA) + Tailwind CSS CDN |

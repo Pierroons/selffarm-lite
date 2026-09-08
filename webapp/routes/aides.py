@@ -41,9 +41,8 @@ async def aides_index(request: Request):
     aides = load_all()
     mn, mx = total_enveloppe(aides)
     return templates.TemplateResponse(
-        "aides/list.html",
+        request, "aides/list.html",
         {
-            "request": request,
             "version": __version__,
             "aides": [a.model_dump(mode="json") for a in aides],
             "count_total": len(aides),
@@ -76,9 +75,8 @@ async def aides_filter(
     filtered = filter_aides(all_aides, f)
     mn, mx = total_enveloppe(filtered)
     return templates.TemplateResponse(
-        "aides/_fragment.html",
+        request, "aides/_fragment.html",
         {
-            "request": request,
             "aides": [a.model_dump(mode="json") for a in filtered],
             "cumul_min": _fmt_num(mn),
             "cumul_max": _fmt_num(mx),
@@ -93,9 +91,8 @@ async def aide_detail(request: Request, aide_id: str):
     if not found:
         raise HTTPException(404, f"Aide inconnue : {aide_id}")
     return templates.TemplateResponse(
-        "aides/detail.html",
+        request, "aides/detail.html",
         {
-            "request": request,
             "version": __version__,
             "aide": found.model_dump(mode="json"),
         },

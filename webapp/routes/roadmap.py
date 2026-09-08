@@ -19,6 +19,6 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 @router.get("/roadmap", response_class=HTMLResponse)
 async def roadmap(request: Request):
     return templates.TemplateResponse(
-        "roadmap.html",
-        {"request": request, "version": __version__, "active_page": "roadmap"},
+        request, "roadmap.html",
+        {"version": __version__, "active_page": "roadmap"},
     )

@@ -38,7 +38,7 @@ async def set_view(mode: str, request: Request):
 @router.get("/parametres/modules", response_class=HTMLResponse)
 async def modules_index(request: Request):
     return templates.TemplateResponse(
-        "modules/index.html", {"request": request, "version": __version__}
+        request, "modules/index.html", {"version": __version__}
     )
 
 
@@ -58,6 +58,6 @@ async def module_desactiver(module_id: str):
 async def module_soon(module_id: str, request: Request):
     module = cat.module_by_id(module_id)
     return templates.TemplateResponse(
-        "modules/bientot.html",
-        {"request": request, "module": module, "version": __version__},
+        request, "modules/bientot.html",
+        {"module": module, "version": __version__},
     )

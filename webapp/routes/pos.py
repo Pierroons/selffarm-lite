@@ -89,9 +89,8 @@ async def pos_index(request: Request):
     exp = get_exploitation()
     seuil_jours = int(exp.get("stock_revue_jours", 7)) if exp else 7
     response = templates.TemplateResponse(
-        "pos/index.html",
+        request, "pos/index.html",
         {
-            "request": request,
             "version": __version__,
             "sessions": list_sessions(),
             "session_ouverte": get_session_ouverte(),
@@ -117,8 +116,8 @@ async def pos_demo_split(request: Request):
     côte à côte en iframes live (même origine). Montre que SelfPOS = les deux."""
     seed_demo_if_needed()
     return templates.TemplateResponse(
-        "pos/demo_split.html",
-        {"request": request, "version": __version__},
+        request, "pos/demo_split.html",
+        {"version": __version__},
     )
 
 
@@ -137,9 +136,8 @@ async def pos_demo_reset():
 @router.get("/pos/produits", response_class=HTMLResponse)
 async def pos_produits(request: Request):
     return templates.TemplateResponse(
-        "pos/produits.html",
+        request, "pos/produits.html",
         {
-            "request": request,
             "version": __version__,
             "produits": list_produits(actifs_only=False),
         },
@@ -211,9 +209,8 @@ async def pos_session_caisse(request: Request, session_id: int):
     if session["statut"] == "cloturee":
         return RedirectResponse(url=f"/pos/sessions/{session_id}/recap", status_code=303)
     return templates.TemplateResponse(
-        "pos/caisse.html",
+        request, "pos/caisse.html",
         {
-            "request": request,
             "version": __version__,
             "session": session,
             "produits": list_produits(actifs_only=True),
@@ -228,9 +225,8 @@ async def pos_session_recap(request: Request, session_id: int):
     if not session:
         raise HTTPException(status_code=404, detail="Session introuvable")
     return templates.TemplateResponse(
-        "pos/recap.html",
+        request, "pos/recap.html",
         {
-            "request": request,
             "version": __version__,
             "session": session,
             "ventes": list_ventes(session_id),
@@ -358,8 +354,8 @@ async def pos_catalogue_export_page(request: Request):
     """Page de téléchargement du catalogue pour la PWA mobile."""
     produits = list_produits(actifs_only=True)
     return templates.TemplateResponse(
-        "pos/catalogue_export.html",
-        {"request": request, "version": __version__, "produits": produits},
+        request, "pos/catalogue_export.html",
+        {"version": __version__, "produits": produits},
     )
 
 
@@ -371,8 +367,8 @@ async def pos_catalogue_export_page(request: Request):
 async def pos_import_marche_page(request: Request):
     """Page d'upload du fichier marché exporté depuis la PWA mobile."""
     return templates.TemplateResponse(
-        "pos/import_marche.html",
-        {"request": request, "version": __version__},
+        request, "pos/import_marche.html",
+        {"version": __version__},
     )
 
 
@@ -477,9 +473,8 @@ async def pos_stock_revue(request: Request):
     all_stock = list_residus(status="stock", active_only=True)
     a_reviewer = list_stock_a_reviewer(seuil_jours)
     return templates.TemplateResponse(
-        "pos/stock_revue.html",
+        request, "pos/stock_revue.html",
         {
-            "request": request,
             "version": __version__,
             "all_stock": all_stock,
             "a_reviewer": a_reviewer,
@@ -523,9 +518,8 @@ async def pos_collectifs_index(request: Request):
     collectifs = list_collectifs(active_only=False)
     sessions = list_sessions_collectif(limit=20)
     return templates.TemplateResponse(
-        "pos/collectifs/index.html",
+        request, "pos/collectifs/index.html",
         {
-            "request": request,
             "version": __version__,
             "collectifs": collectifs,
             "sessions": sessions,
@@ -587,9 +581,8 @@ async def pos_session_chargement(request: Request, session_id: int):
     chargement = list_chargement(session_id)
     produits = list_produits(actifs_only=True)
     return templates.TemplateResponse(
-        "pos/chargement.html",
+        request, "pos/chargement.html",
         {
-            "request": request,
             "version": __version__,
             "session": session,
             "chargement": chargement,
@@ -602,8 +595,8 @@ async def pos_session_chargement(request: Request, session_id: int):
 async def pos_mobile(request: Request):
     """PWA mobile autonome — single-page, IndexedDB, offline-first."""
     return templates.TemplateResponse(
-        "pos/mobile.html",
-        {"request": request, "version": __version__},
+        request, "pos/mobile.html",
+        {"version": __version__},
     )
 
 
@@ -613,8 +606,8 @@ async def pos_stats(request: Request):
     seed_demo_if_needed()
     from self_pos.stats import get_all_stats
     return templates.TemplateResponse(
-        "pos/stats.html",
-        {"request": request, "version": __version__, "stats": get_all_stats()},
+        request, "pos/stats.html",
+        {"version": __version__, "stats": get_all_stats()},
     )
 
 
@@ -674,8 +667,8 @@ def _detect_lan_ips() -> list[dict]:
 async def pos_mode_marche(request: Request):
     """Page d'aide hotspot : détecte IP PC, génère QR pour scan tel."""
     return templates.TemplateResponse(
-        "pos/mode_marche.html",
-        {"request": request, "version": __version__},
+        request, "pos/mode_marche.html",
+        {"version": __version__},
     )
 
 
@@ -757,8 +750,8 @@ async def pos_coffre_appairer(request: Request):
     port = request.url.port or 80
     pair_url = f"http://{ip}:{port}/pos/mobile?pair={token}"
     return templates.TemplateResponse(
-        "pos/coffre_appairer.html",
-        {"request": request, "version": __version__,
+        request, "pos/coffre_appairer.html",
+        {"version": __version__,
          "pair_url": pair_url, "devices": load_devices()},
     )
 

@@ -67,8 +67,8 @@ async def backup_index(request: Request):
         # Vitrine publique : on affiche l'UI complète en lecture seule, sans
         # toucher à l'état réel du serveur (OPSEC) ni autoriser la moindre action.
         return templates.TemplateResponse(
-            "backup/index.html",
-            {"request": request, "version": __version__, **_DEMO_CONTEXT},
+            request, "backup/index.html",
+            {"version": __version__, **_DEMO_CONTEXT},
         )
     from self_backup import (
         _db_path,
@@ -85,9 +85,8 @@ async def backup_index(request: Request):
     db_exists = db_path.exists()
     db_size = db_path.stat().st_size if db_exists else 0
     return templates.TemplateResponse(
-        "backup/index.html",
+        request, "backup/index.html",
         {
-            "request": request,
             "version": __version__,
             "demo_readonly": False,
             "db_path": str(db_path),
@@ -132,8 +131,8 @@ async def backup_demarrage(request: Request):
     from self_backup import list_external_mounts
     mounts = [m for m in list_external_mounts() if m.get("writable")]
     return templates.TemplateResponse(
-        "backup/demarrage.html",
-        {"request": request, "version": __version__, "mounts": mounts},
+        request, "backup/demarrage.html",
+        {"version": __version__, "mounts": mounts},
     )
 
 
@@ -310,9 +309,8 @@ async def backup_restore(request: Request, archive: UploadFile = File(...), conf
             f"et re-soumets le fichier."
         ))
     return templates.TemplateResponse(
-        "backup/restore_ok.html",
+        request, "backup/restore_ok.html",
         {
-            "request": request,
             "version": __version__,
             "result": result,
         },
@@ -330,8 +328,8 @@ async def backup_restaurer_page(request: Request):
         if backups:
             supports.append({"mount": m, "backups": backups})
     return templates.TemplateResponse(
-        "backup/restaurer.html",
-        {"request": request, "version": __version__, "supports": supports},
+        request, "backup/restaurer.html",
+        {"version": __version__, "supports": supports},
     )
 
 
@@ -351,13 +349,13 @@ async def backup_restaurer(request: Request, mount_path: str = Form(...), name: 
         raise HTTPException(status_code=500, detail=f"Erreur restore : {e}")
     if result.get("needs_confirmation"):
         return templates.TemplateResponse(
-            "backup/restore_confirm.html",
-            {"request": request, "version": __version__,
+            request, "backup/restore_confirm.html",
+            {"version": __version__,
              "gen_base": result["gen_base"], "gen_backup": result["gen_backup"],
              "confirm_action": "/backup/restaurer",
              "confirm_fields": {"mount_path": mount_path, "name": name}},
         )
     return templates.TemplateResponse(
-        "backup/restore_ok.html",
-        {"request": request, "version": __version__, "result": result},
+        request, "backup/restore_ok.html",
+        {"version": __version__, "result": result},
     )

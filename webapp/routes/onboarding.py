@@ -135,9 +135,8 @@ def _render_step(request: Request, step: int):
     """Rendu d'un step avec le form state courant + flag mode édition."""
     form_state = _hydrate_form_state(request)
     return templates.TemplateResponse(
-        STEP_TEMPLATES[step],
+        request, STEP_TEMPLATES[step],
         {
-            "request": request,
             "form": form_state,
             "version": __version__,
             "step_num": step,
