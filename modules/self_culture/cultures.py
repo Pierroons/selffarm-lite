@@ -98,6 +98,56 @@ CULTURE_MIGRATIONS: list[tuple[int, str, str]] = [
                 UPDATE plan_culture SET updated_at = datetime('now') WHERE id = NEW.id;
             END;
     """),
+    (3, "rename_parcelle_to_parcelles", """
+        -- Nom de table au pluriel, aligne sur `plan_culture`.
+        -- Le renommage seul ne suffit pas : le hub ouvre ses connexions sans
+        -- PRAGMA foreign_keys, donc SQLite ne reporte le nouveau nom ni dans la
+        -- FK de plan_culture ni dans le trigger. On les refait explicitement.
+        ALTER TABLE parcelle RENAME TO parcelles;
+
+        DROP TRIGGER IF EXISTS trg_parcelle_updated_at;
+        CREATE TRIGGER trg_parcelles_updated_at
+            AFTER UPDATE ON parcelles
+            FOR EACH ROW
+            BEGIN
+                UPDATE parcelles SET updated_at = datetime('now') WHERE id = NEW.id;
+            END;
+
+        -- plan_culture se reconstruit : une FK ne se reecrit pas en place.
+        CREATE TABLE plan_culture_v3 (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            parcelle_id INTEGER NOT NULL,
+            saison INTEGER NOT NULL CHECK (saison >= 2020 AND saison <= 2100),
+            culture TEXT NOT NULL,
+            culture_label TEXT,
+            variete TEXT,
+            surface_ha REAL CHECK (surface_ha IS NULL OR surface_ha > 0),
+            date_semis_prev TEXT,
+            date_recolte_prev TEXT,
+            date_semis_reel TEXT,
+            date_recolte_reel TEXT,
+            rendement_kg_attendu REAL,
+            mode_production TEXT DEFAULT 'ab' CHECK (mode_production IN ('ab','nt','conv','hve')),
+            statut TEXT NOT NULL DEFAULT 'prevu' CHECK (statut IN ('prevu','en_cours','recolte','annule')),
+            notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (parcelle_id) REFERENCES parcelles(id) ON DELETE CASCADE
+        );
+        INSERT INTO plan_culture_v3 SELECT * FROM plan_culture;
+        DROP TABLE plan_culture;
+        ALTER TABLE plan_culture_v3 RENAME TO plan_culture;
+
+        CREATE INDEX IF NOT EXISTS idx_plan_culture_saison ON plan_culture(saison);
+        CREATE INDEX IF NOT EXISTS idx_plan_culture_parcelle ON plan_culture(parcelle_id);
+        CREATE INDEX IF NOT EXISTS idx_plan_culture_statut ON plan_culture(statut);
+        CREATE TRIGGER IF NOT EXISTS trg_plan_culture_updated_at
+            AFTER UPDATE ON plan_culture
+            FOR EACH ROW
+            BEGIN
+                UPDATE plan_culture SET updated_at = datetime('now') WHERE id = NEW.id;
+            END;
+    """),
 ]
 
 
@@ -188,14 +238,14 @@ def list_parcelles() -> list[dict[str, Any]]:
     """Retourne toutes les parcelles, triées par nom."""
     _ensure_schema()
     with _conn() as c:
-        rows = c.execute("SELECT * FROM parcelle ORDER BY nom").fetchall()
+        rows = c.execute("SELECT * FROM parcelles ORDER BY nom").fetchall()
         return [dict(r) for r in rows]
 
 
 def get_parcelle(parcelle_id: int) -> dict[str, Any] | None:
     _ensure_schema()
     with _conn() as c:
-        row = c.execute("SELECT * FROM parcelle WHERE id = ?", (parcelle_id,)).fetchone()
+        row = c.execute("SELECT * FROM parcelles WHERE id = ?", (parcelle_id,)).fetchone()
         return dict(row) if row else None
 
 
@@ -227,7 +277,7 @@ def save_parcelle(data: dict[str, Any]) -> dict[str, Any]:
             # UPDATE
             set_clause = ", ".join(f"{k} = ?" for k in payload)
             c.execute(
-                f"UPDATE parcelle SET {set_clause} WHERE id = ?",
+                f"UPDATE parcelles SET {set_clause} WHERE id = ?",
                 list(payload.values()) + [parcelle_id],
             )
             log.info("Parcelle #%s mise à jour : %s", parcelle_id, payload.get("nom"))
@@ -237,7 +287,7 @@ def save_parcelle(data: dict[str, Any]) -> dict[str, Any]:
             cols = ", ".join(payload.keys())
             placeholders = ", ".join("?" for _ in payload)
             cursor = c.execute(
-                f"INSERT INTO parcelle ({cols}) VALUES ({placeholders})",
+                f"INSERT INTO parcelles ({cols}) VALUES ({placeholders})",
                 list(payload.values()),
             )
             new_id = cursor.lastrowid
@@ -253,7 +303,7 @@ def rename_parcelle(parcelle_id: int, new_nom: str) -> dict[str, Any] | None:
         raise ValueError("rename_parcelle : le nom ne peut pas être vide")
     with _conn() as c:
         cursor = c.execute(
-            "UPDATE parcelle SET nom = ?, updated_at = datetime('now') WHERE id = ?",
+            "UPDATE parcelles SET nom = ?, updated_at = datetime('now') WHERE id = ?",
             (new_nom, parcelle_id),
         )
         if cursor.rowcount == 0:
@@ -268,7 +318,7 @@ def delete_parcelle(parcelle_id: int) -> bool:
     """
     _ensure_schema()
     with _conn() as c:
-        cursor = c.execute("DELETE FROM parcelle WHERE id = ?", (parcelle_id,))
+        cursor = c.execute("DELETE FROM parcelles WHERE id = ?", (parcelle_id,))
         return cursor.rowcount > 0
 
 
@@ -285,7 +335,7 @@ def list_plan_culture(saison: int | None = None, parcelle_id: int | None = None)
     sql = """
         SELECT pc.*, p.nom AS parcelle_nom, p.commune AS parcelle_commune
         FROM plan_culture pc
-        JOIN parcelle p ON p.id = pc.parcelle_id
+        JOIN parcelles p ON p.id = pc.parcelle_id
         WHERE 1=1
     """
     params: list[Any] = []
@@ -388,7 +438,7 @@ def stats_parcelles_saison(saison: int) -> dict[str, Any]:
     _ensure_schema()
     with _conn() as c:
         parcelles = c.execute(
-            "SELECT statut, surface_ha FROM parcelle"
+            "SELECT statut, surface_ha FROM parcelles"
         ).fetchall()
         plans = c.execute(
             "SELECT culture_label, culture, SUM(surface_ha) AS surface "
