@@ -1,6 +1,6 @@
 """Tests du découplage noyau/verticale pour self_culture.cultures.
 
-Vérifie que le schéma agri (parcelle/plan_culture) est porté par la verticale et
+Vérifie que le schéma agri (parcelles/plan_culture) est porté par la verticale et
 non par le noyau compta, via le mécanisme de migrations namespacées.
 """
 
@@ -42,7 +42,7 @@ def test_noyau_seul_ne_cree_pas_parcelle(isolated_db):
     """init_db() (noyau agnostique) ne crée AUCUNE table agricole."""
     storage.init_db()
     tables = _tables(isolated_db)
-    assert "parcelle" not in tables
+    assert "parcelles" not in tables
     assert "plan_culture" not in tables
     # Le tracking ne contient que le namespace noyau, jamais self_culture.
     modules = {m for m, _ in _tracking(isolated_db)}
@@ -50,13 +50,13 @@ def test_noyau_seul_ne_cree_pas_parcelle(isolated_db):
 
 
 def test_verticale_cree_son_schema_au_premier_acces(isolated_db):
-    """Une opération CRUD culture crée parcelle/plan_culture sous self_culture/1,2."""
+    """Une opération CRUD culture crée parcelles/plan_culture sous self_culture/1,2,3."""
     p = cultures.save_parcelle(
         {"nom": "Champ test", "commune": "Sainte-Foy", "surface_ha": 1.5, "statut": "bio"}
     )
     assert p["id"] >= 1
     tables = _tables(isolated_db)
-    assert "parcelle" in tables and "plan_culture" in tables
+    assert "parcelles" in tables and "plan_culture" in tables
     tracking = _tracking(isolated_db)
     assert ("self_culture", 1) in tracking
     assert ("self_culture", 2) in tracking
@@ -70,7 +70,7 @@ def test_ensure_schema_idempotent(isolated_db):
     cultures._ensure_schema()
     cultures._ensure_schema()
     versions = [v for m, v in _tracking(isolated_db) if m == "self_culture"]
-    assert sorted(versions) == [1, 2]
+    assert sorted(versions) == [1, 2, 3]
 
 
 def test_apply_module_migrations_isolation_namespaces(isolated_db):
