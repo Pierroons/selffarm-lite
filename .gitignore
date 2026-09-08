@@ -55,9 +55,11 @@ vault.key
 *.pem
 examples/_perso/
 _perso/
-scripts/deploy.sh
 
 # Aides départementales : dépendent du territoire de l'utilisateur.
 # Les versionner reviendrait à publier où il est installé — le dépôt ne
 # porte que les aides nationales et régionales, vraies pour tout le monde.
 modules/self_aid/data/local/
+
+# Configuration de deploiement : hote et login de la prod
+scripts/.env.deploy
