@@ -34,7 +34,9 @@ def cloture_session(session_id: int) -> dict:
         raise ValueError(f"Session #{session_id} déjà clôturée")
 
     ventes = list_ventes(session_id)
-    total = sum(float(v.get("total_ttc", 0) or 0) for v in ventes)
+    # Decimal de bout en bout : additionner des float accumule les centimes
+    # sur une session chargee, et l ecriture comptable heriterait de la derive.
+    total = sum((Decimal(str(v.get("total_ttc", 0) or 0)) for v in ventes), Decimal("0"))
 
     # Si session vide → clôture mais aucune écriture compta
     if total <= 0 or not ventes:
@@ -70,7 +72,7 @@ def cloture_session(session_id: int) -> dict:
             libelle=libelle,
             compte_debit="411",   # Clients divers (vente directe particuliers)
             compte_credit="701",  # Ventes de produits finis
-            montant_ttc=Decimal(str(round(total, 2))),
+            montant_ttc=total.quantize(Decimal("0.01")),
             source_module="self_pos",
             source_id=str(session_id),
         )
@@ -81,12 +83,12 @@ def cloture_session(session_id: int) -> dict:
     session_cloturee = mark_session_cloturee(session_id, ecriture_id)
     log.info(
         "Session POS #%s clôturée : %.2f € total, écriture compta #%s (created=%s)",
-        session_id, total, ecriture_id, created,
+        session_id, float(total), ecriture_id, created,
     )
     return {
         "ok": True,
         "ecriture_id": ecriture_id,
         "ecriture_created": created,
         "session": session_cloturee,
-        "total_ttc": total,
+        "total_ttc": float(total),
     }
