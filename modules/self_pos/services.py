@@ -36,7 +36,7 @@ def cloture_session(session_id: int) -> dict:
     ventes = list_ventes(session_id)
     # Decimal de bout en bout : additionner des float accumule les centimes
     # sur une session chargee, et l ecriture comptable heriterait de la derive.
-    total = sum((Decimal(str(v.get("total_ttc", 0) or 0)) for v in ventes), Decimal("0"))
+    total = sum((Decimal(str(v.get("total_ttc", 0) or 0)) for v in ventes), Decimal(0))
 
     # Si session vide → clôture mais aucune écriture compta
     if total <= 0 or not ventes:
