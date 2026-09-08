@@ -85,9 +85,8 @@ def _load_example(slug: str) -> Hypotheses:
 @router.get("", response_class=HTMLResponse)
 async def dnja_index(request: Request):
     return templates.TemplateResponse(
-        "dnja/index.html",
+        request, "dnja/index.html",
         {
-            "request": request,
             "version": __version__,
             "examples": _list_examples(),
         },
@@ -100,9 +99,8 @@ async def dnja_calcul(request: Request, example: str):
     h = _load_example(example)
     result = calculer(h)
     return templates.TemplateResponse(
-        "dnja/_result.html",
+        request, "dnja/_result.html",
         {
-            "request": request,
             "version": __version__,
             "result": result.model_dump(mode="json"),
             "example": example,
@@ -113,8 +111,8 @@ async def dnja_calcul(request: Request, example: str):
 @router.get("/editor", response_class=HTMLResponse)
 async def dnja_editor_index(request: Request):
     return templates.TemplateResponse(
-        "dnja/editor.html",
-        {"request": request, "version": __version__, "examples": _list_examples()},
+        request, "dnja/editor.html",
+        {"version": __version__, "examples": _list_examples()},
     )
 
 
@@ -122,9 +120,8 @@ async def dnja_editor_index(request: Request):
 async def dnja_editor_load(request: Request, slug: str):
     h = _load_example(slug)
     return templates.TemplateResponse(
-        "dnja/_editor_form.html",
+        request, "dnja/_editor_form.html",
         {
-            "request": request,
             "h": h,
             "source_slug": slug,
         },
@@ -180,9 +177,8 @@ async def dnja_editor_calcul(request: Request):
     h = await _apply_form_to_hypotheses(source_slug, form_data)
     result = calculer(h)
     return templates.TemplateResponse(
-        "dnja/_result.html",
+        request, "dnja/_result.html",
         {
-            "request": request,
             "result": result.model_dump(mode="json"),
             "example": source_slug,  # pour le bouton PDF fallback
         },
@@ -227,9 +223,8 @@ async def dnja_editor_save(request: Request):
 async def dnja_compare_index(request: Request):
     examples = _list_examples()
     return templates.TemplateResponse(
-        "dnja/compare.html",
+        request, "dnja/compare.html",
         {
-            "request": request,
             "version": __version__,
             "examples": examples,
             "default_a": "hypotheses-pierroons-chambre" if any(e["slug"] == "hypotheses-pierroons-chambre" for e in examples) else examples[0]["slug"],
@@ -290,9 +285,8 @@ async def dnja_compare_run(request: Request, a: str, b: str):
         synth.append("✓ B passe le seuil DNJA (A non)")
 
     return templates.TemplateResponse(
-        "dnja/_compare_result.html",
+        request, "dnja/_compare_result.html",
         {
-            "request": request,
             "a": {"slug": a, "label": examples[a]["label"], "result": ra.model_dump(mode="json")},
             "b": {"slug": b, "label": examples[b]["label"], "result": rb.model_dump(mode="json")},
             "comparison": comparison,

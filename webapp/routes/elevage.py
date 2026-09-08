@@ -133,9 +133,8 @@ async def elevage_index(request: Request, ok: str | None = None,
         })
 
     return templates.TemplateResponse(
-        "elevage/index.html",
+        request, "elevage/index.html",
         {
-            "request": request,
             "version": __version__,
             "stats": stats_elevage(),
             "bandes": lignes,
@@ -235,9 +234,8 @@ async def elevage_bandes(request: Request, ok: str | None = None,
     ]
 
     return templates.TemplateResponse(
-        "elevage/bandes.html",
+        request, "elevage/bandes.html",
         {
-            "request": request,
             "version": __version__,
             "bandes": bandes,
             "mouvements": mouvements,
@@ -323,9 +321,8 @@ async def elevage_lots(request: Request, ok: str | None = None, erreur: str | No
     ]
 
     return templates.TemplateResponse(
-        "elevage/lots.html",
+        request, "elevage/lots.html",
         {
-            "request": request,
             "version": __version__,
             "bandes": bandes,
             "lots": lots,
@@ -526,8 +523,8 @@ async def elevage_registre(request: Request, bande_id: int | None = None,
     bandes = list_bandes(actives_only=False)
     if not bandes:
         return templates.TemplateResponse(
-            "elevage/registre.html",
-            {"request": request, "version": __version__, "bandes": [],
+            request, "elevage/registre.html",
+            {"version": __version__, "bandes": [],
              "registre": None, "erreur": erreur,
              "debut": debut, "fin": fin, "today": date.today().isoformat()},
         )
@@ -559,9 +556,8 @@ async def elevage_registre(request: Request, bande_id: int | None = None,
     exploitation = get_exploitation() or {}
 
     return templates.TemplateResponse(
-        "elevage/registre.html",
+        request, "elevage/registre.html",
         {
-            "request": request,
             "version": __version__,
             "bandes": bandes,
             "bande_id": bande_id,
@@ -605,9 +601,8 @@ async def elevage_aliment(request: Request, ok: str | None = None,
     ]
 
     return templates.TemplateResponse(
-        "elevage/aliment.html",
+        request, "elevage/aliment.html",
         {
-            "request": request,
             "version": __version__,
             "bandes": bandes,
             "ateliers": ateliers,

@@ -149,9 +149,8 @@ async def cultures_index(request: Request, saison: int | None = None):
     surface_totale = float(stats.get("surface_total_ha") or 0)
 
     return templates.TemplateResponse(
-        "cultures/index.html",
+        request, "cultures/index.html",
         {
-            "request": request,
             "version": __version__,
             "saison": saison_active,
             "saisons": saisons,

@@ -195,9 +195,8 @@ async def compta_index(request: Request):
     stats = stats_globales()
 
     return templates.TemplateResponse(
-        "compta/index.html",
+        request, "compta/index.html",
         {
-            "request": request,
             "version": __version__,
             "ecritures": ecritures,
             "balance": balance,
@@ -445,8 +444,8 @@ async def compta_resultat(request: Request):
     for c in data["charges"]:
         c["label"] = _enrich_libelle_compte(c["compte"])
     return templates.TemplateResponse(
-        "compta/resultat.html",
-        {"request": request, "version": __version__, "data": data},
+        request, "compta/resultat.html",
+        {"version": __version__, "data": data},
     )
 
 
@@ -463,8 +462,8 @@ async def compta_bilan(request: Request):
         for l in lignes:
             l["label"] = _enrich_libelle_compte(l["compte"])
     return templates.TemplateResponse(
-        "compta/bilan.html",
-        {"request": request, "version": __version__, "data": data},
+        request, "compta/bilan.html",
+        {"version": __version__, "data": data},
     )
 
 
@@ -496,9 +495,8 @@ async def compta_integrite(request: Request):
     nb_with_hash = sum(1 for e in all_ecritures if e.get("hash_data"))
     nb_with_pdf_hash = sum(1 for e in all_ecritures if e.get("hash_pdf"))
     return templates.TemplateResponse(
-        "compta/integrite.html",
+        request, "compta/integrite.html",
         {
-            "request": request,
             "version": __version__,
             "chain": chain,
             "audit_entries": audit_entries,
@@ -958,9 +956,8 @@ async def compta_saisie_form(request: Request, type_saisie: str):
         raise HTTPException(status_code=404, detail="Type de saisie inconnu")
     titre, journal = _SAISIE_LABELS[type_saisie]
     return templates.TemplateResponse(
-        "compta/saisie.html",
+        request, "compta/saisie.html",
         {
-            "request": request,
             "version": __version__,
             "type_saisie": type_saisie,
             "titre": titre,
