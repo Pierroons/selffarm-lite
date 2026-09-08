@@ -15,6 +15,16 @@
 # Usage : ./scripts/deploy.sh
 set -euo pipefail
 
+# L'etape 4 lance des sudo sur la machine distante : sans terminal, sudo ne peut
+# pas demander le mot de passe et le deploiement echoue au milieu, apres avoir
+# deja pousse le lot sur le stage. Autant le dire avant de commencer.
+if [ ! -t 0 ]; then
+  echo "❌ Pas de terminal (stdin n'est pas un TTY)."
+  echo "   L'etape 4 a besoin de saisir le mot de passe sudo de la prod."
+  echo "   Lance ce script depuis un vrai terminal."
+  exit 1
+fi
+
 ROOT="$(git rev-parse --show-toplevel)"
 [ -f "$ROOT/scripts/.env.deploy" ] && . "$ROOT/scripts/.env.deploy"
 
@@ -62,7 +72,11 @@ echo "→ [3/5] Sync vers le stage distant…"
 rsync -az --delete -e ssh "$STAGE_LOCAL/" "$REMOTE:$STAGE/"
 
 echo "→ [4/5] Déploiement prod (unlock immutable → rsync → lock)…"
-ssh "$REMOTE" "
+ssh -t "$REMOTE" "
+  set -e
+  # Quoi qu'il arrive ensuite, la prod se reverrouille : un echec entre unlock et
+  # lock la laisserait modifiable sans que personne ne le sache.
+  trap 'sudo \"$IMMUT\" lock' EXIT
   sudo '$IMMUT' unlock
   sudo rsync -a --delete --exclude=/data --exclude=.venv --exclude='*.egg-info' --exclude=__pycache__ --exclude=.git --exclude=_perso --exclude='hypotheses-pierroons*' --exclude='hypotheses-perso*' '$STAGE/' '$PROD/'
   sudo chown -R www-data:www-data '$PROD'
