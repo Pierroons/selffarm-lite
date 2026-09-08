@@ -10,7 +10,7 @@
 #   SELFFARM_DEPLOY_PROD     racine du code en production
 #   SELFFARM_DEPLOY_IMMUT    script anti-tamper {lock|unlock|status}
 #   SELFFARM_DEPLOY_SERVICE  unité systemd à redémarrer
-#   SELFFARM_DEPLOY_HEALTH   URL healthz vérifiée à l'arrivée
+#   SELFFARM_DEPLOY_HEALTH   URL(s) vérifiées à l'arrivée, séparées par des espaces
 #
 # Usage : ./scripts/deploy.sh
 set -euo pipefail
@@ -88,10 +88,15 @@ echo "→ [5/5] Vérification chez le destinataire…"
 if [ -z "$HEALTH" ]; then
   echo "⚠ SELFFARM_DEPLOY_HEALTH non défini — déploiement non vérifié à l'arrivée."
 else
-  code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 8 "$HEALTH" || echo 000)
-  echo "  healthz HTTP $code"
-  # Un deploiement qui ne repond pas 200 n'est pas un deploiement reussi :
-  # le code de sortie doit le dire, sinon le controle final ne controle rien.
-  [ "$code" = "200" ] || { echo "❌ Le service ne répond pas 200 — vérifie les journaux."; exit 1; }
+  # Plusieurs URL, pas seulement /healthz : le 08/09/2026 un deploiement a rendu
+  # healthz 200 pendant que la page d'accueil rendait 500 (schema de base
+  # incompatible). Une sonde qui ne touche pas les donnees ne dit rien d'elles.
+  echec=0
+  for url in $HEALTH; do
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 8 "$url" || echo 000)
+    printf '  %-52s HTTP %s\n' "$url" "$code"
+    [ "$code" = "200" ] || echec=1
+  done
+  [ "$echec" -eq 0 ] || { echo "❌ Une URL au moins ne répond pas 200 — vérifie les journaux."; exit 1; }
 fi
 echo "✓ Déployé."
