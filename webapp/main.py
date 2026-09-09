@@ -40,6 +40,7 @@ from webapp.modules_state import (
     is_module_visible,
     visible_tabs,
 )
+from webapp.routes import achats as achats_module
 from webapp.routes import aides as aides_module
 from webapp.routes import backup as backup_module
 from webapp.routes import compta as compta_module
@@ -52,6 +53,7 @@ from webapp.routes import onboarding as onboarding_module
 from webapp.routes import parcelles as parcelles_module
 
 home_router = home_module.router
+achats_router = achats_module.router
 dnja_router = dnja_module.router
 aides_router = aides_module.router
 cultures_router = cultures_module.router
@@ -109,7 +111,7 @@ def _fmt_kg(value) -> str:
 
 from self_backup import backup_health  # santé sauvegardes (B3c) → bandeau global
 
-for _route_module in (home_module, dnja_module, aides_module, parcelles_module, cultures_module, elevage_module, invoice_module, compta_module, backup_module, onboarding_module, roadmap_module, pos_module, modules_routes):
+for _route_module in (home_module, achats_module, dnja_module, aides_module, parcelles_module, cultures_module, elevage_module, invoice_module, compta_module, backup_module, onboarding_module, roadmap_module, pos_module, modules_routes):
     if hasattr(_route_module, "templates"):
         _route_module.templates.env.globals["env"] = ENV_NAME
         # Expose get_exploitation() comme global Jinja pour que tous les templates
@@ -246,6 +248,7 @@ app.include_router(cultures_router)
 app.include_router(elevage_router)
 app.include_router(invoice_router)
 app.include_router(compta_router)
+app.include_router(achats_router)
 app.include_router(backup_router)
 app.include_router(onboarding_router)
 app.include_router(roadmap_router)
