@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Achats — module indisponible · SelfFarm-Lite{% endblock %}
+{% block content %}
+
+<h1 style="font-size: 24px; font-weight: 600; color: var(--text-primary); margin-bottom: 10px;">
+  Achats <span style="color: var(--warm-amber); font-style: italic; font-weight: 500;">— module non installé</span>
+</h1>
+
+<p style="font-size: 13.5px; color: var(--text-secondary); max-width: 720px; line-height: 1.6;">
+  La réception des factures fournisseurs demande un composant optionnel, absent de cette
+  installation. Une instance qui n'est pas raccordée à une plateforme agréée n'en a pas besoin.
+</p>
+
+<pre style="margin-top: 14px; padding: 12px 14px; background: var(--bg-elev); border: 1px solid var(--border-subtle); border-radius: 8px; font-size: 12.5px; color: var(--text-primary); overflow-x: auto;">pip install 'selffarm-lite[pa]'</pre>
+
+<p style="margin-top: 14px; font-size: 12.5px; color: var(--text-muted);">
+  Détail : {{ raison }}
+</p>
+
+{% endblock %}
