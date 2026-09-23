@@ -196,3 +196,16 @@ def test_ecarter_puis_valider_est_possible(client):
                 follow_redirects=True)
 
     assert storage.obtenir(cle)["statut"] == "validee"
+
+
+# ---------------- récupération ----------------
+
+def test_sans_identifiants_le_message_ne_parle_pas_de_panne(client, monkeypatch):
+    """Sans identifiants la plateforme n'est pas appelée : « injoignable » ferait
+    chercher une panne réseau là où il manque une ligne dans le .env."""
+    monkeypatch.delenv("SUPERPDP_CLIENT_ID", raising=False)
+    monkeypatch.delenv("SUPERPDP_CLIENT_SECRET", raising=False)
+    r = client.post("/achats/recuperer", follow_redirects=True)
+
+    assert "Plateforme non configurée" in r.text
+    assert "injoignable" not in r.text

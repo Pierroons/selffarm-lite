@@ -44,6 +44,10 @@ class ErreurPlateforme(RuntimeError):
     """La plateforme a répondu une erreur, ou n'a pas répondu."""
 
 
+class IdentifiantsAbsents(ErreurPlateforme):
+    """L'installation n'a pas d'identifiants : la plateforme n'a pas été appelée."""
+
+
 @dataclass
 class ConfigPA:
     client_id: str
@@ -66,7 +70,7 @@ class ConfigPA:
             if not os.environ.get(nom)
         ]
         if manquantes:
-            raise ErreurPlateforme(
+            raise IdentifiantsAbsents(
                 f"Identifiants absents : {', '.join(manquantes)}. "
                 "Ils se renseignent dans le .env de l'installation."
             )
