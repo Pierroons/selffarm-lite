@@ -71,7 +71,7 @@ fi
 echo "→ [3/5] Sync vers le stage distant…"
 rsync -az --delete -e ssh "$STAGE_LOCAL/" "$REMOTE:$STAGE/"
 
-echo "→ [4/5] Déploiement prod (unlock immutable → rsync → lock)…"
+echo "→ [4/5] Déploiement prod (unlock immutable → rsync → dépendances → lock)…"
 ssh -t "$REMOTE" "
   set -e
   # Quoi qu'il arrive ensuite, la prod se reverrouille : un echec entre unlock et
@@ -80,6 +80,12 @@ ssh -t "$REMOTE" "
   sudo '$IMMUT' unlock
   sudo rsync -a --delete --exclude=/data --exclude=.venv --exclude='*.egg-info' --exclude=__pycache__ --exclude=.git --exclude=_perso --exclude='hypotheses-pierroons*' --exclude='hypotheses-perso*' '$STAGE/' '$PROD/'
   sudo chown -R www-data:www-data '$PROD'
+  # Le code ne suffit pas : pyproject.toml peut exiger une dependance plus
+  # recente que celle du venv. Sans cette etape, la prod a tourne du 24/06 au
+  # 23/09/2026 avec starlette 0.52.1 et deux CVE HIGH, alors que le depot
+  # exigeait >=1.3.1 depuis le 08/09.
+  sudo -u www-data '$PROD/.venv/bin/pip' install --quiet --no-cache-dir -e '$PROD[pa]'
+  sudo -u www-data '$PROD/.venv/bin/pip' check
   sudo systemctl restart '$SERVICE'
   sudo '$IMMUT' lock
 "
