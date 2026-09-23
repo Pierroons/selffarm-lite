@@ -24,7 +24,7 @@ log = logging.getLogger("selffarm.routes.achats")
 # contente alors de dire pourquoi il est vide.
 try:
     from self_pa import comptes, reception, storage
-    from self_pa.client import ErreurPlateforme
+    from self_pa.client import ErreurPlateforme, IdentifiantsAbsents
     MODULE_OK = True
     RAISON_INDISPONIBLE = ""
 except ImportError as e:
@@ -94,6 +94,8 @@ async def achats_recuperer(request: Request):
         return RedirectResponse("/achats", status_code=303)
     try:
         rapport = await reception.recuperer_nouvelles()
+    except IdentifiantsAbsents as e:
+        return _retour(erreur=f"Plateforme non configurée — {e}")
     except ErreurPlateforme as e:
         log.warning("Récupération impossible : %s", e)
         return _retour(erreur=f"Plateforme injoignable — {e}")
