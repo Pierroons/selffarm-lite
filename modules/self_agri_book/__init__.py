@@ -13,5 +13,3 @@ dans `data/pcg-agricole-2026.yaml` (9 classes, 396 sous-comptes, 133 agri-
 spécifiques). Implémentation du moteur d'écritures prévue après SelfInvoice
 v0.2 (pour que les factures puissent générer leurs écritures automatiquement).
 """
-
-__version__ = "0.1.0-dev"

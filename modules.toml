@@ -1,0 +1,106 @@
+# Déclaration des modules publiés par ce dépôt — la seule partie écrite à la main.
+#
+# `scripts/ecosysteme.py manifeste --ecrire` en tire `modules.json` et le tableau « Modules
+# publiés » du README. Ce fichier ne porte que ce que le code ne sait pas : le nom affiché, le
+# résumé, le dossier, et le module d'interface qui donne le statut. Le reste se lit ailleurs :
+# - la version publiée est celle du dépôt, dans `VERSION` — les modules sortent ensemble ;
+# - le statut vient de `status` dans `webapp/modules_catalog.py` (`live` / `soon`).
+#
+# Un paquet `modules/self_*` absent d'ici fait rougir le contrôle.
+#
+# `statut` explicite : réservé au module qui n'a pas d'écran propre au catalogue.
+
+[[module]]
+id = "self_agri_book"
+nom = "self-agri-book"
+dossier = "modules/self_agri_book"
+catalogue = "compta"
+resume.fr = "hub compta central — journal, bilan, compte de résultat, export FEC"
+resume.en = "central accounting hub — journal, balance sheet, income statement, FEC export"
+
+[[module]]
+id = "self_invoice"
+nom = "self-invoice"
+dossier = "webapp/routes/invoice.py"
+catalogue = "invoice"
+resume.fr = "factures Factur-X pour trois régimes : franchise, micro-BA, réel"
+resume.en = "Factur-X invoices for three French tax regimes: franchise, micro-BA, réel"
+
+[[module]]
+id = "self_pos"
+nom = "self-pos"
+dossier = "modules/self_pos"
+catalogue = "pos"
+resume.fr = "caisse de marché sur PC et mobile hors ligne, à l'unité ou au poids, reportée au hub compta"
+resume.en = "market checkout on PC and offline mobile, by unit or weight, posted to the accounting hub"
+
+[[module]]
+id = "self_pa"
+nom = "self-pa"
+dossier = "modules/self_pa"
+catalogue = "achats"
+resume.fr = "factures fournisseurs reçues par plateforme agréée, contrôlées, imputées après validation"
+resume.en = "supplier invoices received through an approved platform, checked, posted after validation"
+
+[[module]]
+id = "self_dnja"
+nom = "self-dnja"
+dossier = "modules/self_dnja"
+catalogue = "dnja"
+resume.fr = "prévisionnel DNJA sur quatre ans et dossier PDF pour la CDOA"
+resume.en = "four-year DNJA business plan and PDF file for the CDOA"
+
+[[module]]
+id = "self_aid"
+nom = "self-aid"
+dossier = "modules/self_aid"
+catalogue = "aides"
+resume.fr = "catalogue des aides publiques, tiré de sources officielles"
+resume.en = "catalogue of public grants, drawn from official sources"
+
+[[module]]
+id = "self_banking"
+nom = "self-banking"
+dossier = "modules/self_banking"
+catalogue = "banking"
+resume.fr = "lecture des relevés bancaires PDF, en vue du rapprochement"
+resume.en = "bank statement PDF reader, for reconciliation"
+
+[[module]]
+id = "self_culture"
+nom = "self-culture"
+dossier = "modules/self_culture"
+catalogue = "cultures"
+resume.fr = "parcellaire et cultures, cartographie IGN"
+resume.en = "plots and crops, IGN mapping"
+
+[[module]]
+id = "self_elevage"
+nom = "self-elevage"
+dossier = "modules/self_elevage"
+catalogue = "elevage"
+resume.fr = "élevage : ponte, bandes et mouvements, lots d'œufs, aliment, registre d'élevage"
+resume.en = "livestock: laying, flocks and movements, egg batches, feed, livestock register"
+
+[[module]]
+id = "self_backup"
+nom = "self-backup"
+dossier = "modules/self_backup"
+catalogue = "backup"
+resume.fr = "sauvegarde et restauration, 100 % locales"
+resume.en = "backup and restore, fully local"
+
+[[module]]
+id = "self_factur_x_agri"
+nom = "self-factur-x-agri"
+dossier = "modules/self_factur_x_agri"
+resume.fr = "TVA agricole et unités HAR/TNE pour Factur-X"
+resume.en = "agricultural VAT and HAR/TNE units for Factur-X"
+statut.fr = "à fusionner dans self-invoice"
+statut.en = "to be merged into self-invoice"
+
+# Modules de my-self cités dans la section « Intégration écosystème » du README.
+# Leur nom, version et résumé se lisent dans le modules.json de my-self, jamais ici.
+[ecosysteme]
+source = "https://raw.githubusercontent.com/Pierroons/my-self/main/modules.json"
+modules = ["selfrecover", "selfmoderate", "selfjustice", "selfact", "selfdataguard"]

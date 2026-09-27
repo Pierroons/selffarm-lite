@@ -1,0 +1,196 @@
+{
+  "depot": {
+    "nom": "selffarm-lite",
+    "version": "0.4.1"
+  },
+  "lisez_moi": "Généré par scripts/ecosysteme.py depuis modules.toml, VERSION et webapp/modules_catalog.py : ne pas l'éditer à la main. Les modules sortent avec le dépôt : leur version de sortie est depot.version. Les autres dépôts de l'écosystème lisent ce fichier au lieu de recopier nos modules.",
+  "modules": [
+    {
+      "id": "self_agri_book",
+      "nom": "self-agri-book",
+      "dossier": "modules/self_agri_book",
+      "version": null,
+      "resume": {
+        "fr": "hub compta central — journal, bilan, compte de résultat, export FEC",
+        "en": "central accounting hub — journal, balance sheet, income statement, FEC export"
+      },
+      "statut": {
+        "fr": "disponible",
+        "en": "available"
+      },
+      "porteurs": [
+        "README.md"
+      ]
+    },
+    {
+      "id": "self_invoice",
+      "nom": "self-invoice",
+      "dossier": "webapp/routes/invoice.py",
+      "version": null,
+      "resume": {
+        "fr": "factures Factur-X pour trois régimes : franchise, micro-BA, réel",
+        "en": "Factur-X invoices for three French tax regimes: franchise, micro-BA, réel"
+      },
+      "statut": {
+        "fr": "disponible",
+        "en": "available"
+      },
+      "porteurs": [
+        "README.md"
+      ]
+    },
+    {
+      "id": "self_pos",
+      "nom": "self-pos",
+      "dossier": "modules/self_pos",
+      "version": null,
+      "resume": {
+        "fr": "caisse de marché sur PC et mobile hors ligne, à l'unité ou au poids, reportée au hub compta",
+        "en": "market checkout on PC and offline mobile, by unit or weight, posted to the accounting hub"
+      },
+      "statut": {
+        "fr": "disponible",
+        "en": "available"
+      },
+      "porteurs": [
+        "README.md"
+      ]
+    },
+    {
+      "id": "self_pa",
+      "nom": "self-pa",
+      "dossier": "modules/self_pa",
+      "version": null,
+      "resume": {
+        "fr": "factures fournisseurs reçues par plateforme agréée, contrôlées, imputées après validation",
+        "en": "supplier invoices received through an approved platform, checked, posted after validation"
+      },
+      "statut": {
+        "fr": "disponible",
+        "en": "available"
+      },
+      "porteurs": [
+        "README.md"
+      ]
+    },
+    {
+      "id": "self_dnja",
+      "nom": "self-dnja",
+      "dossier": "modules/self_dnja",
+      "version": null,
+      "resume": {
+        "fr": "prévisionnel DNJA sur quatre ans et dossier PDF pour la CDOA",
+        "en": "four-year DNJA business plan and PDF file for the CDOA"
+      },
+      "statut": {
+        "fr": "disponible",
+        "en": "available"
+      },
+      "porteurs": [
+        "README.md"
+      ]
+    },
+    {
+      "id": "self_aid",
+      "nom": "self-aid",
+      "dossier": "modules/self_aid",
+      "version": null,
+      "resume": {
+        "fr": "catalogue des aides publiques, tiré de sources officielles",
+        "en": "catalogue of public grants, drawn from official sources"
+      },
+      "statut": {
+        "fr": "disponible",
+        "en": "available"
+      },
+      "porteurs": [
+        "README.md"
+      ]
+    },
+    {
+      "id": "self_banking",
+      "nom": "self-banking",
+      "dossier": "modules/self_banking",
+      "version": null,
+      "resume": {
+        "fr": "lecture des relevés bancaires PDF, en vue du rapprochement",
+        "en": "bank statement PDF reader, for reconciliation"
+      },
+      "statut": {
+        "fr": "en préparation",
+        "en": "in preparation"
+      },
+      "porteurs": [
+        "README.md"
+      ]
+    },
+    {
+      "id": "self_culture",
+      "nom": "self-culture",
+      "dossier": "modules/self_culture",
+      "version": null,
+      "resume": {
+        "fr": "parcellaire et cultures, cartographie IGN",
+        "en": "plots and crops, IGN mapping"
+      },
+      "statut": {
+        "fr": "disponible",
+        "en": "available"
+      },
+      "porteurs": [
+        "README.md"
+      ]
+    },
+    {
+      "id": "self_elevage",
+      "nom": "self-elevage",
+      "dossier": "modules/self_elevage",
+      "version": null,
+      "resume": {
+        "fr": "élevage : ponte, bandes et mouvements, lots d'œufs, aliment, registre d'élevage",
+        "en": "livestock: laying, flocks and movements, egg batches, feed, livestock register"
+      },
+      "statut": {
+        "fr": "disponible",
+        "en": "available"
+      },
+      "porteurs": [
+        "README.md"
+      ]
+    },
+    {
+      "id": "self_backup",
+      "nom": "self-backup",
+      "dossier": "modules/self_backup",
+      "version": null,
+      "resume": {
+        "fr": "sauvegarde et restauration, 100 % locales",
+        "en": "backup and restore, fully local"
+      },
+      "statut": {
+        "fr": "disponible",
+        "en": "available"
+      },
+      "porteurs": [
+        "README.md"
+      ]
+    },
+    {
+      "id": "self_factur_x_agri",
+      "nom": "self-factur-x-agri",
+      "dossier": "modules/self_factur_x_agri",
+      "version": null,
+      "resume": {
+        "fr": "TVA agricole et unités HAR/TNE pour Factur-X",
+        "en": "agricultural VAT and HAR/TNE units for Factur-X"
+      },
+      "statut": {
+        "fr": "à fusionner dans self-invoice",
+        "en": "to be merged into self-invoice"
+      },
+      "porteurs": [
+        "README.md"
+      ]
+    }
+  ]
+}
