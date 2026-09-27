@@ -1,0 +1,33 @@
+# Suivi — ce qui peut devenir faux sans qu'on pousse ici.
+#
+# 🔑 **Pourquoi ce workflow existe.** Notre README cite les modules de my-self, et ce qu'il en dit
+# vient de leur modules.json. Quand my-self publie une version, notre bloc retarde sans qu'aucun envoi
+# ne touche ce dépôt : un contrôle qui ne tourne qu'à nos propres envois ne le verrait jamais. Au
+# 27/09/2026, ce README décrivait encore les modules de my-self tels qu'en juin.
+#
+# Il n'est pas exigé par la protection de `main` : son rouge vient de l'autre dépôt, il signale sans
+# bloquer nos envois. `python3 scripts/ecosysteme.py ecosysteme --ecrire` remet le bloc à jour.
+name: suivi
+
+on:
+  push:
+    branches: [main, develop]
+  schedule:
+    - cron: '29 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ecosysteme:
+    name: Ce que le README dit de my-self
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+      - name: Setup Python 3.12
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: '3.12'
+      - name: Le bloc « Intégration écosystème » suit le modules.json de my-self
+        run: python3 scripts/ecosysteme.py ecosysteme
