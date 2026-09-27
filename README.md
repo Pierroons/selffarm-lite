@@ -7,17 +7,23 @@ applicatif qui repose sur les 3 piliers » (identité / droit / sécurité).
 
 ## Modules publiés
 
+<!-- modules:debut — généré par scripts/ecosysteme.py depuis modules.toml, ne pas éditer ici -->
+
 | Module | Objet | État |
 |---|---|:---:|
-| [`self-agri-book`](modules/self_agri_book) | **Hub compta central** — journal + bilan + résultat + export FEC | ✅ **live** |
-| [`self-pos`](webapp/routes/pos.py) | **SelfPOS** — caisse de marché PC + app mobile (PWA hors-ligne), vente à l'unité ou au poids, remontée auto au hub compta | ✅ **live** |
-| [`self-invoice`](webapp/routes/invoice.py) | Factur-X natif 3 régimes (franchise / micro-BA / réel) | ✅ live |
-| [`self-dnja`](modules/self_dnja) | Prévisionnel DNJA 4 ans + dossier PDF CDOA | ✅ live |
-| [`self-aid`](modules/self_aid) | Catalogue aides publiques sourcées officiellement | ✅ live (V1 JA, V2 NA/AGRI/PME à venir) |
-| [`self-banking`](modules/self_banking) | Parser PDF relevés bancaires (fake-first, SG OK) | ✅ live |
-| [`self-culture`](modules/self_culture) | Parcellaire + cultures — cartographie IGN Géoportail (cadastre multi-commune) | ✅ live |
-| [`self-backup`](modules/self_backup) | Sauvegarde & restauration — export ZIP signé SHA256, snapshots locaux, 100 % local | ✅ live |
-| [`self-factur-x-agri`](modules/self_factur_x_agri) | TVA agricole + UOM HAR/TNE (à fusionner avec self_invoice) | 🏗️ à fusionner |
+| [`self-agri-book`](modules/self_agri_book) | hub compta central — journal, bilan, compte de résultat, export FEC | disponible |
+| [`self-invoice`](webapp/routes/invoice.py) | factures Factur-X pour trois régimes : franchise, micro-BA, réel | disponible |
+| [`self-pos`](modules/self_pos) | caisse de marché sur PC et mobile hors ligne, à l'unité ou au poids, reportée au hub compta | disponible |
+| [`self-pa`](modules/self_pa) | factures fournisseurs reçues par plateforme agréée, contrôlées, imputées après validation | disponible |
+| [`self-dnja`](modules/self_dnja) | prévisionnel DNJA sur quatre ans et dossier PDF pour la CDOA | disponible |
+| [`self-aid`](modules/self_aid) | catalogue des aides publiques, tiré de sources officielles | disponible |
+| [`self-banking`](modules/self_banking) | lecture des relevés bancaires PDF, en vue du rapprochement | en préparation |
+| [`self-culture`](modules/self_culture) | parcellaire et cultures, cartographie IGN | disponible |
+| [`self-elevage`](modules/self_elevage) | élevage : ponte, bandes et mouvements, lots d'œufs, aliment, registre d'élevage | disponible |
+| [`self-backup`](modules/self_backup) | sauvegarde et restauration, 100 % locales | disponible |
+| [`self-factur-x-agri`](modules/self_factur_x_agri) | TVA agricole et unités HAR/TNE pour Factur-X | à fusionner dans self-invoice |
+
+<!-- modules:fin -->
 
 Ces modules sont utilisables **seuls ou combinés**, ils n'exigent aucun
 ERP global et ne capturent aucune donnée dans le cloud.
@@ -210,16 +216,24 @@ FranceAgriMer, Légifrance, MSA, portails régionaux).
 SelfFarm-Lite est l'**étage applicatif agricole** de l'écosystème
 [MySelf](https://my-self.fr). Autonome par défaut, il est conçu pour s'appuyer
 sur les 3 piliers MySelf — intégrations à des stades divers (de l'opérationnel
-à la R&D), pas toutes câblées à ce jour :
+à la R&D), pas toutes câblées à ce jour. Les modules de MySelf, tels que
+[leur manifeste](https://github.com/Pierroons/my-self/blob/main/modules.json) les publie :
 
-- **Bi-Self** (identité & social) :
-  - *SelfRecover* — récupérer l'accès à son instance sans email ni cloud (protocole de recovery souverain)
-  - *SelfModerate* — modération par raisonnement social des données partagées (catalogue variétés, retours terrain collaboratifs)
-- **Self-Right** (droit & action) :
-  - *SelfJustice* — directives juridiques pour les litiges agricoles (bail rural, commission mixte bailleur/preneur)
-  - *SelfAct* — rédaction de courriers et formulaires CERFA (déclarations PAC, MSA…)
-- **Self-Security** (protection) :
-  - *SelfDataGuard* — chiffrement enveloppé (2FA) des données comptables sensibles au repos
+<!-- ecosysteme:my-self:debut — généré par scripts/ecosysteme.py depuis le modules.json de my-self, ne pas éditer ici -->
+
+- **SelfRecover** 0.6.0 — récupération de compte sans email ni SMS
+- **SelfModerate** 0.3.0 — modération communautaire par raisonnement social
+- **SelfJustice** 0.4.1 — consultation du droit français et européen par une API publique
+- **SelfAct** 0.1.3 — modèles officiels et calcul des délais de procédure
+- **SelfDataGuard** 0.4.0 — chiffrement des données au repos côté application
+
+<!-- ecosysteme:my-self:fin -->
+
+Ce que SelfFarm-Lite en attend : récupérer l'accès à son instance sans email
+(SelfRecover), modérer les données partagées entre exploitations (SelfModerate),
+consulter le droit applicable aux litiges agricoles, bail rural compris
+(SelfJustice), calculer les délais d'une procédure (SelfAct), chiffrer les données
+comptables au repos (SelfDataGuard).
 
 ## Licence
 

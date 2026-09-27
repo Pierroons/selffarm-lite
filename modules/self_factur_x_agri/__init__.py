@@ -14,5 +14,3 @@ Objet :
 Statut : squelette v0.1.0-dev. Implémentation prévue après SelfInvoice v0.2
 (le builder abstrait de SelfInvoice fournira la classe parente).
 """
-
-__version__ = "0.1.0-dev"

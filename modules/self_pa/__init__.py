@@ -17,5 +17,3 @@ validation humaine → `self_agri_book.save_ecriture()`. Le dernier maillon n'es
 jamais franchi tout seul : une écriture comptable naît d'une décision, pas d'un
 automatisme.
 """
-
-__version__ = "0.1.0-dev"

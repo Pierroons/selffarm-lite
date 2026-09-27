@@ -53,6 +53,19 @@ jobs:
         # Ils couvrent notamment la génération du dossier DNJA en PDF.
         run: pytest modules/ webapp/ -v --cov=modules --cov=webapp --cov-report=term-missing
 
+  manifeste:
+    name: Manifeste des modules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+      - name: Setup Python 3.12
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: '3.12'
+      - name: modules.json et le tableau du README suivent le code
+        # Bibliothèque standard seule : aucune dépendance à installer.
+        run: python3 scripts/ecosysteme.py manifeste
+
   yaml-validate:
     name: Valide YAML data
     runs-on: ubuntu-latest
