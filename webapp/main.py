@@ -51,6 +51,7 @@ from webapp.routes import home as home_module
 from webapp.routes import invoice as invoice_module
 from webapp.routes import onboarding as onboarding_module
 from webapp.routes import parcelles as parcelles_module
+from webapp.session_key import session_secret
 
 home_router = home_module.router
 achats_router = achats_module.router
@@ -186,14 +187,9 @@ app = FastAPI(
 )
 
 # Session middleware (pour wizard d'onboarding multi-étapes)
-# Secret depuis env, fallback dev (à override en prod via SELFFARM_SESSION_SECRET)
-SESSION_SECRET = os.environ.get(
-    "SELFFARM_SESSION_SECRET",
-    "selffarm-dev-only-change-me-in-prod-via-env-var-please",
-)
 app.add_middleware(
     SessionMiddleware,
-    secret_key=SESSION_SECRET,
+    secret_key=session_secret(),
     session_cookie="selffarm_session",
     max_age=14 * 24 * 3600,  # 14 jours
     same_site="lax",
