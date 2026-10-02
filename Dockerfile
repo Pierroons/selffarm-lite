@@ -57,6 +57,7 @@ RUN pip install --upgrade pip wheel setuptools && \
         "reportlab>=4.0" \
         "drafthorse>=2.3" \
         "itsdangerous>=2.1" \
+        "cryptography>=42" \
         "segno>=1.6" \
         "psutil>=5.9"
 

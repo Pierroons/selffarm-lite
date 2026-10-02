@@ -7,6 +7,7 @@ starlette==1.6.0               # >=1.3.1 referme CVE-2026-54283 ; cf. pyproject.
 uvicorn[standard]==0.45.0      # inclut uvloop, httptools, watchfiles, websockets
 python-multipart==0.0.32       # upload de fichiers (import retour marché, etc.)
 itsdangerous==2.2.0            # SessionMiddleware Starlette (wizard onboarding)
+cryptography==50.0.0           # clé du coffre de sauvegarde (Fernet, self_backup.vault)
 
 # --- Templates ---
 Jinja2==3.1.6

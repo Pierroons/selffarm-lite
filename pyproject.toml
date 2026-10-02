@@ -45,6 +45,7 @@ dependencies = [
     "python-dateutil>=2.9",
     "python-multipart>=0.0.9",
     "itsdangerous>=2.1",
+    "cryptography>=42",
     "segno>=1.6",
     "psutil>=5.9",
 ]
