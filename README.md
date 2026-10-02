@@ -225,7 +225,7 @@ sur les 3 piliers MySelf — intégrations à des stades divers (de l'opération
 - **SelfModerate** 0.4.0 — modération communautaire par raisonnement social
 - **SelfJustice** 0.4.2 — consultation du droit français et européen par une API publique
 - **SelfAct** 0.1.3 — modèles officiels et calcul des délais de procédure
-- **SelfDataGuard** 0.4.0 — chiffrement des données au repos côté application
+- **SelfDataGuard** 0.5.0 — chiffrement des données au repos côté application
 
 <!-- ecosysteme:my-self:fin -->
 
