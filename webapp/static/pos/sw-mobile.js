@@ -5,9 +5,11 @@
  * Toutes les données métier sont en IndexedDB côté client, ne nécessitent aucun serveur.
  */
 
-const CACHE_NAME = 'selfpos-mobile-v0.3.3';
+const CACHE_NAME = 'selfpos-mobile-v0.4.5';
 const SHELL_URLS = [
   '/pos/mobile',
+  '/static/pos/mobile.js',
+  '/static/js/actions.js',
   '/static/pos/manifest-mobile.json',
   '/static/pos/icon.svg',
   '/static/img/selffarm/png/logo-badge-192.png',
@@ -42,8 +44,8 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
 
-  // Shell PWA + assets : cache-first
-  if (url.pathname === '/pos/mobile' || url.pathname.startsWith('/static/pos/') || url.pathname.startsWith('/static/img/selffarm/')) {
+  // Shell PWA + assets
+  if (url.pathname === '/pos/mobile' || url.pathname === '/static/js/actions.js' || url.pathname.startsWith('/static/pos/') || url.pathname.startsWith('/static/img/selffarm/')) {
     event.respondWith(
       // network-first : toujours la dernière version si en ligne, cache en secours
       // offline (évite les écrans figés/noirs après mise à jour — règle PWA anti hard-clean)

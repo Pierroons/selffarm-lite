@@ -22,7 +22,7 @@
   hx-get="/dnja/compare/run"
   hx-target="#comparison"
   hx-swap="innerHTML"
-  hx-trigger="change"
+  hx-trigger="load, change"
   class="card"
   style="margin-bottom: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px;">
 
@@ -57,10 +57,5 @@
   </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  htmx.trigger(document.querySelector('form'), 'change');
-});
-</script>
 
 {% endblock %}

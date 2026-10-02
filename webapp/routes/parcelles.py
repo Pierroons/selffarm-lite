@@ -17,7 +17,7 @@ import logging
 from pathlib import Path
 
 from fastapi import APIRouter, Form, HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from self_agri_book.exploitation import get_exploitation
 from self_culture.cultures import (
@@ -39,7 +39,6 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/parcelles", tags=["parcelles"])
 
 TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
-DEMO_CARTO = Path(__file__).parent.parent.parent / "docs" / "demo-carto.html"
 
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
@@ -80,11 +79,9 @@ async def parcelles_carto(request: Request):
 
 
 @router.get("/carto/embed", response_class=HTMLResponse)
-async def parcelles_carto_embed():
-    """Sert le HTML Leaflet + IGN brut (chargé en iframe par /carto)."""
-    if DEMO_CARTO.exists():
-        return FileResponse(DEMO_CARTO, media_type="text/html")
-    return HTMLResponse("<h1>Démo carto introuvable</h1>", status_code=404)
+async def parcelles_carto_embed(request: Request):
+    """La carte Leaflet + IGN, chargée en iframe par /carto."""
+    return templates.TemplateResponse(request, "parcelles/carto_embed.html", {})
 
 
 # ============ POST : ajouter parcelle ============

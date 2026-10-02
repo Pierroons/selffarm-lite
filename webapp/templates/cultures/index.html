@@ -43,7 +43,7 @@ table.cult td.num {font-variant-numeric:tabular-nums; text-align:right; white-sp
   {% if saisons|length > 1 %}
   <form method="get" action="/cultures" style="display:flex; align-items:center; gap:7px;">
     <label for="saison" style="font-size:11.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px; font-weight:600;">Saison</label>
-    <select id="saison" name="saison" onchange="this.form.submit()"
+    <select id="saison" name="saison" data-change="submit"
             style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-subtle); background:rgba(0,0,0,0.18); color:var(--text-primary); font-size:13px;">
       {% for s in saisons %}<option value="{{ s }}" {% if s == saison %}selected{% endif %}>{{ s }}</option>{% endfor %}
     </select>

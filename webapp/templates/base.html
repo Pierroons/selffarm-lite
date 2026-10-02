@@ -11,11 +11,11 @@
 <link rel="icon" type="image/png" sizes="192x192" href="/static/img/selffarm/png/logo-badge-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="/static/img/selffarm/png/logo-badge-512.png">
 <meta name="theme-color" content="#0a0f0d">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/fonts.css">
 <link rel="stylesheet" href="/static/css/app.css">
-<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+<meta name="htmx-config" content='{"allowEval": false}'>
+<script src="/static/vendor/htmx/1.9.12/htmx.min.js"></script>
+<script src="/static/js/actions.js"></script>
 {% block extra_head %}{% endblock %}
 <style>
 /* ============ CSS Custom Properties — Forest Dark MySelf ============ */
@@ -418,6 +418,12 @@ td.amount { color: var(--text-primary); font-feature-settings: 'tnum'; }
 
 /* Main area padding */
 .main-area { padding: 24px 28px; flex: 1; }
+
+/* Survols — `!important` là où l'élément porte la même propriété en style inline */
+.hover-bg-soft:hover { background: rgba(22,101,52,0.05); }
+.hover-bg:hover { background: rgba(22,101,52,0.10); }
+.hover-border:hover { border-color: var(--forest-700) !important; }
+.hover-text:hover { color: var(--forest-400) !important; }
 </style>
 </head>
 {# Profil exploitation + contexte de navigation (helpers du catalogue de modules) #}
@@ -542,7 +548,7 @@ td.amount { color: var(--text-primary); font-feature-settings: 'tnum'; }
 <main class="content">
 
   <header class="topbar">
-    <button class="mobile-nav-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">
+    <button class="mobile-nav-btn" data-action="toggle-class" data-target="#sidebar" data-class="open">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
     <div class="titles">
@@ -565,26 +571,7 @@ td.amount { color: var(--text-primary); font-feature-settings: 'tnum'; }
       </span>
       <span id="bab-arrow" style="font-size:14px; color:var(--warm-terra); white-space:nowrap;">→</span>
     </a>
-    <script>
-    (function(){
-      var el = document.getElementById('backup-alert-banner');
-      if (!el) return;
-      var poll = setInterval(function(){
-        fetch('/backup/health').then(function(r){ return r.json(); }).then(function(h){
-          if (h && !h.alert) {
-            clearInterval(poll);
-            el.style.borderColor = 'var(--accent-200)';
-            el.style.background = 'rgba(45,90,58,0.12)';
-            document.getElementById('bab-icon').textContent = '✅';
-            document.getElementById('bab-title').textContent = 'Sauvegarde rattrapée';
-            document.getElementById('bab-msg').textContent = 'Tes données sont de nouveau à l\'abri.';
-            document.getElementById('bab-hint').textContent = '';
-            var a = document.getElementById('bab-arrow'); if (a) a.style.color = 'var(--accent-200)';
-          }
-        }).catch(function(){});
-      }, 12000);
-    })();
-    </script>
+    <script src="/static/js/backup-banner.js"></script>
     {% endif %}
     {% block content %}{% endblock %}
   </div>

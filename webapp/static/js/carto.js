@@ -1,185 +1,3 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="utf-8">
-<title>SelfFarm-Lite — Démo carto Val-Fouzon (IGN)</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<style>
-html, body { margin: 0; padding: 0; height: 100%; font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; }
-.header {
-  padding: 12px 20px;
-  background: #1e293b;
-  border-bottom: 2px solid #16a34a;
-}
-.header h1 { margin: 0 0 4px 0; font-size: 16px; color: #f1f5f9; }
-.header small { color: #94a3b8; }
-.header-search {
-  margin-top: 8px;
-  display: flex; gap: 6px; align-items: center;
-  position: relative;
-}
-.header-search input {
-  flex: 1; max-width: 420px;
-  padding: 6px 10px;
-  background: #0f172a;
-  border: 1px solid #475569;
-  color: #e2e8f0;
-  border-radius: 4px;
-  font-size: 12.5px;
-  font-family: inherit;
-}
-.header-search input:focus {
-  outline: none;
-  border-color: #16a34a;
-  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.15);
-}
-.header-search button {
-  padding: 6px 14px;
-  background: #16a34a;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12.5px;
-  font-weight: 600;
-}
-.header-search button:hover { background: #15803d; }
-.header-search .hint {
-  font-size: 10.5px; color: #64748b;
-  margin-left: 4px;
-}
-.suggest-box {
-  position: absolute;
-  top: 100%; left: 0;
-  width: 100%; max-width: 420px;
-  background: #1e293b;
-  border: 1px solid #475569;
-  border-top: none;
-  border-radius: 0 0 4px 4px;
-  max-height: 240px;
-  overflow-y: auto;
-  z-index: 2000;
-  display: none;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
-}
-.suggest-box.open { display: block; }
-.suggest-item {
-  padding: 7px 12px;
-  cursor: pointer;
-  font-size: 12px;
-  color: #cbd5e1;
-  border-bottom: 1px solid #334155;
-  line-height: 1.4;
-}
-.suggest-item:last-child { border-bottom: none; }
-.suggest-item:hover, .suggest-item.focus { background: #16a34a; color: white; }
-.suggest-item .label { color: #f1f5f9; font-weight: 500; }
-.suggest-item .ctx { color: #94a3b8; font-size: 10.5px; margin-top: 1px; }
-.suggest-item:hover .ctx, .suggest-item.focus .ctx { color: #d1fae5; }
-#map { height: calc(100vh - 130px); width: 100%; cursor: grab; }
-#map.mode-select { cursor: crosshair; }
-#map.mode-select:active { cursor: crosshair; }
-.leaflet-popup-content-wrapper { background: #1e293b; color: #e2e8f0; }
-.leaflet-popup-tip { background: #1e293b; }
-.leaflet-popup-content { margin: 10px 12px; font-size: 13px; }
-.leaflet-popup-content b { color: #16a34a; }
-
-.controls {
-  position: absolute; top: 144px; right: 14px; z-index: 1000;
-  background: rgba(30, 41, 59, 0.95);
-  padding: 12px; border-radius: 8px;
-  border: 1px solid #334155;
-  max-width: 260px; font-size: 12px;
-}
-.controls h3 { margin: 0 0 6px 0; color: #16a34a; font-size: 13px; }
-.controls input { width: 100%; padding: 4px 6px; background: #0f172a; border: 1px solid #475569; color: #e2e8f0; border-radius: 4px; margin-bottom: 6px; box-sizing: border-box; }
-.controls button { width: 100%; padding: 6px; background: #16a34a; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
-.controls button:hover { background: #15803d; }
-.controls button.blue { background: #2563eb; }
-.controls button.blue:hover { background: #1e40af; }
-.controls button.amber { background: #f59e0b; color: #422006; font-weight: bold; }
-.controls button.amber:hover { background: #d97706; }
-.controls button.amber.active { background: #dc2626; color: white; }
-
-.mode-panel {
-  position: absolute; top: 144px; left: 14px; z-index: 1000;
-  background: rgba(30, 41, 59, 0.95);
-  padding: 10px; border-radius: 8px;
-  border: 1px solid #334155; font-size: 12px;
-  display: flex; flex-direction: column; gap: 6px;
-}
-.mode-panel .mode-btn {
-  padding: 6px 10px; background: #334155; color: #e2e8f0;
-  border: 1px solid #475569; border-radius: 4px; cursor: pointer;
-  font-size: 12px; white-space: nowrap;
-}
-.mode-panel .mode-btn.active { background: #16a34a; border-color: #16a34a; color: white; }
-.mode-panel .mode-btn:hover { background: #475569; }
-.mode-panel .mode-btn.active:hover { background: #15803d; }
-.mode-panel hr { border: none; border-top: 1px solid #475569; margin: 4px 0; }
-.mode-panel label { color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-
-.status-bar {
-  position: absolute; bottom: 4px; right: 4px; z-index: 1000;
-  background: rgba(15, 23, 42, 0.9); color: #cbd5e1;
-  padding: 6px 10px; font-size: 11px; border-radius: 4px;
-  border: 1px solid #334155; max-width: 400px;
-}
-.status-bar.selecting { color: #fbbf24; border-color: #f59e0b; }
-</style>
-</head>
-<body>
-
-<div class="header">
-  <h1>🗺️ SelfFarm-Lite — Carto IGN</h1>
-  <small>Fond : IGN Géoplateforme · Cadastre : Api Carto IGN · Adresse : api-adresse.data.gouv.fr · 100 % open data gouv.fr</small>
-  <div class="header-search">
-    <input id="adresseInput"
-           type="text"
-           placeholder="🔎 Adresse, lieu-dit, commune (ex : votre adresse, lieu-dit ou commune)"
-           autocomplete="off">
-    <button onclick="centrerSurAdresse()">Centrer</button>
-    <span class="hint">↵ Entrée / ↑ ↓ pour naviguer</span>
-    <div id="suggestBox" class="suggest-box"></div>
-  </div>
-</div>
-
-<div id="map"></div>
-
-<!-- Panneau gauche : modes + couches -->
-<div class="mode-panel">
-  <label>Mode curseur</label>
-  <button id="btnModeMove" class="mode-btn active" onclick="setMode('move')">✋ Déplacer</button>
-  <button id="btnModeSelect" class="mode-btn" onclick="setMode('select')">🎯 Sélectionner</button>
-  <hr>
-  <label>Fond de carte</label>
-  <button id="btnFondOrtho" class="mode-btn" onclick="setFond('ortho')">🛰️ Satellite</button>
-  <button id="btnFondPlan" class="mode-btn" onclick="setFond('plan')">🗺️ Plan IGN</button>
-  <button id="btnFondMix" class="mode-btn active" onclick="setFond('mix')">🛰️+📍 Sat + Cadastre</button>
-</div>
-
-<!-- Panneau droit : recherche parcelle -->
-<div class="controls">
-  <h3>🔍 Recherche parcelle</h3>
-  <input id="commune" placeholder="Code INSEE (ex: 75056)" value="36229">
-  <input id="section" placeholder="Section (ex: ZT)" value="ZT">
-  <input id="numero" placeholder="Numéro (ex: 0010)" value="0010">
-  <button onclick="chercherParcelle()">Afficher la parcelle</button>
-  <button onclick="effacerParcelles()" class="amber" style="margin-top: 6px;">
-    🧹 Effacer la sélection
-  </button>
-  <div style="margin-top: 8px; font-size: 10px; color: #94a3b8; line-height: 1.4;">
-    Source : IGN Cadastre BDParcellaire (données publiques)
-  </div>
-</div>
-
-<div class="status-bar" id="status">
-  Mode : ✋ Déplacer — clique/glisse la carte avec la main
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
 const map = L.map('map', { zoomControl: true }).setView([46.6, 2.4], 6);
 const mapEl = document.getElementById('map');
 const statusEl = document.getElementById('status');
@@ -236,7 +54,7 @@ let parcelles = L.geoJSON(null, {
       Commune: ${p.nom_com} (${p.code_insee})<br>
       Surface: <b>${surface_ha} ha</b> (${p.contenance} m²)<br>
       Feuille: ${p.feuille}<br>
-      <button onclick="ajouterAuxParcelles('${payload}')" style="margin-top:6px;padding:5px 10px;background:#16a34a;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:600;">
+      <button data-action="ajouter-parcelle" data-payload="${payload}" style="margin-top:6px;padding:5px 10px;background:#16a34a;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:600;">
         + Ajouter à mes parcelles
       </button>
     `);
@@ -262,7 +80,7 @@ async function ajouterAuxParcelles(payloadEncoded) {
       statusEl.textContent = `✓ Parcelle ${data.nom} ajoutée — ${data.surface_ha.toFixed(3)} ha`;
       // Notifie le parent (le wrapper iframe) qu'on vient d'ajouter une parcelle
       if (window.parent && window.parent !== window) {
-        window.parent.postMessage({ type: 'parcelle-added', nom: data.nom, surface_ha: data.surface_ha }, '*');
+        window.parent.postMessage({ type: 'parcelle-added', nom: data.nom, surface_ha: data.surface_ha }, window.location.origin);
       }
     } else {
       statusEl.textContent = `✗ Erreur ajout (HTTP ${r.status})`;
@@ -454,7 +272,7 @@ function renderSuggestions() {
     return;
   }
   suggestBox.innerHTML = suggestions.map((s, i) => `
-    <div class="suggest-item ${i === suggestFocus ? 'focus' : ''}" onclick="selectSuggestion(suggestions[${i}])">
+    <div class="suggest-item ${i === suggestFocus ? 'focus' : ''}" data-action="suggestion" data-index="${i}">
       <div class="label">${escapeHtml(s.label)}</div>
       <div class="ctx">${escapeHtml(s.ctx)}</div>
     </div>
@@ -501,6 +319,11 @@ function escapeHtml(s) {
 
 // Chargement initial : parcelle ZT0010 Val-Fouzon (Indre) — commune de démo neutre (vraie géométrie IGN)
 chercherParcelle();
-</script>
-</body>
-</html>
+
+SF.action('centrer-adresse', () => centrerSurAdresse());
+SF.action('mode', (el) => setMode(el.dataset.mode));
+SF.action('fond', (el) => setFond(el.dataset.fond));
+SF.action('chercher-parcelle', () => chercherParcelle());
+SF.action('effacer-parcelles', () => effacerParcelles());
+SF.action('ajouter-parcelle', (el) => ajouterAuxParcelles(el.dataset.payload));
+SF.action('suggestion', (el) => selectSuggestion(suggestions[Number(el.dataset.index)]));

@@ -25,7 +25,7 @@
         <div style="font-size:12px; color:var(--text-primary); font-family:'JetBrains Mono',monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ b.name }}</div>
         <div style="font-size:10.5px; color:var(--text-muted);">{{ (b.size_bytes/1024)|round(1) }} Ko · {{ {'none':'en clair','vault':'chiffré (coffre)','gpg':'chiffré (GPG)'}.get(b.cipher, b.cipher) }}</div>
       </div>
-      <form method="post" action="/backup/restaurer" style="margin:0;" onsubmit="return confirm('Restaurer « {{ b.name }} » ? Tes données actuelles seront remplacées (l\\'ancienne base est gardée en .bak).');">
+      <form method="post" action="/backup/restaurer" style="margin:0;" data-confirm="Restaurer « {{ b.name }} » ? Tes données actuelles seront remplacées (l'ancienne base est gardée en .bak).">
         <input type="hidden" name="mount_path" value="{{ s.mount.path }}">
         <input type="hidden" name="name" value="{{ b.name }}">
         <button type="submit" class="btn" style="font-size:12px; padding:8px 14px; white-space:nowrap;">↑ Restaurer</button>

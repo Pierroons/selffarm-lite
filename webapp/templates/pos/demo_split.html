@@ -83,6 +83,7 @@
       .phone .device { height: 64vh; }
     }
   </style>
+<script src="/static/js/actions.js"></script>
 </head>
 <body>
   <header>
@@ -92,7 +93,7 @@
     </div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <form method="post" action="/pos/demo/reset" style="margin:0;"
-            onsubmit="return confirm('Réinitialiser la démo ? Tes ventes seront effacées et remplacées par les marchés d\'exemple.');">
+            data-confirm="Réinitialiser la démo ? Tes ventes seront effacées et remplacées par les marchés d'exemple.">
         <button type="submit" class="back" style="cursor:pointer; border:0; font:inherit;">↻ Réinitialiser</button>
       </form>
       <a class="back" href="/">← Accueil SelfFarm</a>

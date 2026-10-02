@@ -1,7 +1,7 @@
 # Roadmap `self-parcelles` — module cartographique SelfFarm-Lite
 
 Date : 22 avril 2026
-Statut : concept validé, prototype démo OK (`demo-carto.html`)
+Statut : concept validé, prototype démo OK (`parcelles/carto_embed.html`)
 
 Ce document consigne les besoins fonctionnels et les décisions de
 conception pour le futur module de cartographie parcellaire.
@@ -67,7 +67,7 @@ CREATE INDEX idx_parcelles_geom ON parcelles USING GIST(geometry);
 
 ## Prototype actuel — état
 
-`docs/demo-carto.html` (standalone, zéro backend) :
+`webapp/templates/parcelles/carto_embed.html`, servie en iframe par `/parcelles/carto` :
 
 - ✅ Fond orthophoto IGN / Plan IGN / Sat + Cadastre
 - ✅ Mode ✋ Déplacer / 🎯 Sélectionner par clic
