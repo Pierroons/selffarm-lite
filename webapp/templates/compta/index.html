@@ -48,7 +48,7 @@
       hx-post="/compta/generer-vente"
       hx-target="#flash-message"
       hx-swap="innerHTML"
-      hx-on::after-request="setTimeout(() => window.location.reload(), 1500)"
+      data-reload-after="1500"
       class="btn btn-ghost"
       style="font-size: 12.5px;">
       <span style="color: #93c5fd; margin-right: 4px;">●</span> Vente rapide <span style="opacity: 0.55; font-size: 10px;">411 / 701</span>
@@ -57,7 +57,7 @@
       hx-post="/compta/generer-achat"
       hx-target="#flash-message"
       hx-swap="innerHTML"
-      hx-on::after-request="setTimeout(() => window.location.reload(), 1500)"
+      data-reload-after="1500"
       class="btn btn-ghost"
       style="font-size: 12.5px;">
       <span style="color: #f4c47a; margin-right: 4px;">●</span> Achat <span style="opacity: 0.55; font-size: 10px;">6011 / 401</span>
@@ -66,7 +66,7 @@
       hx-post="/compta/importer-releve"
       hx-target="#flash-message"
       hx-swap="innerHTML"
-      hx-on::after-request="setTimeout(() => window.location.reload(), 2500)"
+      data-reload-after="2500"
       class="btn btn-ghost"
       style="font-size: 12.5px;"
       title="Simule self_banking — lettrage auto factures + prélèvements + frais bancaires">
@@ -82,7 +82,7 @@
       hx-post="/compta/rejouer-derniere-vente"
       hx-target="#flash-message"
       hx-swap="innerHTML"
-      hx-on::after-request="setTimeout(() => window.location.reload(), 1800)"
+      data-reload-after="1800"
       class="btn btn-ghost"
       style="font-size: 12.5px;"
       title="Re-déclenche l'écriture pour la dernière facture — démontre la dédup">
@@ -90,13 +90,17 @@
     </button>
     <span style="flex: 1;"></span>
     <button
-      onclick="if (confirm('Purger TOUTES les écritures comptables ? (reset démo)')) { fetch('/compta/reset-demo', {method:'POST', headers:{'HX-Request':'true'}}).then(r => r.text()).then(html => { document.getElementById('flash-message').innerHTML = html; setTimeout(() => window.location.reload(), 1500); }); }"
+      hx-post="/compta/reset-demo"
+      hx-target="#flash-message"
+      hx-swap="innerHTML"
+      hx-confirm="Purger TOUTES les écritures comptables ? (reset démo)"
+      data-reload-after="1500"
       class="btn btn-ghost"
       style="font-size: 12.5px; border-color: rgba(127,29,29,0.4); color: #fca5a5;">
       Reset démo
     </button>
     <button
-      onclick="window.location.reload()"
+      data-action="reload"
       class="btn btn-ghost"
       style="font-size: 12.5px;"
       title="Recharge la page">

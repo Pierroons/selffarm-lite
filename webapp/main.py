@@ -227,6 +227,10 @@ async def no_cache_service_worker(request: Request, call_next):
         resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
         resp.headers["Pragma"] = "no-cache"
         resp.headers["Expires"] = "0"
+    if p.endswith(("sw-mobile.js", "sw.js")):
+        # Servis sous /static/pos/, ils contrôlent les pages /pos/ : sans cet en-tête,
+        # le navigateur refuse de les enregistrer avec cette portée.
+        resp.headers["Service-Worker-Allowed"] = "/pos/"
     return resp
 
 

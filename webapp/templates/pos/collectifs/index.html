@@ -101,7 +101,7 @@ details.form-card .form-body {padding:0 18px 18px;}
         </td>
         <td style="text-align:right;">
           {% if c.active %}
-          <form action="/pos/collectifs/{{ c.id }}/deactivate" method="post" style="display:inline;" onsubmit="return confirm('Désactiver {{ c.nom }} ?');">
+          <form action="/pos/collectifs/{{ c.id }}/deactivate" method="post" style="display:inline;" data-confirm="Désactiver {{ c.nom }} ?">
             <button type="submit" class="icon-btn" title="Désactiver">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>

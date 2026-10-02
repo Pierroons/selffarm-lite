@@ -26,7 +26,7 @@
     </h2>
     <div style="display: flex; flex-direction: column; gap: 8px;">
       {% for ex in examples %}
-      <div style="border: 1px solid var(--border-subtle); background: var(--bg-elev); border-radius: 7px; transition: border-color 0.15s ease;" onmouseover="this.style.borderColor='var(--forest-700)'" onmouseout="this.style.borderColor='var(--border-subtle)'">
+      <div style="border: 1px solid var(--border-subtle); background: var(--bg-elev); border-radius: 7px; transition: border-color 0.15s ease;" class="hover-border">
         <button
           hx-get="/dnja/calcul?example={{ ex.slug }}"
           hx-target="#result"
@@ -38,7 +38,7 @@
         </button>
         <a href="/dnja/pdf?example={{ ex.slug }}"
            style="display: block; text-align: center; font-size: 11px; color: var(--forest-400); text-decoration: none; padding: 6px; border-top: 1px solid var(--border-subtle); transition: background 0.12s ease;"
-           onmouseover="this.style.background='rgba(22,101,52,0.10)'" onmouseout="this.style.background='transparent'">
+           class="hover-bg">
           ↓ Télécharger PDF direct
         </a>
       </div>
