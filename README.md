@@ -221,9 +221,9 @@ sur les 3 piliers MySelf — intégrations à des stades divers (de l'opération
 
 <!-- ecosysteme:my-self:debut — généré par scripts/ecosysteme.py depuis le modules.json de my-self, ne pas éditer ici -->
 
-- **SelfRecover** 0.7.0 — récupération de compte sans email ni SMS
-- **SelfModerate** 0.3.0 — modération communautaire par raisonnement social
-- **SelfJustice** 0.4.1 — consultation du droit français et européen par une API publique
+- **SelfRecover** 0.8.0 — récupération de compte sans email ni SMS
+- **SelfModerate** 0.4.0 — modération communautaire par raisonnement social
+- **SelfJustice** 0.4.2 — consultation du droit français et européen par une API publique
 - **SelfAct** 0.1.3 — modèles officiels et calcul des délais de procédure
 - **SelfDataGuard** 0.4.0 — chiffrement des données au repos côté application
 
