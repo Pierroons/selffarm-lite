@@ -9,8 +9,6 @@ import re
 from pathlib import Path
 
 import pytest
-from fastapi.responses import HTMLResponse
-from starlette.routing import Route
 
 from webapp.main import CSP, CSP_CARTO, app
 
@@ -25,9 +23,11 @@ GESTIONNAIRE = re.compile(r"<[a-z][^>]*\son[a-z]+\s*=", re.IGNORECASE)
 HX_ON = re.compile(r"\bhx-on\b")
 CDN = re.compile(r"unpkg\.com|jsdelivr|googleapis|gstatic|cdnjs|cloudflare", re.IGNORECASE)
 
-PAGES = sorted(r.path for r in app.routes
-               if isinstance(r, Route) and "GET" in (r.methods or set())
-               and "{" not in r.path and getattr(r, "response_class", None) is HTMLResponse)
+# Les pages HTML sans paramètre, lues dans le schéma OpenAPI : `app.routes` ne
+# liste plus les routes des routeurs inclus depuis FastAPI 0.142.
+PAGES = sorted(p for p, ops in app.openapi()["paths"].items()
+               if "{" not in p and "text/html" in ops.get("get", {}).get("responses", {})
+               .get("200", {}).get("content", {}))
 
 
 def _defauts(texte: str) -> list[str]:
