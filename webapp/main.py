@@ -234,6 +234,55 @@ async def no_cache_service_worker(request: Request, call_next):
     return resp
 
 
+# Politique de sécurité du contenu : aucun script inline, rien chargé d'un autre
+# domaine. Les styles inline restent permis. Seule la carte joint l'IGN et la
+# Base adresse nationale.
+_CSP = {
+    "default-src": "'self'",
+    "script-src": "'self'",
+    "style-src": "'self' 'unsafe-inline'",
+    "img-src": "'self' data: blob:",
+    "font-src": "'self'",
+    "connect-src": "'self'",
+    "frame-src": "'self'",
+    "frame-ancestors": "'self'",
+    "form-action": "'self'",
+    "base-uri": "'self'",
+    "object-src": "'none'",
+    "worker-src": "'self'",
+    "manifest-src": "'self'",
+}
+_CSP_CARTO = {
+    **_CSP,
+    "img-src": _CSP["img-src"] + " https://data.geopf.fr",
+    "connect-src": _CSP["connect-src"] + " https://apicarto.ign.fr https://api-adresse.data.gouv.fr",
+}
+
+
+def _politique(directives: dict[str, str]) -> str:
+    return "; ".join(f"{k} {v}" for k, v in directives.items())
+
+
+CSP = _politique(_CSP)
+CSP_CARTO = _politique(_CSP_CARTO)
+
+
+# Pages de documentation que FastAPI génère avec un script inline et un CDN : la
+# CSP les casserait, et elles n'affichent aucune donnée de l'exploitation.
+_SANS_CSP = {app.docs_url, app.redoc_url, app.swagger_ui_oauth2_redirect_url}
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    resp = await call_next(request)
+    path = request.url.path
+    if path not in _SANS_CSP:
+        resp.headers["Content-Security-Policy"] = CSP_CARTO if path == "/parcelles/carto/embed" else CSP
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    resp.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return resp
+
+
 # Static
 STATIC_DIR = Path(__file__).parent / "static"
 STATIC_DIR.mkdir(exist_ok=True)
