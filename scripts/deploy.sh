@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Déploiement blindé SelfFarm-Lite → serveur de prod.
-# Audit OPSEC AVANT toute copie + cycle prod-immutable (anti-tamper) + exclusions strictes.
+# Livre origin/main, fichiers suivis par git seulement + audit OPSEC AVANT toute copie
+# + cycle prod-immutable (anti-tamper).
 #
 # Configuration : renseigne `scripts/.env.deploy` (gitignoré, cf. .env.deploy.example)
 # ou exporte les variables à la main.
@@ -35,20 +36,20 @@ IMMUT="${SELFFARM_DEPLOY_IMMUT:-/usr/local/sbin/prod-immutable.sh}"
 SERVICE="${SELFFARM_DEPLOY_SERVICE:-selffarm-webapp}"
 HEALTH="${SELFFARM_DEPLOY_HEALTH:-}"
 
-EXCLUDES=(--exclude='.git' --exclude='.venv' --exclude='/data' --exclude='__pycache__'
-          --exclude='*.pyc' --exclude='*.bak*' --exclude='.pytest_cache' --exclude='*.egg-info'
-          --exclude='.mypy_cache' --exclude='.ruff_cache' --exclude='node_modules' --exclude='_perso'
-          --exclude='scripts/.env.deploy'
-          # OPSEC : les scénarios DNJA nominatifs (identité civile) ne sortent JAMAIS de la machine perso.
-          --exclude='hypotheses-pierroons*' --exclude='hypotheses-perso*')
+# Le lot est origin/main tel que git le porte, jamais l'arbre de travail : celui-ci
+# contient aussi les fichiers que .gitignore garde hors du depot (scenarios DNJA
+# nominatifs, aides departementales du poste, caches, binaires d'outillage), et
+# le --delete de l'etape 4 retire de la prod tout ce que le lot ne contient pas.
+STAGE_LOCAL="$(mktemp -d)"
+trap 'rm -rf "$STAGE_LOCAL"' EXIT
+# mktemp cree le repertoire en 700, et rsync -a reporterait ce mode sur la racine
+# du code en prod.
+chmod 755 "$STAGE_LOCAL"
 
-# Hors du depot : un stage a l'interieur se recopierait dans lui-meme, et il
-# faudrait maintenir une exclusion de plus.
-STAGE_LOCAL="${TMPDIR:-/tmp}/selffarm-deploy-stage-$(id -u)"
-
-echo "→ [1/5] Construction du lot à déployer (exclusions strictes)…"
-mkdir -p "$STAGE_LOCAL"
-rsync -a --delete "${EXCLUDES[@]}" "$ROOT/" "$STAGE_LOCAL/"
+echo "→ [1/5] Construction du lot à déployer (origin/main, fichiers suivis par git)…"
+git -C "$ROOT" fetch --quiet origin main
+echo "  $(git -C "$ROOT" describe --tags --always origin/main) — $(git -C "$ROOT" rev-parse --short origin/main)"
+git -C "$ROOT" archive origin/main | tar -x -C "$STAGE_LOCAL"
 echo "  $(find "$STAGE_LOCAL" -type f | wc -l) fichiers retenus"
 
 echo "→ [2/5] Audit OPSEC (gitleaks) sur le lot…"
