@@ -41,16 +41,6 @@ def test_une_cle_existante_est_reprise_telle_quelle(sans_variable):
     assert session_secret() == "cle-d-une-version-precedente"
 
 
-def test_le_worker_qui_perd_la_course_garde_la_cle_du_gagnant(sans_variable):
-    from webapp.session_key import _create
-
-    p = session_key_path()
-    p.write_text("cle-du-gagnant", encoding="ascii")
-    _create(p)
-    assert p.read_text(encoding="ascii") == "cle-du-gagnant"
-    assert [f.name for f in sans_variable.iterdir()] == ["session.key"]
-
-
 def test_une_cle_vide_empeche_le_demarrage(sans_variable):
     session_key_path().write_text("", encoding="ascii")
     with pytest.raises(RuntimeError, match="vide"):

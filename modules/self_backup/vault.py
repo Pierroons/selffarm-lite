@@ -16,8 +16,10 @@ Trois « ciphers » coexistent selon la destination :
 """
 from __future__ import annotations
 
+import contextlib
 import logging
 import os
+import tempfile
 from pathlib import Path
 
 from self_backup import _db_path
@@ -38,22 +40,37 @@ def has_vault_key() -> bool:
     return _vault_key_path().exists()
 
 
+def write_key_file(p: Path, data: bytes, *, replace: bool = False) -> bool:
+    """Écrit une clé, en 600 dès sa naissance : un fichier temporaire créé en 600
+    prend son nom en un seul geste. Sans `replace`, une clé déjà présente est
+    gardée — celle du processus qui a gagné la course — et rien n'est écrit.
+    Rend True si la clé a été écrite."""
+    p.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=p.parent, prefix=f".{p.name}.")
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+        if replace:
+            os.replace(tmp, p)
+            return True
+        try:
+            os.link(tmp, p)
+        except FileExistsError:
+            return False
+        return True
+    finally:
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(tmp)
+
+
 def get_or_create_vault_key() -> bytes:
     """Clé Fernet (base64url, 44 octets). Générée + persistée au 1er appel (perms 600)."""
     from cryptography.fernet import Fernet
 
     p = _vault_key_path()
-    if p.exists():
-        return p.read_bytes().strip()
-    key = Fernet.generate_key()
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_bytes(key)
-    try:
-        os.chmod(p, 0o600)
-    except OSError:
-        pass
-    log.info("Clé de coffre générée : %s", p)
-    return key
+    if not p.exists() and write_key_file(p, Fernet.generate_key()):
+        log.info("Clé de coffre générée : %s", p)
+    return p.read_bytes().strip()
 
 
 def vault_key_b64() -> str:
@@ -68,12 +85,7 @@ def import_vault_key(key_b64) -> None:
     key = key_b64.strip().encode("ascii") if isinstance(key_b64, str) else key_b64.strip()
     Fernet(key)  # lève ValueError si le format est invalide
     p = _vault_key_path()
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_bytes(key)
-    try:
-        os.chmod(p, 0o600)
-    except OSError:
-        pass
+    write_key_file(p, key, replace=True)
     log.info("Clé de coffre importée : %s", p)
 
 

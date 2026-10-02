@@ -9,10 +9,10 @@ from __future__ import annotations
 
 import os
 import secrets
-import tempfile
 from pathlib import Path
 
 from self_backup import _db_path
+from self_backup.vault import write_key_file
 
 SESSION_KEY_FILENAME = "session.key"
 
@@ -28,7 +28,7 @@ def session_secret() -> str:
     p = session_key_path()
     try:
         if not p.exists():
-            _create(p)
+            write_key_file(p, secrets.token_hex(32).encode("ascii"))
         key = p.read_text(encoding="ascii").strip()
     except OSError as e:
         raise RuntimeError(
@@ -39,19 +39,3 @@ def session_secret() -> str:
         raise RuntimeError(f"Clé de session vide : {p}. Supprime-la, elle sera régénérée.")
     return key
 
-
-def _create(p: Path) -> None:
-    """Écrit la clé dans un fichier temporaire (600), puis la lie sous son nom.
-    Le lien échoue si un autre worker a gagné la course : sa clé vaut pour tous,
-    et aucun ne lit un fichier à moitié écrit."""
-    p.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(dir=p.parent, prefix=f".{p.name}.")
-    try:
-        with os.fdopen(fd, "w", encoding="ascii") as f:
-            f.write(secrets.token_hex(32))
-        try:
-            os.link(tmp, p)
-        except FileExistsError:
-            pass
-    finally:
-        os.unlink(tmp)
