@@ -404,7 +404,9 @@ def init_db() -> None:
     # l'ancien registre.
     _convertir_registre_migrations()
     _apply_migrations("self_agri_book", MIGRATIONS)
-    log.info("Compta DB initialisée : %s", _db_path())
+    # DEBUG : chaque accès aux données passe par ici, une trentaine de fois par
+    # page. Ce qui change vraiment la base a sa propre ligne INFO.
+    log.debug("Compta DB initialisée : %s", _db_path())
 
 
 def apply_module_migrations(module: str, migrations: list[tuple[int, str, str]]) -> None:

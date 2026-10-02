@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
 from datetime import date
 from decimal import Decimal
@@ -30,6 +31,13 @@ def test_init_db_creates_schema(isolated_db):
             "SELECT name FROM sqlite_master WHERE type='table' AND name='ecritures_comptables'"
         ).fetchall()
     assert len(rows) == 1
+
+
+def test_init_db_sur_une_base_a_jour_ne_journalise_rien_en_info(isolated_db, caplog):
+    storage.init_db()
+    with caplog.at_level(logging.INFO, logger=storage.log.name):
+        storage.init_db()
+    assert [r.getMessage() for r in caplog.records if r.name == storage.log.name] == []
 
 
 def test_save_ecriture_basic(isolated_db):
