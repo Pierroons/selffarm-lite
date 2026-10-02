@@ -33,7 +33,7 @@
               <a class="btn-ghost" href="/m/{{ m.id }}/bientot">Découvrir</a>
             {% elif is_module_active(m.id) %}
               <form method="post" action="/parametres/modules/{{ m.id }}/desactiver" style="margin: 0;"
-                    onsubmit="return confirm('Désactiver « {{ m.label }} » ?\n\nLe module disparaît de l\'interface mais tes données sont CONSERVÉES. Tu pourras le réactiver à tout moment et tout retrouver.');">
+                    data-confirm="Désactiver « {{ m.label }} » ?&#10;&#10;Le module disparaît de l'interface mais tes données sont CONSERVÉES. Tu pourras le réactiver à tout moment et tout retrouver.">
                 <button class="btn-ghost toggle-on" type="submit">● Activé</button>
               </form>
             {% else %}

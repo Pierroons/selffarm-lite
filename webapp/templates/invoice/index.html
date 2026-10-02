@@ -34,7 +34,7 @@
       {% if factures %}
       <div style="max-height: 420px; overflow-y: auto;">
         {% for f in factures %}
-        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border-subtle); transition: background 0.12s ease; cursor: default;" onmouseover="this.style.background='rgba(22,101,52,0.05)'" onmouseout="this.style.background='transparent'">
+        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border-subtle); transition: background 0.12s ease; cursor: default;" class="hover-bg-soft">
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 3px;">
             <code style="font-size: 11px; color: #86efac; font-weight: 600;">{{ f.numero }}</code>
             <span style="font-size: 11px; color: var(--text-muted); font-family: monospace;">{{ f.date }}</span>

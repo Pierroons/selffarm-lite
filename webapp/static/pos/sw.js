@@ -3,13 +3,13 @@
  *
  * Stratégie :
  * - Précache statique : CSS/JS de base + page caisse shell
- * - Pour navigation : network-first avec fallback cache
+ * - Pages caisse et assets statiques : network-first avec fallback cache
  * - Pour POST vente : si offline → 202 + queue côté client gère via LocalStorage
  *   (le SW n'intercepte pas le POST — le JS côté caisse détecte navigator.onLine)
  * - Background sync : déclenche flush quand connexion revient
  */
 
-const CACHE_NAME = 'selfpos-v1';
+const CACHE_NAME = 'selfpos-v2';
 const PRECACHE_URLS = [
   '/static/pos/manifest.json',
   '/static/pos/icon.svg',
@@ -36,40 +36,24 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
-  // Cache pour assets statiques
-  if (url.pathname.startsWith('/static/')) {
-    event.respondWith(
-      caches.match(request).then((cached) => {
-        if (cached) return cached;
-        return fetch(request).then((resp) => {
-          if (resp.ok) {
-            const clone = resp.clone();
-            caches.open(CACHE_NAME).then((c) => c.put(request, clone));
-          }
-          return resp;
-        }).catch(() => cached);
-      })
-    );
-    return;
-  }
+  if (!url.pathname.startsWith('/static/') && !url.pathname.startsWith('/pos/')) return;
 
-  // Navigation : network-first avec fallback cache
-  if (url.pathname.startsWith('/pos/')) {
-    event.respondWith(
-      fetch(request)
-        .then((resp) => {
-          if (resp.ok) {
-            const clone = resp.clone();
-            caches.open(CACHE_NAME).then((c) => c.put(request, clone));
-          }
-          return resp;
-        })
-        .catch(() => caches.match(request).then((cached) => cached || new Response(
-          '<h1>Hors ligne</h1><p>Cette page n\'est pas disponible hors connexion. Reviens en ligne pour la consulter.</p>',
-          { headers: { 'Content-Type': 'text/html; charset=utf-8' }, status: 503 }
-        )))
-    );
-  }
+  // network-first : la dernière version en ligne, le cache en secours hors ligne.
+  // En cache-first, une mise à jour de l'app laisserait la caisse sur ses anciens fichiers.
+  event.respondWith(
+    fetch(request)
+      .then((resp) => {
+        if (resp.ok) {
+          const clone = resp.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(request, clone));
+        }
+        return resp;
+      })
+      .catch(() => caches.match(request).then((cached) => cached || new Response(
+        '<h1>Hors ligne</h1><p>Cette page n\'est pas disponible hors connexion. Reviens en ligne pour la consulter.</p>',
+        { headers: { 'Content-Type': 'text/html; charset=utf-8' }, status: 503 }
+      )))
+  );
 });
 
 // Background sync : déclenché quand le réseau revient

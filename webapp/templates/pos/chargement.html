@@ -83,7 +83,7 @@
                      name="produit_{{ p.id }}_charged"
                      value="1"
                      {% if is_checked %}checked{% endif %}
-                     onchange="document.getElementById('row-{{ p.id }}').classList.toggle('unchecked', !this.checked)">
+                     data-change="class-if-unchecked" data-target="#row-{{ p.id }}" data-class="unchecked">
             </td>
             <td class="emo">{{ p.emoji or '🌿' }}</td>
             <td>{{ p.nom }}</td>
