@@ -799,34 +799,34 @@ async def api_pos_backup_download():
 @router.post("/api/pos/backup/restore-push")
 async def api_pos_backup_restore_push(request: Request):
     """Le tel renvoie un backup chiffré (vault) → le PC déchiffre + restaure.
-    Pour un PC neuf, le tel fournit aussi sa clé de coffre via X-Vault-Key."""
+
+    Une installation qui a des données ne déchiffre qu'avec SA clé de coffre.
+    Seul un PC vierge (onboarding pas fait) accepte la clé que le tel pousse
+    (X-Vault-Key) : c'est le scénario du PC neuf, et il n'y a rien à y écraser.
+    Fermée en démo publique."""
+    if os.environ.get("SELFFARM_ENV", "prod") == "demo":
+        raise HTTPException(status_code=404)
+    from cryptography.fernet import Fernet, InvalidToken
+    from self_agri_book.exploitation import is_onboarding_done
     from self_backup import restore_from_bytes
-    from self_backup.vault import decrypt, has_vault_key, import_vault_key
+    from self_backup.vault import decrypt, import_vault_key
     from self_pos.devices import touch_device
-    device_id = request.headers.get("X-Device-Id", "")
-    if device_id:
-        touch_device(device_id)
     blob = await request.body()
     if not blob:
         raise HTTPException(status_code=400, detail="Corps vide")
     pushed_key = request.headers.get("X-Vault-Key", "")
-    if pushed_key and not has_vault_key():
-        try:
-            import_vault_key(pushed_key)
-        except Exception:  # best-effort, mais tracé
-            log.warning("Import de la clé de coffre poussée par le mobile échoué",
-                        exc_info=True)
     try:
-        zip_bytes = decrypt(blob)
-    except Exception:
-        if pushed_key:
-            try:
-                import_vault_key(pushed_key)
-                zip_bytes = decrypt(blob)
-            except Exception:
-                raise HTTPException(status_code=400, detail="Déchiffrement impossible (clé de coffre invalide)")
+        if pushed_key and not is_onboarding_done():
+            zip_bytes = Fernet(pushed_key.strip().encode("ascii")).decrypt(blob)
+            import_vault_key(pushed_key)
         else:
-            raise HTTPException(status_code=400, detail="Déchiffrement impossible (clé de coffre absente)")
+            zip_bytes = decrypt(blob)
+    except (ValueError, InvalidToken):
+        raise HTTPException(status_code=400,
+                            detail="Déchiffrement impossible : ce n'est pas la clé de coffre de ce PC")
+    device_id = request.headers.get("X-Device-Id", "")
+    if device_id:
+        touch_device(device_id)
     confirm = request.headers.get("X-Confirm-Rollback", "") == "1"
     try:
         result = restore_from_bytes(zip_bytes, confirm_rollback=confirm)
