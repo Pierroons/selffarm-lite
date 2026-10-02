@@ -99,7 +99,7 @@ image: ghcr.io/pierroons/selffarm-lite:v0.4.0
 
 ## 4. Sauvegardes
 
-**Toutes tes données sont dans le volume `selffarm-data`** (compta SQLite, factures émises, parcelles cartographiées, cache des aides).
+**Toutes tes données sont dans le volume `selffarm-data`** (compta SQLite, factures émises, parcelles cartographiées, cache des aides, et `session.key`, la clé qui signe tes sessions, tirée au premier démarrage).
 
 ### Backup
 ```bash
@@ -173,6 +173,12 @@ en :
       - "0.0.0.0:8001:8001"
 ```
 Puis depuis un autre poste : `http://IP-DU-PC-HOTE:8001`.
+
+### Fournir ta propre clé de session
+Sans rien configurer, SelfFarm tire sa clé au premier démarrage et la garde dans le volume. Pour la fournir toi-même, ajoute sous `environment:` :
+```yaml
+      SELFFARM_SESSION_SECRET: "<le résultat de : openssl rand -hex 32>"
+```
 
 ### Reverse proxy HTTPS (Caddy / nginx)
 Cf. `docs/deploy-reverse-proxy.md` (à venir).
