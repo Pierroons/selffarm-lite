@@ -43,7 +43,8 @@ fi
 # 3. Install deps Python
 echo "▶ Installation des dépendances Python…"
 .venv/bin/pip install --quiet --upgrade pip
-.venv/bin/pip install --quiet -e ".[dev]"
+.venv/bin/pip install --quiet -r requirements-dev.txt
+.venv/bin/pip install --quiet --no-deps -e .
 echo "  ✓ Dépendances installées"
 
 # 4. Tests
