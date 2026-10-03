@@ -81,11 +81,11 @@ ssh -t "$REMOTE" "
   sudo '$IMMUT' unlock
   sudo rsync -a --delete --exclude=/data --exclude=.venv --exclude='*.egg-info' --exclude=__pycache__ --exclude=.git --exclude=_perso --exclude='hypotheses-pierroons*' --exclude='hypotheses-perso*' '$STAGE/' '$PROD/'
   sudo chown -R www-data:www-data '$PROD'
-  # Le code ne suffit pas : pyproject.toml peut exiger une dependance plus
-  # recente que celle du venv. Sans cette etape, la prod a tourne du 24/06 au
-  # 23/09/2026 avec starlette 0.52.1 et deux CVE HIGH, alors que le depot
-  # exigeait >=1.3.1 depuis le 08/09.
-  sudo -u www-data '$PROD/.venv/bin/pip' install --quiet --no-cache-dir -e '$PROD[pa]'
+  # Le code ne suffit pas : un venv ne suit pas le depot de lui-meme (la prod a
+  # tourne du 24/06 au 23/09/2026 avec starlette 0.52.1 et deux CVE HIGH). Il
+  # recoit le verrou, les versions que la CI a testees et que l'image embarque.
+  sudo -u www-data '$PROD/.venv/bin/pip' install --quiet --no-cache-dir -r '$PROD/requirements.txt'
+  sudo -u www-data '$PROD/.venv/bin/pip' install --quiet --no-cache-dir --no-deps -e '$PROD'
   sudo -u www-data '$PROD/.venv/bin/pip' check
   sudo systemctl restart '$SERVICE'
   sudo '$IMMUT' lock

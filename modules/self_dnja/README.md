@@ -10,7 +10,8 @@ présenter.
 Depuis la racine de SelfFarm-Lite :
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install -e ".[facturx,dev]"
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/pip install --no-deps -e .
 ```
 
 ## Utilisation

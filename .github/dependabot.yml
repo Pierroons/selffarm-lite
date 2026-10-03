@@ -1,0 +1,11 @@
+# Propose les mises à jour du verrou (requirements*.txt, généré par pip-compile
+# depuis pyproject.toml). Chaque proposition passe par la CI, dont le job
+# « Verrou à jour » vérifie que les deux fichiers restent cohérents.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    target-branch: develop
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
