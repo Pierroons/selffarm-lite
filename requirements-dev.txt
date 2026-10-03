@@ -152,7 +152,7 @@ pydantic==2.13.5
     #   -c requirements.txt
     #   fastapi
     #   selffarm-lite (pyproject.toml)
-pydantic-core==2.46.5
+pydantic-core==2.49.0
     # via
     #   -c requirements.txt
     #   pydantic
