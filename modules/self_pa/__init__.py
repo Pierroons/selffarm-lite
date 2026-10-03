@@ -17,3 +17,7 @@ validation humaine → `self_agri_book.save_ecriture()`. Le dernier maillon n'es
 jamais franchi tout seul : une écriture comptable naît d'une décision, pas d'un
 automatisme.
 """
+
+# Inscrit les migrations du module au registre du noyau, dont la restauration
+# a besoin pour mettre une sauvegarde à niveau.
+from self_pa import storage as _storage  # noqa: F401

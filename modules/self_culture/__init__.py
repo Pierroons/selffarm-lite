@@ -16,3 +16,7 @@ Conventions :
 """
 
 from __future__ import annotations
+
+# Inscrit les migrations du module au registre du noyau, dont la restauration
+# a besoin pour mettre une sauvegarde à niveau.
+from self_culture import cultures as _cultures  # noqa: F401

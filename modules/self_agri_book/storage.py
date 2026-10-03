@@ -11,6 +11,7 @@ pour un schéma aussi plat). sqlite3 stdlib suffit.
 from __future__ import annotations
 
 import hashlib
+import importlib
 import json as _json
 import logging
 import os
@@ -311,15 +312,18 @@ MIGRATIONS: list[tuple[int, str, str]] = [
 ]
 
 
-def _apply_migrations(module: str, migrations: list[tuple[int, str, str]]) -> None:
+def _apply_migrations(
+    module: str, migrations: list[tuple[int, str, str]], conn: sqlite3.Connection | None = None
+) -> None:
     """Applique les migrations manquantes d'un module. Idempotent.
 
     Le suivi est namespacé par `module` : le noyau (self_agri_book) et chaque
     verticale portent leur propre suite de versions, appliquée une seule fois.
+    Sans `conn`, la base de l'app.
     """
-    with _conn() as c:
+    with _sur(conn) as c:
         applied = {
-            int(r["version"])
+            int(r[0])
             for r in c.execute(
                 "SELECT version FROM _schema_migrations WHERE module = ?", (module,)
             ).fetchall()
@@ -327,7 +331,10 @@ def _apply_migrations(module: str, migrations: list[tuple[int, str, str]]) -> No
         for version, name, sql in migrations:
             if version in applied:
                 continue
-            log.info("Application migration %s#%d : %s", module, version, name)
+            # INFO pour la base de l'app seulement : une copie de sauvegarde ou une
+            # base en mémoire migrent aussi, sans que la base de l'app change.
+            log.log(logging.INFO if conn is None else logging.DEBUG,
+                    "Application migration %s#%d : %s", module, version, name)
             c.executescript(sql)
             c.execute(
                 "INSERT INTO _schema_migrations (module, version, name) VALUES (?, ?, ?)",
@@ -351,6 +358,16 @@ def _conn():
         conn.close()
 
 
+@contextmanager
+def _sur(conn: sqlite3.Connection | None):
+    """La connexion fournie, ou à défaut une connexion à la base de l'app."""
+    if conn is not None:
+        yield conn
+        return
+    with _conn() as c:
+        yield c
+
+
 # Les deux migrations qui ont changé de maison en 0.2.0 : parcelle et plan_culture
 # étaient 5 et 6 de la suite globale, elles sont 1 et 2 de self_culture. Le noyau
 # a gardé ses numéros, d'où le trou 5-6 dans MIGRATIONS ci-dessus.
@@ -360,7 +377,7 @@ _MIGRATIONS_DEMENAGEES: dict[int, tuple[str, int]] = {
 }
 
 
-def _convertir_registre_migrations() -> None:
+def _convertir_registre_migrations(conn: sqlite3.Connection | None = None) -> None:
     """Passe `_schema_migrations` du format d'avant 0.2.0 au format namespacé.
 
     Jusqu'en 0.1.x le registre portait (version, name, applied_at), numérotés
@@ -375,7 +392,7 @@ def _convertir_registre_migrations() -> None:
     L'ancien registre est conservé sous `_schema_migrations_avant_0_2_0` — une
     conversion de registre ne se relit pas, autant garder de quoi la vérifier.
     """
-    with _conn() as c:
+    with _sur(conn) as c:
         colonnes = {r[1] for r in c.execute("PRAGMA table_info(_schema_migrations)")}
         if not colonnes or "module" in colonnes:
             return
@@ -388,7 +405,8 @@ def _convertir_registre_migrations() -> None:
                 "INSERT INTO _schema_migrations (module, version, name, applied_at) VALUES (?, ?, ?, ?)",
                 (module, nouvelle, name, applied_at),
             )
-        log.info("Registre de migrations converti : %d entrée(s) reprises", len(anciennes))
+        log.log(logging.INFO if conn is None else logging.DEBUG,
+                "Registre de migrations converti : %d entrée(s) reprises", len(anciennes))
 
 
 def init_db() -> None:
@@ -418,6 +436,68 @@ def apply_module_migrations(module: str, migrations: list[tuple[int, str, str]])
     """
     init_db()
     _apply_migrations(module, migrations)
+
+
+# Migrations des verticales, que chacune inscrit à l'import de son paquet. La
+# restauration s'en sert pour mettre une sauvegarde à la version de l'app avant
+# de la fusionner.
+MIGRATIONS_DES_MODULES: dict[str, list[tuple[int, str, str]]] = {}
+
+
+def register_module_migrations(module: str, migrations: list[tuple[int, str, str]]) -> None:
+    MIGRATIONS_DES_MODULES[module] = migrations
+
+
+def migrations_du_module(module: str) -> list[tuple[int, str, str]] | None:
+    """Les migrations d'une verticale, None si cette version de l'app ne la connaît pas.
+
+    Le paquet d'une verticale porte le nom de son espace dans `_schema_migrations`
+    et inscrit ses migrations quand on l'importe.
+    """
+    if module not in MIGRATIONS_DES_MODULES:
+        try:
+            importlib.import_module(module)
+        except ImportError:
+            return None
+    return MIGRATIONS_DES_MODULES.get(module)
+
+
+def mettre_a_niveau(conn: sqlite3.Connection) -> set[str]:
+    """Porte la base de `conn` à la version de l'app : schéma et migrations du noyau,
+    puis celles de chaque verticale que son registre mentionne.
+
+    Rend les modules de son registre que cette version de l'app ne connaît pas.
+    """
+    conn.executescript(SCHEMA_SQL)
+    _convertir_registre_migrations(conn)
+    _apply_migrations("self_agri_book", MIGRATIONS, conn)
+    inconnus: set[str] = set()
+    modules = conn.execute(
+        "SELECT DISTINCT module FROM _schema_migrations WHERE module != 'self_agri_book'"
+    ).fetchall()
+    for (module,) in modules:
+        migrations = migrations_du_module(module)
+        if migrations is None:
+            inconnus.add(module)
+        else:
+            _apply_migrations(module, migrations, conn)
+    return inconnus
+
+
+def tables_du_module(module: str) -> set[str]:
+    """Tables que crée une verticale connue, mesurées sur une base vide en mémoire."""
+    migrations = migrations_du_module(module)
+    if migrations is None:
+        return set()
+    conn = sqlite3.connect(":memory:", isolation_level=None)
+    try:
+        mettre_a_niveau(conn)
+        avant = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        _apply_migrations(module, migrations, conn)
+        apres = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    finally:
+        conn.close()
+    return apres - avant
 
 
 def next_numero_facture(annee: int, prefix: str = "F") -> str:
