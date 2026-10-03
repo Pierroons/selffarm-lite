@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -19,6 +20,9 @@ TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 log = logging.getLogger("selffarm-webapp.backup")
+
+# Plafond d'un fichier envoyé à la restauration : il est lu en mémoire.
+_TAILLE_MAX_ARCHIVE = 200 * 1024 * 1024
 
 
 def _is_demo() -> bool:
@@ -288,15 +292,15 @@ async def backup_download():
 async def backup_restore(request: Request, archive: UploadFile = File(...), confirm_rollback: str = Form("")):
     _block_in_demo()
     from self_backup import restore_from_bytes
-    if not archive.filename.endswith(".zip"):
-        raise HTTPException(status_code=400, detail="Fichier attendu : .zip")
-    zip_bytes = await archive.read()
+    zip_bytes = await archive.read(_TAILLE_MAX_ARCHIVE + 1)
     if not zip_bytes:
         raise HTTPException(status_code=400, detail="Archive vide")
+    if len(zip_bytes) > _TAILLE_MAX_ARCHIVE:
+        raise HTTPException(status_code=413, detail="Fichier trop gros pour une archive de sauvegarde")
     try:
         result = restore_from_bytes(zip_bytes, confirm_rollback=(confirm_rollback == "on"))
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except (ValueError, zipfile.BadZipFile) as e:
+        raise HTTPException(status_code=400, detail=f"Archive illisible : {e}")
     except Exception as e:  # pragma: no cover
         log.exception("Restore failed")
         raise HTTPException(status_code=500, detail=f"Erreur restore : {e}")

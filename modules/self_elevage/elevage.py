@@ -42,7 +42,7 @@ import logging
 from datetime import date, timedelta
 from typing import Any
 
-from self_agri_book.storage import _conn, apply_module_migrations
+from self_agri_book.storage import _conn, apply_module_migrations, register_module_migrations
 
 log = logging.getLogger(__name__)
 
@@ -198,6 +198,7 @@ ELEVAGE_MIGRATIONS: list[tuple[int, str, str]] = [
             BEGIN UPDATE aliment_livraison SET updated_at = datetime('now') WHERE id = NEW.id; END;
     """),
 ]
+register_module_migrations("self_elevage", ELEVAGE_MIGRATIONS)
 
 
 def _ensure_schema() -> None:

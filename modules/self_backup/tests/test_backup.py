@@ -107,8 +107,7 @@ def test_restore_creates_backup_of_old_db(isolated_db, tmp_path):
 
 
 def test_restore_rejects_invalid_archive(isolated_db):
-    # Un blob non-ZIP lève BadZipFile (qu'on laisse remonter — la route HTTP
-    # le traduit en 500). On vérifie ici qu'aucune données n'est altérée.
+    # Un blob non-ZIP lève BadZipFile, que la route HTTP traduit en 400.
     import zipfile as _zipfile
     with pytest.raises((_zipfile.BadZipFile, ValueError)):
         restore_from_bytes(b"this is not a zip")

@@ -319,6 +319,9 @@ def restore_from_bytes(zip_bytes: bytes, confirm_rollback: bool = False) -> dict
         "nb_factures_restaurees": nb_factures_restaurees,
         "gen_base": result.get("gen_base"),
         "gen_backup": result.get("gen_backup"),
+        "importees": result.get("importees", {}),
+        "signalees": result.get("signalees", []),
+        "modules_inconnus": result.get("modules_inconnus", []),
     }
 
 
@@ -534,8 +537,9 @@ def restore_from_path(path: str, confirm_rollback: bool = False) -> dict:
 
 
 def restore_from_support(mount_path: str, name: str, confirm_rollback: bool = False) -> dict:
-    """Restaure un backup nommé depuis un support + récupère la clé de coffre déposée
-    à côté (vault.key) → re-synchroniser mobile/NAS après un crash PC."""
+    """Restaure un backup nommé depuis un support. Si la base était vierge (PC neuf),
+    récupère aussi la clé de coffre déposée à côté (vault.key) → re-synchroniser
+    mobile/NAS après un crash PC."""
     d = Path(mount_path) / EXTERNAL_SUBDIR
     # Garde-fou anti-traversée : nom de fichier simple uniquement.
     if Path(name).name != name:
@@ -548,7 +552,9 @@ def restore_from_support(mount_path: str, name: str, confirm_rollback: bool = Fa
         return result  # rétro non confirmé : rien appliqué, pas de récupération de clé
     result["vault_recovered"] = False
     keyfile = d / "vault.key"
-    if keyfile.exists():
+    # Seulement sur une base qui était vierge : ailleurs, la clé du PC est celle
+    # que ses téléphones appairés connaissent.
+    if keyfile.exists() and result.get("mode") == "fresh":
         try:
             from self_backup.vault import import_vault_key
             import_vault_key(keyfile.read_text())
