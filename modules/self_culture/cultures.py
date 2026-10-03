@@ -26,7 +26,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from self_agri_book.storage import _conn, apply_module_migrations
+from self_agri_book.storage import _conn, apply_module_migrations, register_module_migrations
 
 from self_culture.catalog import load_catalog
 from self_culture.models import ModeProduction
@@ -149,6 +149,7 @@ CULTURE_MIGRATIONS: list[tuple[int, str, str]] = [
             END;
     """),
 ]
+register_module_migrations("self_culture", CULTURE_MIGRATIONS)
 
 
 def _ensure_schema() -> None:

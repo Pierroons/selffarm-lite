@@ -22,7 +22,7 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from self_agri_book.storage import _conn, apply_module_migrations
+from self_agri_book.storage import _conn, apply_module_migrations, register_module_migrations
 
 from self_pa.imputation import Imputation
 from self_pa.models import CanalReception, FactureRecue
@@ -71,6 +71,7 @@ MIGRATIONS: list[tuple[int, str, str]] = [
             ON facture_recue(siren_emetteur);
     """),
 ]
+register_module_migrations(MODULE, MIGRATIONS)
 
 
 def _ensure_schema() -> None:
