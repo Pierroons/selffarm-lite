@@ -1,7 +1,7 @@
 {
   "depot": {
     "nom": "selffarm-lite",
-    "version": "0.4.6"
+    "version": "0.4.7"
   },
   "lisez_moi": "Généré par scripts/ecosysteme.py depuis modules.toml, VERSION et webapp/modules_catalog.py : ne pas l'éditer à la main. Les modules sortent avec le dépôt : leur version de sortie est depot.version. Les autres dépôts de l'écosystème lisent ce fichier au lieu de recopier nos modules.",
   "modules": [
