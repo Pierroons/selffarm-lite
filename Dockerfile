@@ -38,30 +38,15 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /build
+# Le verrou seul d'abord : cette couche ne se reconstruit que s'il change. Ce
+# sont les versions que la CI a testées, et celles que reçoit le serveur de prod.
+COPY requirements.txt ./
+RUN pip install --upgrade pip wheel setuptools && \
+    pip install -r requirements.txt
+
 COPY pyproject.toml VERSION README.md ./
 COPY modules/ ./modules/
-
-RUN pip install --upgrade pip wheel setuptools && \
-    pip install \
-        "fastapi>=0.110,<1.0" \
-        "starlette>=0.40,<1.0" \
-        "uvicorn[standard]>=0.27" \
-        "pydantic>=2.6" \
-        "pyyaml>=6.0" \
-        "jinja2>=3.1" \
-        "weasyprint>=62.0" \
-        "sqlalchemy>=2.0" \
-        "python-dateutil>=2.9" \
-        "python-multipart>=0.0.9" \
-        "pdfplumber>=0.11" \
-        "reportlab>=4.0" \
-        "drafthorse>=2.3" \
-        "itsdangerous>=2.1" \
-        "cryptography>=42" \
-        "segno>=1.6" \
-        "psutil>=5.9"
-
-RUN pip install --no-deps .
+RUN pip install --no-deps . && pip check
 
 # ============================================================================
 # STAGE 2 — Runtime : image légère sans toolchain de build

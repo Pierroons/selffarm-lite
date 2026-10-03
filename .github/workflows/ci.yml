@@ -34,9 +34,13 @@ jobs:
           sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0
 
       - name: Install Python deps
+        # Le verrou, comme l'image Docker et le serveur de prod : ce qui est
+        # testé ici est ce qui tourne là-bas.
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[facturx,pa,dev]"
+          pip install -r requirements-dev.txt
+          pip install --no-deps -e .
+          pip check
 
       - name: Lint (ruff)
         # webapp/ inclus depuis le 28/07/2026 : le périmètre était limité à
@@ -52,6 +56,53 @@ jobs:
         # n'étaient jamais exécutés, et 17 sur 18 échouaient en silence.
         # Ils couvrent notamment la génération du dossier DNJA en PDF.
         run: pytest modules/ webapp/ -v --cov=modules --cov=webapp --cov-report=term-missing
+
+  verrou:
+    name: Verrou à jour
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+      - name: Setup Python 3.13
+        # La version qui a généré le verrou (en-tête de requirements.txt).
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: '3.13'
+      - name: requirements*.txt suivent pyproject.toml
+        # Sans --upgrade, pip-compile garde chaque version figée qui satisfait
+        # encore pyproject.toml : un écart veut dire que l'un a bougé sans l'autre.
+        # L'en-tête (#…) est exclu : pip-compile n'y écrit pas les mêmes options
+        # selon qu'il part d'un verrou existant ou non.
+        shell: bash
+        run: |
+          pip install "pip-tools==$(sed -n 's/^pip-tools==//p' requirements-dev.txt)"
+          cp requirements.txt "$RUNNER_TEMP/r.txt"
+          cp requirements-dev.txt "$RUNNER_TEMP/rd.txt"
+          pip-compile --quiet --allow-unsafe --strip-extras --extra pa \
+            --output-file requirements.txt pyproject.toml
+          pip-compile --quiet --allow-unsafe --strip-extras --extra pa --extra dev \
+            -c requirements.txt --output-file requirements-dev.txt pyproject.toml
+          diff <(grep -v '^#' "$RUNNER_TEMP/r.txt") <(grep -v '^#' requirements.txt)
+          diff <(grep -v '^#' "$RUNNER_TEMP/rd.txt") <(grep -v '^#' requirements-dev.txt)
+
+  dernieres-versions:
+    name: Dernières versions
+    # Non exigé pour main : il annonce la rupture qu'apporterait la prochaine
+    # mise à jour du verrou, avant qu'elle n'y entre.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+      - name: Setup Python 3.13
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: '3.13'
+      - name: Install system deps for WeasyPrint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0
+      - name: Dernière version permise de chaque dépendance
+        run: pip install -e ".[pa,dev]"
+      - name: Run pytest
+        run: pytest modules/ webapp/ -q
 
   manifeste:
     name: Manifeste des modules

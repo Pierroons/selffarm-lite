@@ -149,8 +149,8 @@ python -m self_aid.cli search --bio --zone Dordogne
 | API | FastAPI + Starlette `>=1.3.1` |
 | Validation données | Pydantic v2 (+ `model_validator` pour équilibre D/C) |
 | BDD | SQLite local (1 fichier par utilisateur) |
-| Front | HTML + htmx (server-rendered, pas de SPA) + Tailwind CSS CDN |
-| PDF | WeasyPrint (HTML → PDF/A-3) + reportlab (prévis DNJA) |
+| Front | HTML + htmx (server-rendered, pas de SPA) + Tailwind CSS compilé en local |
+| PDF | WeasyPrint (HTML → PDF/A-3) |
 | Parser banque | pdfplumber (reconstruction depuis `extract_words()` X/Y) |
 | Factur-X | XML CII EN16931 + PDF/A-3 embedded |
 | Tests | pytest + pytest-cov |
