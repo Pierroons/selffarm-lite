@@ -782,13 +782,21 @@ async function syncBackup(manual) {
   try {
     const m = await fetch(base + '/api/pos/backup/manifest').then(r => r.json());
     if (!m.available) { if (manual) toast('Rien à sauvegarder côté PC', 'warn'); return; }
+    // Le PC a changé de clé depuis l'appairage : ce téléphone ne saurait pas
+    // rendre une sauvegarde chiffrée avec la nouvelle.
+    if (m.vault_key_id && vault.value.vault_key_id && m.vault_key_id !== vault.value.vault_key_id) {
+      toast('La clé du coffre du PC a changé : ré-appaire ce téléphone (Sauvegardes → Appairer un coffre mobile).', 'warn', 6000);
+      return;
+    }
     if (await dbGet('backups', m.sha256)) { if (manual) toast('Déjà à jour ✓', 'info'); return; }
     const resp = await fetch(base + '/api/pos/backup/download');
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const buf = await resp.arrayBuffer();
     const name = resp.headers.get('X-Backup-Name') || 'selffarm-backup.zip.vault';
     const sha = resp.headers.get('X-Backup-Sha') || m.sha256;
-    await dbPut('backups', {sha, name, date: new Date().toISOString(), size: buf.byteLength, blob: buf});
+    // Chaque sauvegarde garde sa clé : un ré-appairage ne la rend pas illisible.
+    await dbPut('backups', {sha, name, date: new Date().toISOString(), size: buf.byteLength, blob: buf,
+                            vault_key: vault.value.vault_key});
     const all = (await dbGetAll('backups')).sort((a, b) => a.date < b.date ? 1 : -1);
     for (const old of all.slice(30)) await dbDelete('backups', old.sha); // rétention 30
     toast('🔐 Sauvegarde déposée sur le coffre', 'info', 2500);
@@ -796,31 +804,24 @@ async function syncBackup(manual) {
   } catch (e) { if (manual) toast('Sauvegarde échouée : ' + e.message, 'error'); }
 }
 
-async function restorePush(sha) {
-  if (!confirm('Restaurer ce backup sur le PC connecté ? Les données actuelles du PC seront remplacées.')) return;
+// Le fichier porte la sauvegarde ET sa clé : le PC qui le reçoit n'a besoin de rien
+// d'autre, même neuf. Il vaut donc une sauvegarde en clair.
+async function exportBackup(sha) {
   const b = await dbGet('backups', sha);
   if (!b) { toast('Sauvegarde introuvable', 'error'); return; }
   const vault = await dbGet('settings', 'vault');
-  const base = app.pcUrl || location.origin;
-  const hdr = {
-    'Content-Type': 'application/octet-stream',
-    'X-Device-Id': (vault && vault.value && vault.value.device_id) || '',
-    'X-Vault-Key': (vault && vault.value && vault.value.vault_key) || '',
-    'X-Backup-Name': b.name
-  };
-  try {
-    let resp = await fetch(base + '/api/pos/backup/restore-push', {method: 'POST', headers: hdr, body: b.blob});
-    if (resp.status === 409) {
-      const info = await resp.json();
-      if (!confirm('Ce backup est plus ANCIEN que les données du PC (sauvegarde ' + info.gen_backup + ' < PC ' + info.gen_base + '). La compta du PC sera préservée, mais son état métier reculera. Confirmer ?')) {
-        toast('Restauration annulée', 'warn'); return;
-      }
-      hdr['X-Confirm-Rollback'] = '1';
-      resp = await fetch(base + '/api/pos/backup/restore-push', {method: 'POST', headers: hdr, body: b.blob});
-    }
-    if (!resp.ok) throw new Error('HTTP ' + resp.status + ' ' + (await resp.text()));
-    toast('✓ Backup restauré sur le PC', 'info', 3000);
-  } catch (e) { toast('Restauration échouée : ' + e.message, 'error', 4000); }
+  const cle = b.vault_key || (vault && vault.value && vault.value.vault_key);
+  if (!cle) { toast('Clé du coffre introuvable sur ce téléphone', 'error'); return; }
+  const fichier = {format: 'selffarm-coffre', version: 1, backup_name: b.name, vault_key: cle,
+                   token: new TextDecoder().decode(b.blob)};
+  // octet-stream : en application/json, Android ajouterait « .json » au nom.
+  const blob = new Blob([JSON.stringify(fichier)], {type: 'application/octet-stream'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = b.name.replace(/\.zip\.vault$/, '') + '.sfcoffre';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✓ Fichier exporté. Sur le PC : Sauvegarde → Restaurer, puis supprime-le de ce téléphone.', 'info', 6000);
 }
 
 async function renderCoffre() {
@@ -837,7 +838,9 @@ async function renderCoffre() {
   content.innerHTML = `
     <div class="card">
       <h2>🔐 Coffre de sauvegarde</h2>
-      <p>Ce téléphone garde <strong>${backups.length}</strong> sauvegarde(s) chiffrée(s) de ton SelfFarm. Illisibles sans le PC. Tu peux les rendre à un PC à tout moment.</p>
+      <p>Ce téléphone garde <strong>${backups.length}</strong> sauvegarde(s) chiffrée(s) de ton SelfFarm, avec la clé qui les ouvre.</p>
+      <p>Pour en rendre une à un PC, même neuf : <strong>Exporter</strong>, puis sur le PC <strong>Sauvegarde → Restaurer</strong> avec ce fichier. Ça marche même si le PC n'a plus la même adresse.</p>
+      <p style="color:var(--text-muted); font-size:12px;">⚠ Le fichier exporté contient la clé : garde-le hors du cloud du téléphone, et supprime-le une fois importé.</p>
       <button class="btn" data-action="sync-backup">⟳ Sauvegarder maintenant</button>
     </div>
     ${backups.length === 0 ? '<div class="card"><p style="color:var(--text-muted);">Aucune sauvegarde encore. Connecte-toi au PC puis touche « Sauvegarder maintenant ».</p></div>' : ''}
@@ -845,7 +848,7 @@ async function renderCoffre() {
       <div class="card" style="padding:12px 14px;">
         <div style="font-size:11.5px; font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(b.name)}</div>
         <div style="font-size:11px; color:var(--text-muted); margin-top:3px;">${new Date(b.date).toLocaleString('fr-FR')} · ${(b.size / 1024).toFixed(1)} Ko</div>
-        <button class="btn btn-ghost" style="margin-top:8px; font-size:12px;" data-action="restore-push" data-sha="${b.sha}">↑ Restaurer ce backup sur le PC connecté</button>
+        <button class="btn btn-ghost" style="margin-top:8px; font-size:12px;" data-action="export-backup" data-sha="${b.sha}">↓ Exporter ce fichier</button>
       </div>`).join('')}
   `;
 }
@@ -951,6 +954,10 @@ async function resetAll() {
 async function tryPairing() {
   const token = new URLSearchParams(location.search).get('pair');
   if (!token) return;
+  // Le service worker peut rouvrir la page sur son URL d'ouverture, jeton compris :
+  // un jeton déjà consommé ici ne se rejoue pas (le PC le refuserait).
+  const deja = await dbGet('settings', 'pair_token');
+  if (deja && deja.value === token) { history.replaceState(null, '', location.pathname); return; }
   try {
     const base = app.pcUrl || location.origin;
     const r = await fetch(base + '/api/pos/pair', {
@@ -960,8 +967,10 @@ async function tryPairing() {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const data = await r.json();
     await dbPut('settings', {key: 'vault', value: {
-      device_id: data.device_id, vault_key: data.vault_key, server_url: data.server_url
+      device_id: data.device_id, vault_key: data.vault_key, vault_key_id: data.vault_key_id,
+      server_url: data.server_url
     }});
+    await dbPut('settings', {key: 'pair_token', value: token});
     if (data.server_url) {
       app.pcUrl = data.server_url;
       await dbPut('settings', {key: 'pc_url', value: app.pcUrl});
@@ -1032,7 +1041,7 @@ SF.action('fin-marche-session', (el) => finMarcheSession(Number(el.dataset.id)))
 SF.action('export-session', (el) => exportSession(Number(el.dataset.id)));
 SF.action('export-fichier', (el) => exportFichierMarche(Number(el.dataset.id)));
 SF.action('sync-backup', () => syncBackup(true));
-SF.action('restore-push', (el) => restorePush(el.dataset.sha));
+SF.action('export-backup', (el) => exportBackup(el.dataset.sha));
 SF.action('save-pc-url', () => savePCUrl());
 SF.action('test-pc', () => checkPCConnection().then(() => toast('Test connexion lancé', 'info', 1500)));
 SF.action('catalog-import', (el) => handleCatalogImport(el));

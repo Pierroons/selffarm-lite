@@ -93,10 +93,10 @@
   <div class="card" style="padding: 18px;">
     <h2 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">♻️ Restaurer (réinjecter)</h2>
     <p style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 14px;">
-      <strong style="color: var(--text-primary);">Sens inverse :</strong> recharge un <code style="font-size: 11px;">.zip</code> de sauvegarde pour <strong style="color: #f4c47a;">remplacer tes données actuelles</strong> par celles de l'archive. L'ancienne base est gardée en <code style="font-size: 10.5px;">compta.db.bak-…</code> au cas où.
+      <strong style="color: var(--text-primary);">Sens inverse :</strong> recharge une sauvegarde : un <code style="font-size: 11px;">.zip</code>, ou le fichier <code style="font-size: 11px;">.sfcoffre</code> exporté par un téléphone appairé. Sur un PC neuf, elle <strong style="color: #f4c47a;">remplace tout</strong> ; sinon elle se fusionne avec tes données, sans jamais perdre une écriture ni une facture. Une copie de la base actuelle est gardée en <code style="font-size: 10.5px;">compta.db.prediff-…</code> avant toute modification.
     </p>
     <form action="/backup/restore" method="post" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 10px;">
-      <input type="file" name="archive" accept=".zip" required style="font-size: 12px; padding: 8px;">
+      <input type="file" name="archive" accept=".zip,.sfcoffre" required style="font-size: 12px; padding: 8px;">
       <label style="font-size:11px; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
         <input type="checkbox" name="confirm_rollback"> Autoriser un retour en arrière (si le backup est plus ancien — compta préservée)
       </label>
@@ -270,7 +270,7 @@
 <div class="card" style="margin-top: 14px; padding: 16px;">
   <h3 style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">📱 Coffre mobile</h3>
   <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px;">
-    Transforme un téléphone en support de sauvegarde : il reçoit des copies <strong>chiffrées</strong> (illisibles sans ce PC) et peut les rendre en cas de pépin. Aucune clé à gérer — tout passe par un scan de QR.
+    Transforme un téléphone en support de sauvegarde : il reçoit des copies <strong>chiffrées</strong>, et garde la clé qui les ouvre. En cas de pépin, il exporte un fichier que tu importes ici, dans ♻️ Restaurer, même sur un PC neuf. Aucune clé à gérer — tout passe par un scan de QR.
   </p>
   <a href="/pos/coffre/appairer" class="btn" style="display:inline-block; font-size:12.5px; padding:8px 14px; text-decoration:none;">Appairer un téléphone →</a>
 </div>

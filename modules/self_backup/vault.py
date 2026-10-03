@@ -13,10 +13,16 @@ Trois « ciphers » coexistent selon la destination :
 - ``none``  : DD externe (ZIP en clair) — filet de récup zéro-clé
 - ``vault`` : mobile + NAS produit (Fernet, clé auto)
 - ``gpg``   : NAS, option avancée (clé asymétrique de l'utilisateur)
+
+Le téléphone garde la clé à côté de ses sauvegardes, et les rend à un PC en
+exportant un fichier qui porte les deux (`ouvrir_fichier_coffre`) : ce fichier
+vaut une sauvegarde en clair.
 """
 from __future__ import annotations
 
 import contextlib
+import hashlib
+import json
 import logging
 import os
 import tempfile
@@ -76,6 +82,39 @@ def get_or_create_vault_key() -> bytes:
 def vault_key_b64() -> str:
     """Clé de coffre en texte (à transmettre au support de confiance / déposer sur le DD)."""
     return get_or_create_vault_key().decode("ascii")
+
+
+def vault_key_id(key: bytes | None = None) -> str:
+    """Empreinte courte de la clé de coffre : le téléphone la compare à celle reçue
+    à l'appairage pour savoir si la clé du PC a changé depuis."""
+    return hashlib.sha256(key or get_or_create_vault_key()).hexdigest()[:16]
+
+
+# Fichier qu'exporte le coffre d'un téléphone : une sauvegarde chiffrée ET sa clé.
+FORMAT_COFFRE = "selffarm-coffre"
+
+
+def ouvrir_fichier_coffre(data: bytes) -> tuple[bytes, str]:
+    """Archive et clé d'un fichier exporté par le coffre d'un téléphone (.sfcoffre).
+
+    Lève ValueError si le fichier n'en est pas un, ou si sa clé ne déchiffre pas
+    sa sauvegarde. N'utilise pas la clé du PC : un PC neuf n'en a pas encore.
+    """
+    from cryptography.fernet import Fernet, InvalidToken
+
+    try:
+        doc = json.loads(data.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as e:
+        raise ValueError("fichier de coffre illisible") from e
+    if not isinstance(doc, dict) or doc.get("format") != FORMAT_COFFRE or doc.get("version") != 1:
+        raise ValueError("ce n'est pas un fichier exporté par le coffre d'un téléphone")
+    cle, jeton = doc.get("vault_key"), doc.get("token")
+    if not isinstance(cle, str) or not isinstance(jeton, str):
+        raise ValueError("fichier de coffre incomplet")  # noqa: TRY004 — contenu de fichier, l'appelant attend ValueError
+    try:
+        return Fernet(cle.encode("ascii")).decrypt(jeton.encode("ascii")), cle
+    except (ValueError, InvalidToken) as e:
+        raise ValueError("sa clé ne déchiffre pas la sauvegarde qu'il contient") from e
 
 
 def import_vault_key(key_b64) -> None:
