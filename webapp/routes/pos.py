@@ -724,7 +724,7 @@ async def api_pos_qr_code(url: str | None = None):
 @router.post("/api/pos/pair")
 async def api_pos_pair(request: Request):
     """Appairage du coffre : le tel présente le jeton du QR, reçoit la clé de coffre."""
-    from self_backup.vault import vault_key_b64
+    from self_backup.vault import vault_key_b64, vault_key_id
     from self_pos.devices import consume_pair_token, register_device
     try:
         body = await request.json()
@@ -736,6 +736,7 @@ async def api_pos_pair(request: Request):
     return JSONResponse({
         "device_id": device_id,
         "vault_key": vault_key_b64(),
+        "vault_key_id": vault_key_id(),
         "server_url": str(request.base_url).rstrip("/"),
     }, headers={"Access-Control-Allow-Origin": "*"})
 
@@ -765,14 +766,17 @@ _POS_BACKUP_CORS = {
 
 @router.get("/api/pos/backup/manifest")
 async def api_pos_backup_manifest():
-    """Empreinte du backup courant — le tel compare pour savoir s'il doit re-télécharger."""
+    """Empreinte du backup courant — le tel compare pour savoir s'il doit re-télécharger,
+    et l'empreinte de la clé qui le chiffrera, pour savoir s'il saura le rendre."""
     from self_backup import _db_path, _file_sha256
+    from self_backup.vault import vault_key_id
     db = _db_path()
     if not db.exists():
         return JSONResponse({"available": False}, headers=_POS_BACKUP_CORS)
     return JSONResponse({
         "available": True,
         "sha256": _file_sha256(db),
+        "vault_key_id": vault_key_id(),
         "db_size": db.stat().st_size,
         "generated_at": datetime.now(UTC).isoformat(),
     }, headers=_POS_BACKUP_CORS)
@@ -794,51 +798,6 @@ async def api_pos_backup_download():
         **_POS_BACKUP_CORS, "X-Backup-Name": name, "X-Backup-Sha": sha,
         "Content-Disposition": f'attachment; filename="{name}"',
     })
-
-
-@router.post("/api/pos/backup/restore-push")
-async def api_pos_backup_restore_push(request: Request):
-    """Le tel renvoie un backup chiffré (vault) → le PC déchiffre + restaure.
-
-    Une installation qui a des données ne déchiffre qu'avec SA clé de coffre.
-    Seul un PC vierge (onboarding pas fait) accepte la clé que le tel pousse
-    (X-Vault-Key) : c'est le scénario du PC neuf, et il n'y a rien à y écraser.
-    Fermée en démo publique."""
-    if os.environ.get("SELFFARM_ENV", "prod") == "demo":
-        raise HTTPException(status_code=404)
-    from cryptography.fernet import Fernet, InvalidToken
-    from self_agri_book.exploitation import is_onboarding_done
-    from self_backup import restore_from_bytes
-    from self_backup.vault import decrypt, import_vault_key
-    from self_pos.devices import touch_device
-    blob = await request.body()
-    if not blob:
-        raise HTTPException(status_code=400, detail="Corps vide")
-    pushed_key = request.headers.get("X-Vault-Key", "")
-    try:
-        if pushed_key and not is_onboarding_done():
-            zip_bytes = Fernet(pushed_key.strip().encode("ascii")).decrypt(blob)
-            import_vault_key(pushed_key)
-        else:
-            zip_bytes = decrypt(blob)
-    except (ValueError, InvalidToken):
-        raise HTTPException(status_code=400,
-                            detail="Déchiffrement impossible : ce n'est pas la clé de coffre de ce PC")
-    device_id = request.headers.get("X-Device-Id", "")
-    if device_id:
-        touch_device(device_id)
-    confirm = request.headers.get("X-Confirm-Rollback", "") == "1"
-    try:
-        result = restore_from_bytes(zip_bytes, confirm_rollback=confirm)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    if result.get("needs_confirmation"):
-        return JSONResponse({"restored": False, "needs_confirmation": True,
-                             "gen_base": result.get("gen_base"), "gen_backup": result.get("gen_backup")},
-                            status_code=409, headers=_POS_BACKUP_CORS)
-    return JSONResponse({"restored": True,
-                         "nb_factures": result.get("nb_factures_restaurees", 0)},
-                        headers=_POS_BACKUP_CORS)
 
 
 @router.post("/pos/sessions/{session_id}/chargement")

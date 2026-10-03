@@ -204,7 +204,8 @@ async def require_onboarding(request: Request, call_next):
     path = request.url.path
     # Routes exemptes : onboarding lui-même, assets, swagger, healthz, et la
     # SAUVEGARDE (/backup) — un PC neuf doit pouvoir RESTAURER avant l'onboarding
-    # (scénario catastrophe : DD branché sur une install fraîche).
+    # (scénario catastrophe : DD externe, ou fichier exporté par le téléphone,
+    # sur une install fraîche).
     EXEMPT_PREFIXES = ("/onboarding", "/static", "/docs", "/openapi.json", "/healthz", "/favicon", "/backup")
     if ENV_NAME == "demo" or any(path.startswith(p) for p in EXEMPT_PREFIXES):
         return await call_next(request)

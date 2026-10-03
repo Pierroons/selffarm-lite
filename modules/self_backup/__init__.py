@@ -550,11 +550,13 @@ def restore_from_support(mount_path: str, name: str, confirm_rollback: bool = Fa
     result = restore_from_path(str(target), confirm_rollback=confirm_rollback)
     if result.get("needs_confirmation"):
         return result  # rétro non confirmé : rien appliqué, pas de récupération de clé
+    # Seulement sur une base qui était vierge : ailleurs, la clé du PC est celle
+    # que ses téléphones appairés connaissent, et `vault_recovered` reste absent.
+    if result.get("mode") != "fresh":
+        return result
     result["vault_recovered"] = False
     keyfile = d / "vault.key"
-    # Seulement sur une base qui était vierge : ailleurs, la clé du PC est celle
-    # que ses téléphones appairés connaissent.
-    if keyfile.exists() and result.get("mode") == "fresh":
+    if keyfile.exists():
         try:
             from self_backup.vault import import_vault_key
             import_vault_key(keyfile.read_text())

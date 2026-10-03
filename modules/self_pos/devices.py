@@ -2,8 +2,9 @@
 
 Modèle (Partie D du plan backup) : à l'appairage (scan d'un QR portant un jeton
 one-time), le PC confie au tel la clé de coffre + un identifiant d'appareil. Le tel
-devient un « support de confiance » : il reçoit des backups chiffrés et peut les
-rendre à un PC (neuf ou non) pour restauration. Zéro clé à gérer pour l'utilisateur.
+devient un « support de confiance » : il reçoit des backups chiffrés et, pour les
+rendre à un PC (neuf ou non), les exporte en un fichier que le PC importe par
+/backup/restore. Zéro clé à gérer pour l'utilisateur.
 
 - Jetons d'appairage : one-time, en mémoire, TTL court (anti-rejeu).
 - Registre des appareils appairés : persisté (`pos_devices.json` dans le data dir).

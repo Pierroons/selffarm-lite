@@ -40,6 +40,11 @@
       {% if result.mode == "fresh" %}base vierge, entièrement remplacée par l'archive
       {% else %}fusion avec les données présentes{% endif %}
     </div>
+    {% if result.vault_recovered %}
+    <div><span style="color: var(--text-muted);">Clé du coffre :</span> reprise de l'ancien PC — tes téléphones appairés continuent de fonctionner</div>
+    {% elif result.vault_recovered is sameas false %}
+    <div><span style="color: var(--text-muted);">Clé du coffre :</span> non reprise — ré-appaire tes téléphones depuis la page Sauvegarde</div>
+    {% endif %}
     {% for module, tables in result.importees.items() %}
     <div><span style="color: var(--text-muted);">Importé de l'archive ({{ module }}) :</span>
       {% for t, n in tables.items() %}{{ t }} ({{ n }}){% if not loop.last %}, {% endif %}{% endfor %}

@@ -5,7 +5,7 @@
  * Toutes les données métier sont en IndexedDB côté client, ne nécessitent aucun serveur.
  */
 
-const CACHE_NAME = 'selfpos-mobile-v0.4.5';
+const CACHE_NAME = 'selfpos-mobile-v0.4.9';
 const SHELL_URLS = [
   '/pos/mobile',
   '/static/pos/mobile.js',
@@ -29,12 +29,15 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys().then((keys) => {
+      const anciens = keys.filter((k) => k !== CACHE_NAME);
+      return Promise.all(anciens.map((k) => caches.delete(k))).then(() => anciens.length > 0);
+    }).then((miseAJour) => self.clients.claim().then(() => miseAJour))
      // Reload silencieux des onglets ouverts → la nouvelle version s'applique
-     // sans hard-clean (garde-fou PWA #3).
-     .then(() => self.clients.matchAll({ type: 'window' }))
+     // sans hard-clean (garde-fou PWA #3). Après une mise à jour seulement : au
+     // premier enregistrement la page est déjà à jour, et c.url est l'URL
+     // d'ouverture de l'onglet, jeton d'appairage compris.
+     .then((miseAJour) => (miseAJour ? self.clients.matchAll({ type: 'window' }) : []))
      .then((clients) => clients.forEach((c) => { try { c.navigate(c.url); } catch (e) {} }))
   );
 });

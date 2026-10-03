@@ -195,7 +195,7 @@ def test_le_disque_externe_ne_remplace_pas_la_cle_d_un_pc_appaire(base, tmp_path
     cle_du_pc = get_or_create_vault_key()
     r = restore_from_support(disque, "sauvegarde.zip")
 
-    assert r["vault_recovered"] is False
+    assert "vault_recovered" not in r
     assert get_or_create_vault_key() == cle_du_pc != cle_du_disque
 
 

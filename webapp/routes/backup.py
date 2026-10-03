@@ -292,11 +292,21 @@ async def backup_download():
 async def backup_restore(request: Request, archive: UploadFile = File(...), confirm_rollback: str = Form("")):
     _block_in_demo()
     from self_backup import restore_from_bytes
-    zip_bytes = await archive.read(_TAILLE_MAX_ARCHIVE + 1)
-    if not zip_bytes:
+    from self_backup.vault import import_vault_key, ouvrir_fichier_coffre
+    contenu = await archive.read(_TAILLE_MAX_ARCHIVE + 1)
+    if not contenu:
         raise HTTPException(status_code=400, detail="Archive vide")
-    if len(zip_bytes) > _TAILLE_MAX_ARCHIVE:
+    if len(contenu) > _TAILLE_MAX_ARCHIVE:
         raise HTTPException(status_code=413, detail="Fichier trop gros pour une archive de sauvegarde")
+    # Une archive ZIP, ou le fichier qu'exporte le coffre d'un téléphone (JSON).
+    cle_du_telephone = None
+    if contenu.lstrip()[:1] == b"{":
+        try:
+            zip_bytes, cle_du_telephone = ouvrir_fichier_coffre(contenu)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=f"Fichier du téléphone illisible : {e}")
+    else:
+        zip_bytes = contenu
     try:
         result = restore_from_bytes(zip_bytes, confirm_rollback=(confirm_rollback == "on"))
     except (ValueError, zipfile.BadZipFile) as e:
@@ -312,6 +322,15 @@ async def backup_restore(request: Request, archive: UploadFile = File(...), conf
             f"mais l'état métier reculerait. Pour confirmer : coche « Autoriser le retour en arrière » "
             f"et re-soumets le fichier."
         ))
+    # Sur un PC neuf, la clé du téléphone devient celle du PC : ses téléphones
+    # appairés à l'ancien PC continuent de déposer et de rendre leurs sauvegardes.
+    if cle_du_telephone and result.get("mode") == "fresh":
+        try:
+            import_vault_key(cle_du_telephone)
+            result["vault_recovered"] = True
+        except (ValueError, OSError) as e:
+            log.warning("Clé du coffre du téléphone non reprise : %s", e)
+            result["vault_recovered"] = False
     return templates.TemplateResponse(
         request, "backup/restore_ok.html",
         {
