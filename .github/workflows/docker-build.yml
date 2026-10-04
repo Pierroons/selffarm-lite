@@ -101,7 +101,7 @@ jobs:
           IMAGE="${{ env.REGISTRY }}/${IMAGE_NAME_LC}:sha-$(echo ${{ github.sha }} | cut -c1-7)"
           echo "Testing $IMAGE"
           docker pull "$IMAGE"
-          docker run -d --name selffarm-smoke -p 8001:8001 "$IMAGE"
+          docker run -d --name selffarm-smoke -p 127.0.0.1:8001:8001 "$IMAGE"
           sleep 8
           curl -fsS http://localhost:8001/healthz || (docker logs selffarm-smoke; exit 1)
           curl -fsS http://localhost:8001/ -o /dev/null -w "HTTP %{http_code}\n"

@@ -4,7 +4,7 @@
 #   docker build -t selffarm-lite:latest .
 #
 # Run webapp (par défaut) :
-#   docker run --rm -p 8001:8001 -v selffarm-data:/app/data ghcr.io/pierroons/selffarm-lite:latest
+#   docker run --rm -p 127.0.0.1:8001:8001 -v selffarm-data:/app/data ghcr.io/pierroons/selffarm-lite:latest
 #   → http://localhost:8001
 #
 # Run CLI ponctuel (override entrypoint) :
