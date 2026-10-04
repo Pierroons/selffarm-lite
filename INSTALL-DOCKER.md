@@ -162,17 +162,26 @@ docker compose down -v
 ## 6. Aller plus loin
 
 ### Exposer sur le LAN
+Par défaut, SelfFarm ne répond qu'au PC qui le fait tourner. L'ouvrir au réseau local est un choix à faire
+toi-même, en connaissant ses limites :
+
+> ⚠️ **SelfFarm n'a pas encore de mot de passe.** Une fois ouvert, n'importe quel appareil du même réseau lit et
+> modifie ta compta. Ouvre-le seulement sur le réseau de ta maison, jamais sur un wifi partagé (marché,
+> coopérative, gîte, café). Sous Linux, ne compte pas sur le pare-feu (ufw) pour le refermer : Docker publie le
+> port avant lui.
+
 Édite `docker-compose.yml`, change la ligne :
 ```yaml
     ports:
-      - "8001:8001"
+      - "127.0.0.1:8001:8001"
 ```
 en :
 ```yaml
     ports:
       - "0.0.0.0:8001:8001"
 ```
-Puis depuis un autre poste : `http://IP-DU-PC-HOTE:8001`.
+Puis `docker compose up -d`, et depuis un autre poste : `http://IP-DU-PC-HOTE:8001`.
+Pour refermer, remets `127.0.0.1` et relance `docker compose up -d`.
 
 ### Fournir ta propre clé de session
 Sans rien configurer, SelfFarm tire sa clé au premier démarrage et la garde dans le volume. Pour la fournir toi-même, ajoute sous `environment:` :
