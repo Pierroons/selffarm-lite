@@ -41,7 +41,9 @@ dependencies = [
     # relevées par Trivy sur le venv de prod le 23/09/2026.
     "anyio>=4.14.2",
     "uvicorn[standard]>=0.27",
-    "python-multipart>=0.0.9",
+    # Plancher posé pour CVE-2026-53537, -53538, -53539 (corrigées en 0.0.30) et
+    # CVE-2026-53540 (0.0.31), la plus récente que liste OSV le 04/10/2026.
+    "python-multipart>=0.0.31",
     "itsdangerous>=2.1",
     "cryptography>=42",
     # Lecture des relevés bancaires en PDF (self_banking).
