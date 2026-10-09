@@ -129,7 +129,7 @@ webencodings==0.6.1
     #   cssselect2
     #   tinycss2
     #   tinyhtml5
-websockets==17.1
+websockets==17.2
     # via uvicorn
 zopfli==0.4.3
     # via fonttools
