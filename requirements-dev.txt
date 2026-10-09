@@ -19,7 +19,7 @@ anyio==4.15.1
     #   selffarm-lite (pyproject.toml)
     #   starlette
     #   watchfiles
-ast-serialize==0.12.0
+ast-serialize==0.12.1
     # via mypy
 brotli==1.2.0
     # via
