@@ -108,7 +108,7 @@ mypy==2.4.0
     # via selffarm-lite (pyproject.toml)
 mypy-extensions==1.1.0
     # via mypy
-opentelemetry-api==1.45.0
+opentelemetry-api==1.45.1
     # via
     #   -c requirements.txt
     #   fastapi
