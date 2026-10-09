@@ -162,7 +162,7 @@ pydyf==0.12.1
     #   weasyprint
 pygments==2.21.0
     # via pytest
-pypdfium2==5.13.0
+pypdfium2==5.14.0
     # via
     #   -c requirements.txt
     #   pdfplumber

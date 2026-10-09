@@ -80,7 +80,7 @@ pydantic-core==2.46.5
     # via pydantic
 pydyf==0.12.1
     # via weasyprint
-pypdfium2==5.13.0
+pypdfium2==5.14.0
     # via pdfplumber
 pyphen==0.18.1
     # via weasyprint
