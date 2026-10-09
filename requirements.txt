@@ -58,7 +58,7 @@ jinja2==3.1.6
     # via selffarm-lite (pyproject.toml)
 markupsafe==3.0.4
     # via jinja2
-opentelemetry-api==1.45.0
+opentelemetry-api==1.45.1
     # via fastapi
 pdfminer-six==20260107
     # via pdfplumber
