@@ -1,9 +1,14 @@
 # Suivi — ce qui peut devenir faux sans qu'on pousse ici.
 #
 # 🔑 **Pourquoi ce workflow existe.** Notre README cite les modules de my-self, et ce qu'il en dit
-# vient de leur modules.json. Quand my-self publie une version, notre bloc retarde sans qu'aucun envoi
-# ne touche ce dépôt : un contrôle qui ne tourne qu'à nos propres envois ne le verrait jamais. Au
-# 27/09/2026, ce README décrivait encore les modules de my-self tels qu'en juin.
+# vient de leur modules.json. Quand un module y apparaît, disparaît ou change de résumé, notre bloc
+# retarde sans qu'aucun envoi ne touche ce dépôt : un contrôle qui ne tourne qu'à nos propres envois
+# ne le verrait jamais. Au 27/09/2026, ce README décrivait encore les modules de my-self tels qu'en
+# juin.
+#
+# Le bloc ne porte pas leurs numéros de version, retirés le 11/10/2026 : une version recopiée dans un
+# dépôt qui ne la produit pas fait rougir ce job à chaque publication chez eux, six fois en sept jours
+# en octobre. Le lecteur qui veut un numéro suit le lien vers leur manifeste.
 #
 # Il n'est pas exigé par la protection de `main` : son rouge vient de l'autre dépôt, il signale sans
 # bloquer nos envois. `python3 scripts/ecosysteme.py ecosysteme --ecrire` remet le bloc à jour.
