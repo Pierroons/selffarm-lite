@@ -146,8 +146,9 @@ def liste_ecosysteme(racine: Path, url: str) -> tuple[str, list[str]]:
             erreurs.append(f"« {ident} » n'est plus publié par my-self")
             continue
         m = publies[ident]
-        version = f" {m['version']}" if m.get("version") else ""
-        lignes.append(f"- **{m['nom']}**{version} — {m['resume']['fr']}")
+        # Le nom et le résumé, pas la version : celle-ci vit dans le modules.json de my-self, qui en
+        # est la source. Recopiée ici, elle fait rougir ce contrôle à chaque publication là-bas.
+        lignes.append(f"- **{m['nom']}** — {m['resume']['fr']}")
     return "\n".join(lignes), erreurs
 
 
