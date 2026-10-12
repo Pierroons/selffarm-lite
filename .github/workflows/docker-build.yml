@@ -25,7 +25,7 @@ env:
 jobs:
   build-and-push:
     name: Build multi-arch & push GHCR
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
@@ -91,7 +91,7 @@ jobs:
 
   smoke-test:
     name: Smoke test (amd64)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: build-and-push
     if: github.event_name != 'pull_request'
     steps:
