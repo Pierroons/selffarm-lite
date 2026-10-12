@@ -1,5 +1,6 @@
 """
-scripts/ecosysteme.py — le contrôle rougit-il sur les dérives qu'il prétend attraper ?
+scripts/ecosysteme.py — le contrôle rougit-il sur les dérives qu'il prétend attraper,
+et reste-t-il vert sur ce qui ne nous concerne pas ?
 
 Chaque test travaille sur une copie réduite du dépôt (déclarations, catalogue, README, et un
 `__init__.py` vide par paquet) : planter un défaut ne touche jamais l'arbre réel. Le manifeste de
@@ -100,8 +101,14 @@ def test_ecosysteme_a_jour_vert(depot, myself):
     assert eco.main(["ecosysteme"], racine=depot) == 0
 
 
-def test_version_publiee_par_myself_rougit(depot, myself):
+def test_version_publiee_par_myself_reste_verte(depot, myself):
+    """Le bloc ne porte pas les versions : leur montée ne nous concerne plus (11/10/2026)."""
     _modifier(myself, lambda modules: modules[0].update(version="1.0.1"))
+    assert eco.main(["ecosysteme"], racine=depot) == 0
+
+
+def test_resume_change_par_myself_rougit(depot, myself):
+    _modifier(myself, lambda modules: modules[0].update(resume={"fr": "résumé réécrit", "en": "x"}))
     assert eco.main(["ecosysteme"], racine=depot) == 1
 
 
