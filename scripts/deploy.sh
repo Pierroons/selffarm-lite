@@ -86,6 +86,9 @@ ssh -t "$REMOTE" "
   # recoit le verrou, les versions que la CI a testees et que l'image embarque.
   sudo -u www-data '$PROD/.venv/bin/pip' install --quiet --no-cache-dir -r '$PROD/requirements.txt'
   sudo -u www-data '$PROD/.venv/bin/pip' install --quiet --no-cache-dir --no-deps -e '$PROD'
+  # pip install -r ne retire rien : ce qui sort du verrou y resterait. Le script
+  # le desinstalle, puis refuse un venv qui differe du verrou, avant le restart.
+  sudo -u www-data '$PROD/.venv/bin/python' '$PROD/scripts/venv_suit_verrou.py' '$PROD/requirements.txt'
   sudo -u www-data '$PROD/.venv/bin/pip' check
   sudo systemctl restart '$SERVICE'
   sudo '$IMMUT' lock
