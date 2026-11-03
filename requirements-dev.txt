@@ -21,17 +21,19 @@ anyio==4.15.1
     #   watchfiles
 ast-serialize==0.12.0
     # via mypy
-brotli==1.2.0
+brotli==1.2.1
     # via
     #   -c requirements.txt
     #   fonttools
+    #   selffarm-lite (pyproject.toml)
 build==1.6.1
     # via pip-tools
-certifi==2026.7.22
+certifi==2026.10.23
     # via
     #   -c requirements.txt
     #   httpcore
     #   httpx
+    #   selffarm-lite (pyproject.toml)
 cffi==2.1.1
     # via
     #   -c requirements.txt
@@ -108,10 +110,11 @@ mypy==2.4.0
     # via selffarm-lite (pyproject.toml)
 mypy-extensions==1.1.0
     # via mypy
-opentelemetry-api==1.45.0
+opentelemetry-api==1.45.2
     # via
     #   -c requirements.txt
     #   fastapi
+    #   selffarm-lite (pyproject.toml)
 packaging==26.3
     # via
     #   build
@@ -127,11 +130,12 @@ pdfplumber==0.11.10
     # via
     #   -c requirements.txt
     #   selffarm-lite (pyproject.toml)
-pillow==12.3.0
+pillow==13.0.0
     # via
     #   -c requirements.txt
     #   pdfplumber
     #   reportlab
+    #   selffarm-lite (pyproject.toml)
     #   weasyprint
 pip-tools==7.6.1
     # via selffarm-lite (pyproject.toml)
