@@ -77,8 +77,10 @@ pa = ["httpx>=0.27", "certifi>=2026.10.18"]
 # 4.0.0 (OSV le 04/11/2026), la version suivante est la 5.0.0.
 sftp = ["paramiko>=5.0.0"]
 # reportlab ne sert qu'à scripts/generate_sg_fake_statement.py.
+# setuptools arrive par pip-tools : plancher pour GHSA-xmj3-9gf7-h52w (faible,
+# Windows ; OSV et Dependabot le 04/11/2026), corrigée en 84.1.0.
 dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.4", "mypy>=1.10", "httpx>=0.27",
-       "pip-tools>=7.4", "reportlab>=4.0"]
+       "pip-tools>=7.4", "reportlab>=4.0", "setuptools>=84.1.0"]
 
 [project.scripts]
 self-dnja = "self_dnja.cli:main"
