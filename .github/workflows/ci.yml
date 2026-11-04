@@ -84,6 +84,49 @@ jobs:
           diff <(grep -v '^#' "$RUNNER_TEMP/r.txt") <(grep -v '^#' requirements.txt)
           diff <(grep -v '^#' "$RUNNER_TEMP/rd.txt") <(grep -v '^#' requirements-dev.txt)
 
+  venv-prod:
+    name: Venv de prod
+    # Le job test installe requirements-dev.txt : 20 paquets de plus que le venv
+    # de prod, que deploy.sh ramène au seul requirements.txt. Ici, les gestes de
+    # son étape 4 dans un venv neuf, puis l'application démarrée dessus.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+      - name: Setup Python 3.13
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: '3.13'
+      - name: Install system deps for WeasyPrint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0
+      - name: Les gestes de l'étape 4 de deploy.sh
+        run: |
+          python -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet -r requirements.txt
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet --no-deps -e .
+          "$RUNNER_TEMP/venv/bin/python" scripts/venv_suit_verrou.py requirements.txt
+          "$RUNNER_TEMP/venv/bin/pip" check
+      - name: L'application sert ses pages et un PDF
+        env:
+          SELFFARM_ENV: demo
+          SELFFARM_DATA_DIR: ${{ runner.temp }}/data
+        shell: bash
+        run: |
+          "$RUNNER_TEMP/venv/bin/python" -c 'from self_agri_book.exploitation import save_exploitation, mark_onboarding_done
+          save_exploitation({"nom": "Ferme de test", "statut": "JA", "commune": "Sainte-Foy", "saison_courante": 2026})
+          mark_onboarding_done()'
+          "$RUNNER_TEMP/venv/bin/uvicorn" webapp.main:app --host 127.0.0.1 --port 8001 &
+          for _ in $(seq 30); do curl -fsS http://127.0.0.1:8001/healthz && break; sleep 1; done
+          echo
+          for page in / /compta; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:8001$page")
+            echo "$page : HTTP $code"; [ "$code" = 200 ]
+          done
+          type=$(curl -fsS -o "$RUNNER_TEMP/dnja.pdf" -w '%{content_type}' \
+            "http://127.0.0.1:8001/dnja/pdf?example=hypotheses-demo-publique")
+          echo "PDF DNJA : $type, $(stat -c %s "$RUNNER_TEMP/dnja.pdf") octets"; [ "$type" = application/pdf ]
+
   dernieres-versions:
     name: Dernières versions
     # Non exigé pour main : il annonce la rupture qu'apporterait la prochaine
