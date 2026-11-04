@@ -173,8 +173,10 @@ def main(argv: list[str] | None = None) -> int:
     if not args.verifier:
         retirer = en_trop(verrou, venv.versions, venv.editables | {projet})
         for nom in retirer:
-            subprocess.run([sys.executable, "-m", "pip", "uninstall", "--yes", "--quiet", nom],
-                           check=False)
+            # Le nom vient des métadonnées du venv : `--` l'empêche d'être lu
+            # comme une option de pip (`-r<fichier>`).
+            subprocess.run([sys.executable, "-m", "pip", "uninstall", "--yes", "--quiet",
+                            "--", nom], check=False)
         venv = inventaire()
         partis = [nom for nom in retirer if nom not in venv.versions]
         if partis:

@@ -67,7 +67,7 @@ def test_ecarts_nomme_chaque_difference():
 # --- De bout en bout, dans un vrai venv -------------------------------------
 
 PROJET = "projet-local"
-FACTICES = ("attendu", "en-trop", "a-sans-record", PROJET, "autre-editable")
+FACTICES = ("attendu", "en-trop", "a-sans-record", PROJET, "autre-editable", "-rcible.txt")
 SOURCES_PTH = "zz_sources_du_projet.pth"
 EDITABLE = {"direct_url.json": '{"url": "file:///opt/projet", "dir_info": {"editable": true}}'}
 
@@ -128,8 +128,9 @@ def _verrou(dossier: Path, texte: str) -> Path:
 
 
 def _lancer(python: Path, verrou: Path, *options: str) -> subprocess.CompletedProcess:
+    """Lancé depuis le dossier du verrou : pip y lirait un `-r<fichier>` relatif."""
     return subprocess.run([str(python), str(SCRIPT), str(verrou), *options],
-                          capture_output=True, text=True, check=False)
+                          capture_output=True, text=True, check=False, cwd=verrou.parent)
 
 
 def _version_de_pip(python: Path) -> str:
@@ -226,6 +227,22 @@ def test_le_residu_d_une_desinstallation_interrompue_est_signale_sans_bloquer(si
     assert r.returncode == 0, r.stderr
     assert "Résidu d'une désinstallation interrompue" in r.stderr
     assert "~en_trop-1.0.dist-info" in r.stderr
+
+
+def test_un_nom_qui_ressemble_a_une_option_n_est_pas_lu_par_pip(site, tmp_path):
+    """Sans `--`, pip lirait `-rcible-txt` comme « désinstalle ce que liste
+    cible-txt », et retirerait un paquet du verrou."""
+    python, purelib = site
+    attendu = _poser(purelib, "attendu", "2.0")
+    _poser(purelib, "-rcible.txt", "1.0")
+    verrou = _verrou(tmp_path, "attendu==2.0\n")
+    (tmp_path / "cible-txt").write_text("attendu\n")
+
+    r = _lancer(python, verrou)
+
+    assert attendu.exists()
+    assert r.returncode == 1
+    assert "hors verrou : -rcible-txt==1.0" in r.stderr
 
 
 def test_un_autre_projet_editable_reste(site, tmp_path):
