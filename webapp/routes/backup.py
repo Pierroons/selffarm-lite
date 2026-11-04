@@ -62,6 +62,7 @@ _DEMO_CONTEXT = {
     "last_snapshot_age_h": 6,
     "cron_schedule": None,
     "sftp_config": {},
+    "sftp_disponible": False,
 }
 
 
@@ -83,7 +84,7 @@ async def backup_index(request: Request):
         list_external_mounts,
         load_ext_config,
     )
-    from self_backup.remote import load_sftp_config
+    from self_backup.remote import load_sftp_config, sftp_disponible
     db_path = _db_path()
     stats = _stats_db(db_path)
     db_exists = db_path.exists()
@@ -103,6 +104,7 @@ async def backup_index(request: Request):
             "last_snapshot_age_h": _last_snapshot_age_hours(),
             "cron_schedule": get_cron_schedule(),
             "sftp_config": load_sftp_config(),
+            "sftp_disponible": sftp_disponible(),
         },
     )
 

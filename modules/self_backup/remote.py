@@ -8,9 +8,14 @@ Principe (souverain / zero-knowledge) :
 Auth SSH par clé uniquement (jamais de mot de passe en config).
 Calqué sur le connecteur disque externe (backup_to_external) — même rétention,
 même mémoire de config JSON (backup_sftp.json à côté de la DB).
+
+Option à installer : paramiko vient avec l'extra `sftp`, absent du verrou de prod
+et de l'image Docker. Limite : la clé du serveur est acceptée sans vérification à
+la première connexion (`AutoAddPolicy`).
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import logging
 import os
@@ -23,6 +28,15 @@ from self_backup import _db_path, make_backup
 log = logging.getLogger("self_backup.remote")
 
 REMOTE_SUFFIX = ".gpg"
+
+OPTION_ABSENTE = ("La sauvegarde SFTP est une option à installer : dans le dossier de "
+                  "SelfFarm, .venv/bin/pip install -e '.[sftp]'. "
+                  "Elle n'est pas incluse dans l'image Docker.")
+
+
+def sftp_disponible() -> bool:
+    """paramiko n'est installé qu'avec l'option `sftp`."""
+    return importlib.util.find_spec("paramiko") is not None
 
 
 # ── Config ───────────────────────────────────────────────────────────────────
@@ -114,6 +128,8 @@ def _sftp_makedirs(sftp, remote_dir: str) -> None:
 def test_sftp(cfg: dict) -> dict:
     """Teste connexion + droit d'écriture dans le dossier distant.
     Retourne {ok: bool, message: str}."""
+    if not sftp_disponible():
+        return {"ok": False, "message": OPTION_ABSENTE}
     remote_dir = (cfg.get("remote_dir") or "").strip()
     if not remote_dir:
         return {"ok": False, "message": "Dossier distant manquant."}
@@ -159,6 +175,8 @@ def _prune_remote(sftp, remote_dir: str, keep: int) -> int:
 def backup_to_sftp(version: str = "0.1.0-dev", keep: int | None = None) -> dict:
     """Crée le backup, le chiffre (GPG), l'envoie en SFTP, applique la rétention,
     et mémorise la date/destination. Lève une exception en cas d'échec."""
+    if not sftp_disponible():
+        raise RuntimeError(OPTION_ABSENTE)
     cfg = load_sftp_config()
     remote_dir = (cfg.get("remote_dir") or "").strip()
     if not remote_dir:
