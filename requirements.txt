@@ -14,12 +14,15 @@ anyio==4.15.1
     #   selffarm-lite (pyproject.toml)
     #   starlette
     #   watchfiles
-brotli==1.2.0
-    # via fonttools
-certifi==2026.7.22
+brotli==1.2.1
+    # via
+    #   fonttools
+    #   selffarm-lite (pyproject.toml)
+certifi==2026.10.23
     # via
     #   httpcore
     #   httpx
+    #   selffarm-lite (pyproject.toml)
 cffi==2.1.1
     # via
     #   cryptography
@@ -58,15 +61,18 @@ jinja2==3.1.6
     # via selffarm-lite (pyproject.toml)
 markupsafe==3.0.4
     # via jinja2
-opentelemetry-api==1.45.0
-    # via fastapi
+opentelemetry-api==1.45.2
+    # via
+    #   fastapi
+    #   selffarm-lite (pyproject.toml)
 pdfminer-six==20260107
     # via pdfplumber
 pdfplumber==0.11.10
     # via selffarm-lite (pyproject.toml)
-pillow==12.3.0
+pillow==13.0.0
     # via
     #   pdfplumber
+    #   selffarm-lite (pyproject.toml)
     #   weasyprint
 psutil==7.2.2
     # via selffarm-lite (pyproject.toml)
