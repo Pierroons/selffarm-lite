@@ -11,7 +11,7 @@ import logging
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
-from weasyprint import HTML, URLFetcher
+from rendu_pdf import AucuneRessource, html_vers_pdf
 
 from self_dnja.models import PrevisionnelDnja
 
@@ -19,14 +19,7 @@ log = logging.getLogger("self-dnja")
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
-
-class AucuneRessource(URLFetcher):
-    """Le gabarit ne charge aucune ressource : WeasyPrint n'en reçoit aucune, ni réseau,
-    ni fichier local, ni `data:`. Une valeur du scénario qui en demanderait une échoue."""
-
-    def fetch(self, url, headers=None):
-        log.warning("Ressource refusée dans le dossier DNJA : %.120s", url)
-        raise ValueError("ressource externe refusée")
+__all__ = ["AucuneRessource", "environnement", "pdf_bytes", "render_html", "render_pdf"]
 
 
 def environnement() -> Environment:
@@ -36,9 +29,8 @@ def environnement() -> Environment:
 
 
 def pdf_bytes(result: PrevisionnelDnja) -> bytes:
-    """Le dossier PDF, en mémoire."""
-    return HTML(string=render_html(result), base_url=str(TEMPLATES_DIR),
-                url_fetcher=AucuneRessource()).write_pdf()
+    """Le dossier PDF, en mémoire, sans charger aucune ressource."""
+    return html_vers_pdf(render_html(result), base_url=str(TEMPLATES_DIR))
 
 
 def render_pdf(result: PrevisionnelDnja, out_path: Path) -> Path:
