@@ -6,6 +6,7 @@ import os
 import re
 from pathlib import Path
 
+import anyio
 import yaml
 from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
@@ -13,7 +14,6 @@ from fastapi.templating import Jinja2Templates
 from self_dnja.engine import calculer
 from self_dnja.models import Hypotheses
 from self_dnja.pdf import pdf_bytes
-from starlette.concurrency import run_in_threadpool
 
 from webapp import __version__
 
@@ -296,13 +296,17 @@ async def dnja_compare_run(request: Request, a: str, b: str):
     )
 
 
+RENDUS_PDF = anyio.CapacityLimiter(1)
+
+
 @router.get("/pdf")
 async def dnja_pdf(example: str):
     """Télécharge le PDF d'un scénario."""
     h = _load_example(example)
-    # Le rendu prend près d'une seconde : hors de la boucle, les autres pages répondent
-    # pendant ce temps. En mémoire : aucun fichier à nom prévisible dans /tmp.
-    contenu = await run_in_threadpool(lambda: pdf_bytes(calculer(h)))
+    # Le rendu prend près d'une seconde : hors de la boucle, pour que les autres pages
+    # répondent, et un seul à la fois, pour qu'une rafale ne prenne ni la mémoire ni le
+    # pool de threads commun. En mémoire : aucun fichier à nom prévisible dans /tmp.
+    contenu = await anyio.to_thread.run_sync(lambda: pdf_bytes(calculer(h)), limiter=RENDUS_PDF)
 
     return Response(
         content=contenu,
