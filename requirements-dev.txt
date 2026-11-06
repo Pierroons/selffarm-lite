@@ -205,7 +205,7 @@ segno==1.6.6
     # via
     #   -c requirements.txt
     #   selffarm-lite (pyproject.toml)
-starlette==1.7.0
+starlette==1.10.0
     # via
     #   -c requirements.txt
     #   fastapi
