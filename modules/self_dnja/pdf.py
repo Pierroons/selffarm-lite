@@ -11,7 +11,7 @@ import logging
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
-from weasyprint import HTML
+from weasyprint import HTML, URLFetcher
 
 from self_dnja.models import PrevisionnelDnja
 
@@ -20,16 +20,30 @@ log = logging.getLogger("self-dnja")
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 
+class AucuneRessource(URLFetcher):
+    """Le gabarit ne charge aucune ressource : WeasyPrint n'en reçoit aucune, ni réseau,
+    ni fichier local, ni `data:`. Une valeur du scénario qui en demanderait une échoue."""
+
+    def fetch(self, url, headers=None):
+        log.warning("Ressource refusée dans le dossier DNJA : %.120s", url)
+        raise ValueError("ressource externe refusée")
+
+
 def environnement() -> Environment:
     """Le gabarit est du HTML que WeasyPrint rend : chaque valeur y est échappée.
     `select_autoescape` jugerait sur l'extension finale, `.j2`, et n'échapperait rien."""
     return Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)), autoescape=True)
 
 
+def pdf_bytes(result: PrevisionnelDnja) -> bytes:
+    """Le dossier PDF, en mémoire."""
+    return HTML(string=render_html(result), base_url=str(TEMPLATES_DIR),
+                url_fetcher=AucuneRessource()).write_pdf()
+
+
 def render_pdf(result: PrevisionnelDnja, out_path: Path) -> Path:
     """Génère le PDF à `out_path`. Retourne le chemin final."""
-    html_str = render_html(result)
-    HTML(string=html_str, base_url=str(TEMPLATES_DIR)).write_pdf(str(out_path))
+    out_path.write_bytes(pdf_bytes(result))
     log.info("PDF écrit : %s", out_path)
     return out_path
 
