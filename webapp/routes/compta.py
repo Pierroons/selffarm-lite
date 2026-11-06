@@ -14,6 +14,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Resp
 from fastapi.templating import Jinja2Templates
 
 from webapp import __version__
+from webapp.facture_pdf import facture_pdf
 
 
 def _demo_only():
@@ -585,7 +586,6 @@ async def compta_facture_du_journal(limit: int = 8):
         )
 
     # Construction des lignes à partir des écritures
-    from weasyprint import HTML
 
     today = date.today()
     lignes = []
@@ -685,9 +685,7 @@ async def compta_facture_du_journal(limit: int = 8):
         },
     }
 
-    tmpl = templates.get_template("invoice/facture.html.j2")
-    html_str = tmpl.render(**data)
-    pdf_bytes = HTML(string=html_str).write_pdf()
+    pdf_bytes = facture_pdf(data)
 
     return Response(
         content=pdf_bytes,

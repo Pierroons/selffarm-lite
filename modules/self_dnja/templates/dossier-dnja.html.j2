@@ -14,11 +14,16 @@
         color: #888;
     }
     @top-right {
-        content: "{{ hypotheses.candidat }} — {{ genere_le }}";
-        font-size: 9pt;
-        color: #888;
+        content: element(pied-haut);
     }
     {% endif %}
+}
+/* Le texte de la marge vient d'un élément du corps : aucune valeur du scénario n'est
+   écrite dans cette feuille, où l'échappement HTML ne protège pas. */
+.pied-haut {
+    position: running(pied-haut);
+    font-size: 9pt;
+    color: #888;
 }
 
 body {
@@ -159,6 +164,7 @@ ul.compact li {
 </style>
 </head>
 <body>
+{% if hypotheses.afficher_pied_de_page %}<div class="pied-haut">{{ hypotheses.candidat }} — {{ genere_le }}</div>{% endif %}
 
 <h1>Dossier prévisionnel d'installation — DNJA</h1>
 

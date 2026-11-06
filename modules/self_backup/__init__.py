@@ -661,10 +661,11 @@ def backup_health(late_after_days: float = 2.0) -> dict:
     )
 
     try:
-        from self_backup.remote import load_sftp_config
+        from self_backup.remote import OPTION_ABSENTE, load_sftp_config, sftp_disponible
         sc = load_sftp_config()
+        option_absente = None if sftp_disponible() else OPTION_ABSENTE
     except Exception:  # noqa: BLE001 — sauvegarde distante facultative : on dégrade sans bloquer
-        sc = {}
+        sc, option_absente = {}, None
     sftp = _target(
         enabled=bool(sc.get("enabled")),
         last_ok_s=sc.get("last_sftp_backup_utc"),
@@ -677,7 +678,9 @@ def backup_health(late_after_days: float = 2.0) -> dict:
     for t, kind in ((external, "disque externe"), (sftp, "serveur distant")):
         if not t["alert"]:
             continue
-        if t["age_days"] is None:
+        if t is sftp and option_absente:
+            messages.append(f"Sauvegarde sur {kind} ({t['label']}) impossible : {option_absente}")
+        elif t["age_days"] is None:
             messages.append(f"Aucune sauvegarde sur {kind} ({t['label']}) pour l'instant.")
         elif t["missed"]:
             messages.append(f"Dernière sauvegarde {kind} ({t['label']}) manquée — cible injoignable.")

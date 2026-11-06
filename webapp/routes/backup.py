@@ -62,6 +62,7 @@ _DEMO_CONTEXT = {
     "last_snapshot_age_h": 6,
     "cron_schedule": None,
     "sftp_config": {},
+    "sftp_disponible": False,
 }
 
 
@@ -83,7 +84,7 @@ async def backup_index(request: Request):
         list_external_mounts,
         load_ext_config,
     )
-    from self_backup.remote import load_sftp_config
+    from self_backup.remote import load_sftp_config, sftp_disponible
     db_path = _db_path()
     stats = _stats_db(db_path)
     db_exists = db_path.exists()
@@ -103,6 +104,7 @@ async def backup_index(request: Request):
             "last_snapshot_age_h": _last_snapshot_age_hours(),
             "cron_schedule": get_cron_schedule(),
             "sftp_config": load_sftp_config(),
+            "sftp_disponible": sftp_disponible(),
         },
     )
 
@@ -174,8 +176,16 @@ async def backup_distant_config(
 ):
     """Enregistre la config de la sauvegarde distante SFTP chiffrée (B4)."""
     _block_in_demo()
-    from self_backup.remote import load_sftp_config, save_sftp_config
+    from self_backup.remote import (
+        OPTION_ABSENTE,
+        load_sftp_config,
+        save_sftp_config,
+        sftp_disponible,
+    )
     cfg = load_sftp_config()
+    # Les champs saisis se gardent ; la sauvegarde ne s'active qu'avec l'option, sinon
+    # le cron et la réplication échoueraient à chaque passage.
+    activable = sftp_disponible()
     cfg.update({
         "host": host.strip(),
         "port": int(port),
@@ -184,8 +194,11 @@ async def backup_distant_config(
         "remote_dir": remote_dir.strip(),
         "gpg_recipient": gpg_recipient.strip(),
         "retention": int(retention),
-        "enabled": enabled == "on",
+        "enabled": enabled == "on" and activable,
     })
+    if enabled == "on" and not activable:
+        cfg["last_test"] = {"ok": False, "message": OPTION_ABSENTE,
+                            "at": datetime.now(UTC).isoformat()}
     save_sftp_config(cfg)
     return RedirectResponse(url="/backup", status_code=303)
 

@@ -204,6 +204,11 @@
     Pousse une copie <strong style="color:var(--text-primary);">chiffrée</strong> (GPG, ta clé) vers ton propre serveur — NAS, VPS, Raspberry… Le serveur distant ne stocke que de l'<strong>illisible</strong> : toi seul peux déchiffrer. Ta copie <strong>hors-site</strong>, automatisable.
   </p>
 
+  <div id="sftp-option" style="font-size:11.5px; line-height:1.5; margin-bottom:10px; padding:8px 10px; border-radius:6px; border:1px solid var(--border-subtle); color:var(--text-secondary);">
+    {% if not sftp_disponible %}<strong style="color:var(--warm-terra);">Option à installer.</strong> Dans le dossier de SelfFarm : <code style="font-size:10.5px;">.venv/bin/pip install -e '.[sftp]'</code>. Elle n'est pas incluse dans l'image Docker.<br>{% endif %}
+    À la première connexion, la clé du serveur est acceptée sans vérification : fais ce premier test depuis ton propre réseau, pas depuis un wifi public.
+  </div>
+
   {% if request.query_params.get('sftp_ok') %}<div style="font-size:11.5px; color:var(--accent-200); margin-bottom:10px;">✓ Sauvegarde distante chiffrée envoyée.</div>{% endif %}
   {% if request.query_params.get('sftp_err') %}<div style="font-size:11.5px; color:var(--warm-terra); margin-bottom:10px;">✗ Échec de l'envoi — voir le détail ci-dessous.</div>{% endif %}
 

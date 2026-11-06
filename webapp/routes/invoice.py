@@ -24,6 +24,7 @@ def _demo_only():
         )
 
 from webapp import __version__
+from webapp.facture_pdf import facture_pdf
 
 # Hub compta self_agri_book — auto-écritures depuis factures
 try:
@@ -421,7 +422,6 @@ async def invoice_nouvelle_form(request: Request):
 @router.post("/creer")
 async def invoice_creer(request: Request):
     """Crée une facture depuis le formulaire utilisateur."""
-    from weasyprint import HTML
 
     form = await request.form()
 
@@ -538,9 +538,7 @@ async def invoice_creer(request: Request):
         },
     }
 
-    tmpl = templates.get_template("invoice/facture.html.j2")
-    html_str = tmpl.render(**data)
-    pdf_bytes = HTML(string=html_str).write_pdf()
+    pdf_bytes = facture_pdf(data)
 
     ecriture_id, ecriture_created = _hook_compta_vente(data, pdf_bytes=pdf_bytes)
 
@@ -565,14 +563,10 @@ async def invoice_generer_demo(regime: str | None = None):
 
     ?regime=franchise|micro-ba|reel (sinon aléatoire)
     """
-    from weasyprint import HTML
 
     data = _generer_facture_data(regime)
 
-    tmpl = templates.get_template("invoice/facture.html.j2")
-    html_str = tmpl.render(**data)
-
-    pdf_bytes = HTML(string=html_str).write_pdf()
+    pdf_bytes = facture_pdf(data)
 
     # Hook compta : auto-écriture 411/701 dans le hub self_agri_book
     ecriture_id, ecriture_created = _hook_compta_vente(data, pdf_bytes=pdf_bytes)

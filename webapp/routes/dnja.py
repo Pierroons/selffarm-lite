@@ -6,13 +6,14 @@ import os
 import re
 from pathlib import Path
 
+import anyio
 import yaml
 from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from self_dnja.engine import calculer
 from self_dnja.models import Hypotheses
-from self_dnja.pdf import render_pdf
+from self_dnja.pdf import pdf_bytes
 
 from webapp import __version__
 
@@ -295,21 +296,20 @@ async def dnja_compare_run(request: Request, a: str, b: str):
     )
 
 
+RENDUS_PDF = anyio.CapacityLimiter(1)
+
+
 @router.get("/pdf")
 async def dnja_pdf(example: str):
     """Télécharge le PDF d'un scénario."""
     h = _load_example(example)
-    result = calculer(h)
-    # Fichier temporaire mémoire
-
-    # Re-utilise la fonction render_pdf qui écrit sur disque
-    tmp_path = Path(f"/tmp/selffarm-dnja-{example}.pdf")
-    render_pdf(result, tmp_path)
-    pdf_bytes = tmp_path.read_bytes()
-    tmp_path.unlink(missing_ok=True)
+    # Le rendu prend près d'une seconde : hors de la boucle, pour que les autres pages
+    # répondent, et un seul à la fois, pour qu'une rafale ne prenne ni la mémoire ni le
+    # pool de threads commun. En mémoire : aucun fichier à nom prévisible dans /tmp.
+    contenu = await anyio.to_thread.run_sync(lambda: pdf_bytes(calculer(h)), limiter=RENDUS_PDF)
 
     return Response(
-        content=pdf_bytes,
+        content=contenu,
         media_type="application/pdf",
         headers={
             "Content-Disposition": f'inline; filename="dossier-dnja-{example}.pdf"',

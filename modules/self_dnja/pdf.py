@@ -10,8 +10,8 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-from weasyprint import HTML
+from jinja2 import Environment, FileSystemLoader
+from rendu_pdf import AucuneRessource, html_vers_pdf
 
 from self_dnja.models import PrevisionnelDnja
 
@@ -19,14 +19,30 @@ log = logging.getLogger("self-dnja")
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
+__all__ = ["AucuneRessource", "environnement", "pdf_bytes", "render_html", "render_pdf"]
+
+
+def environnement() -> Environment:
+    """Le gabarit est du HTML que WeasyPrint rend : chaque valeur y est échappée.
+    `select_autoescape` jugerait sur l'extension finale, `.j2`, et n'échapperait rien."""
+    return Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)), autoescape=True)
+
+
+def pdf_bytes(result: PrevisionnelDnja) -> bytes:
+    """Le dossier PDF, en mémoire, sans charger aucune ressource."""
+    return html_vers_pdf(render_html(result), base_url=str(TEMPLATES_DIR))
+
 
 def render_pdf(result: PrevisionnelDnja, out_path: Path) -> Path:
     """Génère le PDF à `out_path`. Retourne le chemin final."""
-    env = Environment(
-        loader=FileSystemLoader(str(TEMPLATES_DIR)),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
-    template = env.get_template("dossier-dnja.html.j2")
+    out_path.write_bytes(pdf_bytes(result))
+    log.info("PDF écrit : %s", out_path)
+    return out_path
+
+
+def render_html(result: PrevisionnelDnja) -> str:
+    """Le HTML du dossier, tel que WeasyPrint le reçoit."""
+    template = environnement().get_template("dossier-dnja.html.j2")
     payload = result.model_dump(mode="json")
 
     # Annexe interne « capacité & réserve » : écart capacité de production − quantité
@@ -83,6 +99,4 @@ def render_pdf(result: PrevisionnelDnja, out_path: Path) -> Path:
         caf_annuelles=payload.get("caf_annuelles") or {},
     )
     log.info("Rendu HTML terminé, taille=%d caractères", len(html_str))
-    HTML(string=html_str, base_url=str(TEMPLATES_DIR)).write_pdf(str(out_path))
-    log.info("PDF écrit : %s", out_path)
-    return out_path
+    return html_str
