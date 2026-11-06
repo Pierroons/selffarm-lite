@@ -100,7 +100,7 @@ pyyaml==6.0.3
     #   uvicorn
 segno==1.6.6
     # via selffarm-lite (pyproject.toml)
-starlette==1.7.0
+starlette==1.10.0
     # via
     #   fastapi
     #   selffarm-lite (pyproject.toml)
