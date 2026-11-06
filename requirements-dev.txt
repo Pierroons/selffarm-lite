@@ -64,7 +64,7 @@ fastapi==0.142.2
     # via
     #   -c requirements.txt
     #   selffarm-lite (pyproject.toml)
-fonttools==4.66.1
+fonttools==4.68.0
     # via
     #   -c requirements.txt
     #   weasyprint
