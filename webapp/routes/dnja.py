@@ -12,7 +12,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from self_dnja.engine import calculer
 from self_dnja.models import Hypotheses
-from self_dnja.pdf import render_pdf
+from self_dnja.pdf import pdf_bytes
+from starlette.concurrency import run_in_threadpool
 
 from webapp import __version__
 
@@ -299,17 +300,12 @@ async def dnja_compare_run(request: Request, a: str, b: str):
 async def dnja_pdf(example: str):
     """Télécharge le PDF d'un scénario."""
     h = _load_example(example)
-    result = calculer(h)
-    # Fichier temporaire mémoire
-
-    # Re-utilise la fonction render_pdf qui écrit sur disque
-    tmp_path = Path(f"/tmp/selffarm-dnja-{example}.pdf")
-    render_pdf(result, tmp_path)
-    pdf_bytes = tmp_path.read_bytes()
-    tmp_path.unlink(missing_ok=True)
+    # Le rendu prend près d'une seconde : hors de la boucle, les autres pages répondent
+    # pendant ce temps. En mémoire : aucun fichier à nom prévisible dans /tmp.
+    contenu = await run_in_threadpool(lambda: pdf_bytes(calculer(h)))
 
     return Response(
-        content=pdf_bytes,
+        content=contenu,
         media_type="application/pdf",
         headers={
             "Content-Disposition": f'inline; filename="dossier-dnja-{example}.pdf"',
