@@ -73,8 +73,9 @@ dependencies = [
 pa = ["httpx>=0.27", "certifi>=2026.10.18"]
 # Sauvegarde distante SFTP (self_backup.remote). Hors du verrou, donc hors de
 # l'image Docker et de la prod : venv_suit_verrou.py la retirerait d'un venv que
-# deploy.sh ramène au verrou. Plancher : GHSA-r374-rxx8-8654 touche jusqu'à la
-# 4.0.0 (OSV le 04/11/2026), la version suivante est la 5.0.0.
+# deploy.sh ramène au verrou. Plancher : GHSA-r374-rxx8-8654 (OSV le 04/11/2026)
+# touche jusqu'à la 4.0.0 ; corrigée par a4489456, que la 5.0.0 contient
+# (comparaison GitHub du 06/11/2026).
 sftp = ["paramiko>=5.0.0"]
 # reportlab ne sert qu'à scripts/generate_sg_fake_statement.py.
 # setuptools arrive par pip-tools : plancher pour GHSA-xmj3-9gf7-h52w (faible,

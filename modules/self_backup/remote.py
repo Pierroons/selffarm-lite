@@ -55,7 +55,12 @@ def load_sftp_config() -> dict:
 
 
 def save_sftp_config(cfg: dict) -> None:
-    _sftp_config_path().write_text(json.dumps(cfg, indent=2, ensure_ascii=False))
+    """Écrit à côté puis remplace : un lecteur voit l'ancienne config ou la nouvelle,
+    jamais un fichier à moitié écrit, qu'il prendrait pour une config vide."""
+    cible = _sftp_config_path()
+    provisoire = cible.with_name(f".{cible.name}.{os.getpid()}.tmp")
+    provisoire.write_text(json.dumps(cfg, indent=2, ensure_ascii=False))
+    os.replace(provisoire, cible)
 
 
 # ── Chiffrement GPG (clé publique → la machine chiffre mais ne déchiffre pas) ──
@@ -87,7 +92,10 @@ def gpg_recipient_ok(recipient: str) -> bool:
 
 # ── Transport SFTP (paramiko) ─────────────────────────────────────────────────
 def _connect(cfg: dict):
-    """Ouvre (ssh, sftp) vers la cible. Auth par clé SSH uniquement."""
+    """Ouvre (ssh, sftp) vers la cible. Auth par clé SSH uniquement.
+    Seul lieu qui importe paramiko : chaque appelant reçoit le même message sans l'option."""
+    if not sftp_disponible():
+        raise RuntimeError(OPTION_ABSENTE)
     import paramiko
 
     host = (cfg.get("host") or "").strip()

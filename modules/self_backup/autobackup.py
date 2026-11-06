@@ -65,8 +65,13 @@ def _backup_external(log, version: str) -> int:
 def _backup_sftp(log, version: str) -> int:
     """Serveur SSH distant chiffré (B4). Retourne 0 si OK/désactivé, 2 si échec."""
     try:
-        from self_backup.remote import backup_to_sftp, load_sftp_config, save_sftp_config
-    except Exception as e:  # noqa: BLE001 — paramiko absent, etc.
+        from self_backup.remote import (
+            backup_to_sftp,
+            load_sftp_config,
+            save_sftp_config,
+            sftp_disponible,
+        )
+    except Exception as e:  # noqa: BLE001
         log.warning("SFTP distant indisponible : %s", e)
         return 0
 
@@ -84,7 +89,8 @@ def _backup_sftp(log, version: str) -> int:
         scfg["last_sftp_missed_utc"] = datetime.now(UTC).isoformat()
         save_sftp_config(scfg)
         log.warning("SFTP distant échoué → manqué (noté) : %s", e)
-        _notify(log, f"Sauvegarde distante chiffrée échouée — serveur injoignable ? ({e})")
+        cause = str(e) if not sftp_disponible() else f"serveur injoignable ? ({e})"
+        _notify(log, f"Sauvegarde distante chiffrée échouée — {cause}")
         return 2
 
 
