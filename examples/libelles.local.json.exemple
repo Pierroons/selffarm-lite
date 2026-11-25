@@ -1,0 +1,19 @@
+{
+  "_lisez_moi": [
+    "Copier ce fichier en examples/libelles.local.json pour nommer vos scénarios.",
+    "Il reste sur votre machine : git et Docker l'ignorent.",
+    "Sans lui, chaque scénario s'affiche sous son slug et /dnja/compare part des",
+    "deux premiers de la liste. L'application fonctionne dans les deux cas.",
+    "Un slug de 'compare' qui ne correspond à aucun scénario présent est ignoré."
+  ],
+  "libelles": {
+    "hypotheses-mon-scenario": {
+      "label": "Mon scénario ⭐",
+      "desc": "Une phrase qui dit ce que ce jeu d'hypothèses représente"
+    }
+  },
+  "compare": {
+    "a": "hypotheses-mon-scenario",
+    "b": "hypotheses-demo-publique"
+  }
+}

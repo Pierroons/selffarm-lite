@@ -18,7 +18,7 @@ garde_fou:
 
 # ---------- Référentiels embarqués (indicatifs, l'utilisateur ne les saisit pas) ----------
 referentiels:
-  seuil_ebe_uth_dnja_na_2026: 17717            # source moteur : EBE_UTH_SEUIL_DNJA_NA_2026
+  seuil_ebe_uth_dnja_2026: 17717            # source moteur : EBE_UTH_SEUIL_DNJA_2026
   certification_bio_annuelle_eur: 550          # indicatif, auto si bio/conversion, ajustable
   msa_exoneration_ja_pct: [65, 55, 35, 25, 15] # barème dégressif standard JA
   dnja_decoupage_national: {acompte_pct: 80, annee_acompte: 1, solde_pct: 20}

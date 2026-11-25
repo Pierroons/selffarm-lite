@@ -7,7 +7,7 @@ de code du soir.
 
 ## 0. Rappel des 3 piliers stratégiques
 
-Depuis `project_selfinvoice_strategy.md` (mémoire) :
+Les trois piliers retenus pour ce module :
 
 1. **Souveraineté locale** — self-hosted, AGPL-3.0-or-later, pas de capture SaaS
 2. **Factur-X natif** — conformité obligation française 2026 sans dépendre de Pennylane/Quadient
@@ -25,7 +25,7 @@ Depuis `project_selfinvoice_strategy.md` (mémoire) :
 | Front | HTML + htmx + Tailwind CSS | Pas de framework JS lourd, SSR propre |
 | PDF | WeasyPrint (HTML → PDF/A-3) | Déjà en prod self-dnja, fontes OK |
 | Factur-X | **factur-x** (akretion) | Benchmark validé : commit récent, validation Schematron FR |
-| Payments | Viva Wallet API v2 (OAuth2) | Canal unique Pierroons (feedback_viva_stripe.md) |
+| Payments | Viva Wallet API v2 (OAuth2) | Canal de paiement unique retenu |
 | Tests | pytest + pytest-cov + pytest-asyncio | Écosystème mature |
 | Qualité | ruff + mypy | Lint + typage statique |
 | Deploy | Docker Compose (Raspberry Pi / VPS) | Portable, gitops-friendly |
@@ -194,7 +194,7 @@ class VivaTransactionEventData(BaseModel):
 ### Sprint 6 — Tests + docs (1 h)
 - pytest unit tests des builders + Viva mock
 - README SelfInvoice
-- Update memory `project_selfinvoice_strategy.md`
+- Mettre à jour les notes de conception du module
 
 **Total estimé** : 7-8 h de code. Ambitieux mais réalisable vu qu'on a les specs.
 
@@ -208,7 +208,7 @@ L'architecture AbstractBuilder permet de faire hériter `self-factur-x-agri` de 
 
 Bidirectionnel :
 - SelfInvoice utilise le PCG agricole de `self-agri-book` pour les comptes 7011-7014 agri
-- Les factures de vente de chanvre sortent en Factur-X via SelfInvoice + extension agri
+- Les factures de vente agricole sortent en Factur-X via SelfInvoice + extension agri
 
 ## 8. Licence et dépendances
 
@@ -227,7 +227,7 @@ Aucun conflit de licence. On peut publier AGPL propre.
 
 - **Multi-tenancy** : un SelfInvoice = 1 exploitation (mono), ou multi pour mutualiser entre plusieurs producteurs bio d'un même territoire ?
 - **Chorus Pro direct ou PDP partenaire** ? (Pour B2G, futur)
-- **Portail paiement alternatif** à Viva (si redondance nécessaire) ? SEPA QR (cf. `project_selfcashpay_idea.md`) comme 2e canal ?
+- **Portail paiement alternatif** à Viva (si redondance nécessaire) ? SEPA QR comme 2e canal ?
 - **Signature PDF** avec certificat ? (pour conformité juridique renforcée)
 
 À arbitrer ce soir ou plus tard.

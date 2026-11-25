@@ -33,7 +33,8 @@ MONTH_LABELS = [
     "Juil", "Août", "Sept", "Oct", "Nov", "Déc",
 ]
 
-# Plafonds aides référence JA bio (mémoire project_aides_agri_pierroons.md)
+# Plafonds aides de référence, profil JA bio — valeurs indicatives, à confirmer
+# auprès de leur source officielle avant tout usage autre qu'un affichage.
 # Filtre auto-appliqué : plafond=0 → exclu du chart (règle "ligne jamais à 0")
 DEFAULT_AIDES_PLAFOND: dict[str, float] = {
     "DNJA Trésorerie": 24500,

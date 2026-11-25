@@ -27,6 +27,9 @@ exports/
 # Garder uniquement hypotheses-demo-publique.yaml (anonymisé Marie DUPONT Dordogne)
 examples/hypotheses-pierroons*.yaml
 examples/hypotheses-perso*.yaml
+# Libellés et comparaison par défaut des scénarios : ils décrivent une
+# exploitation réelle, ils restent sur la machine. Format : le .exemple à côté.
+examples/libelles.local.json
 
 # Fixtures bancaires sensibles (relevés réels qui auraient échappé au fake-first)
 modules/self_banking/fixtures/sg_real_*.pdf

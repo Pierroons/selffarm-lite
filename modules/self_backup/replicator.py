@@ -5,8 +5,9 @@ NDJSON (append-only) sur le support → `mark_replicated`. Opportuniste : ne pou
 QUE vers les supports présents, et seulement s'il y a du nouveau (pas de connexion
 inutile). cf Partie E du plan (log shipping du ledger).
 
-Le ledger est écrit EN CLAIR sur le DD (déjà filet de récup en clair) et sur le NAS
-perso de Pierroons. Le chiffrement par batch pour le cloud = étape 5.
+Le ledger est écrit EN CLAIR sur le disque externe (déjà filet de récupération en
+clair) et sur un second support du réseau local. Le chiffrement par lots, pour une
+copie hors site, est l'étape 5.
 """
 from __future__ import annotations
 
@@ -46,7 +47,7 @@ def replicate_to_mount(mount_path: str, uuid: str) -> dict:
 
 
 def replicate_to_sftp(cfg: dict) -> dict:
-    """Append les événements non répliqués vers le serveur SFTP (NAS perso, en clair)."""
+    """Append les événements non répliqués vers le serveur SFTP configuré, en clair."""
     from self_backup.remote import _connect, _sftp_makedirs
     remote_dir = (cfg.get("remote_dir") or "").rstrip("/") + "/" + LEDGER_SUBDIR
 

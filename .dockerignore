@@ -62,6 +62,7 @@ docs/
 # Fixtures personnelles (PII)
 examples/hypotheses-pierroons*.yaml
 examples/*-perso.yaml
+examples/libelles.local.json
 
 # Logs
 *.log

@@ -42,7 +42,7 @@ def test_garde_fou_plancher_2000(schema):
 
 def test_referentiels_indispensables(schema):
     r = schema["referentiels"]
-    assert r["seuil_ebe_uth_dnja_na_2026"] == 17717
+    assert r["seuil_ebe_uth_dnja_2026"] == 17717
     assert r["dnja_decoupage_national"]["acompte_pct"] == 80
     assert "faconnage_cbd_indicatif" in r
     assert len(r["msa_exoneration_ja_pct"]) >= 4

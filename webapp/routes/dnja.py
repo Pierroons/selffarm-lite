@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 from pathlib import Path
@@ -32,6 +33,36 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 _PRIVATE_SCENARIO_PATTERNS = ("pierroons", "perso")
 _SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 
+# ── OPSEC : un libellé de scénario, et le couple comparé par défaut, décrivent
+# une exploitation réelle — sa filière, son dossier d'installation. Ils vivent
+# donc hors du dépôt, dans examples/libelles.local.json, ignoré par git et par
+# Docker. Sans ce fichier, un scénario s'affiche sous son slug et la
+# comparaison part des deux premiers de la liste : l'application marche, elle
+# ne raconte simplement plus rien.
+_LIBELLES_LOCAUX = EXAMPLES_DIR / "libelles.local.json"
+
+# Seul libellé porté par le dépôt : la démo, dont le YAML est publié et fictif.
+_LIBELLES_PUBLICS: dict[str, tuple[str, str]] = {
+    "hypotheses-demo-publique": (
+        "Démo publique 🌻",
+        "JA fictif·ve — maraîchage bio + PPAM (données 100 % anonymisées)",
+    ),
+}
+
+
+def _libelles_locaux() -> dict:
+    """Contenu de examples/libelles.local.json, ou {} si absent ou illisible.
+
+    Relu à chaque appel, sans cache : le fichier peut apparaître entre deux
+    requêtes, et un cache rendrait son absence définitive pour le processus.
+    """
+    try:
+        with _LIBELLES_LOCAUX.open(encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
 
 def _perso_env() -> bool:
     return os.environ.get("SELFFARM_ENV", "prod").lower() == "perso"
@@ -49,20 +80,10 @@ def _list_examples() -> list[dict]:
     """
     out = []
     show_private = _perso_env()
-    labels = {
-        "hypotheses-pierroons-chambre": ("Prévisionnel CHAMBRE 🏛️",
-                                          "Version officielle CDOA — matériel neuf, charges valorisées"),
-        "hypotheses-pierroons-perso": ("Prévisionnel PERSO 🔧",
-                                        "Vision réelle terrain — matériel DIY/occase, vraie marge"),
-        "hypotheses-pierroons-huile-cbd": ("Scénario huile CBD 🛢️",
-                                            "Installation graduelle mix fleurs + huile + maraîchage"),
-        "hypotheses-pierroons-realiste": ("Scénario réaliste 🌱",
-                                            "Ancien modèle fleurs brutes — à titre comparatif"),
-        "hypotheses-pierroons": ("Scénario optimiste ⭐",
-                                  "Ancien modèle optimiste pour comparatif"),
-        "hypotheses-demo-publique": ("Démo publique 🌻",
-                                      "JA fictif·ve Dordogne — maraîchage bio + PPAM (données 100 % anonymisées)"),
-    }
+    labels = dict(_LIBELLES_PUBLICS)
+    for slug, valeur in (_libelles_locaux().get("libelles") or {}).items():
+        if isinstance(valeur, dict):
+            labels[str(slug)] = (str(valeur.get("label") or slug), str(valeur.get("desc") or ""))
     for path in sorted(EXAMPLES_DIR.glob("hypotheses-*.yaml")):
         slug = path.stem
         if not show_private and _is_private_scenario(slug):
@@ -220,16 +241,36 @@ async def dnja_editor_save(request: Request):
     )
 
 
+def _defauts_compare(examples: list[dict]) -> tuple[str, str]:
+    """Couple de scénarios proposé à l'ouverture de /dnja/compare.
+
+    Il vient de examples/libelles.local.json quand il nomme deux scénarios
+    présents ; sinon ce sont les deux premiers de la liste. Un slug absent est
+    ignoré plutôt que proposé : la page ne doit pas nommer un scénario qu'elle
+    ne peut pas charger.
+    """
+    slugs = [e["slug"] for e in examples]
+    if not slugs:
+        return "", ""
+    voulu = _libelles_locaux().get("compare") or {}
+    a = voulu.get("a") if isinstance(voulu, dict) else None
+    b = voulu.get("b") if isinstance(voulu, dict) else None
+    defaut_a = a if a in slugs else slugs[0]
+    defaut_b = b if b in slugs else (slugs[1] if len(slugs) > 1 else slugs[0])
+    return defaut_a, defaut_b
+
+
 @router.get("/compare", response_class=HTMLResponse)
 async def dnja_compare_index(request: Request):
     examples = _list_examples()
+    defaut_a, defaut_b = _defauts_compare(examples)
     return templates.TemplateResponse(
         request, "dnja/compare.html",
         {
             "version": __version__,
             "examples": examples,
-            "default_a": "hypotheses-pierroons-chambre" if any(e["slug"] == "hypotheses-pierroons-chambre" for e in examples) else examples[0]["slug"],
-            "default_b": "hypotheses-pierroons-perso" if any(e["slug"] == "hypotheses-pierroons-perso" for e in examples) else (examples[1]["slug"] if len(examples) > 1 else examples[0]["slug"]),
+            "default_a": defaut_a,
+            "default_b": defaut_b,
         },
     )
 

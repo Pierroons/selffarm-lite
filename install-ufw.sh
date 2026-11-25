@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
 #
-# install-ufw.sh — Hardening firewall UFW pour Pierroons
-# Cible : Debian 13 Trixie x64, usage perso + dev + gaming cloud (GFN)
+# install-ufw.sh — pare-feu UFW du poste qui sert SelfFarm-Lite sur le réseau local
+# Cible : Debian 13 (Trixie) x64, poste de travail servant l'application en LAN
 #
 # Politique :
 #   - INCOMING : deny par défaut (tout fermé sauf règles explicites)
-#   - OUTGOING : allow (GFN, Discord, jeux web, etc. fonctionnent natifs)
+#   - OUTGOING : allow — un poste de travail initie ses connexions
 #   - LOOPBACK : allow auto
-#   - LAN seul autorisé sur SelfFarm port 8003
+#   - LAN seul autorisé sur le port de SelfFarm (8003 par défaut)
 #
-# GeForce Now (GFN) :
-#   GFN est un client STREAMING (NVIDIA serveurs distants). Toutes les
-#   connexions sont INITIÉES par ton PC → trafic SORTANT.
-#   `default allow outgoing` couvre 100% du trafic GFN, aucune règle
-#   inbound spéciale nécessaire. Idem Discord, Steam (achat), Twitch, etc.
+# Pourquoi `allow outgoing` : les applications d'un poste de travail — navigateur,
+# mises à jour, clients de streaming — ouvrent elles-mêmes leurs connexions ; le
+# trafic est donc SORTANT et aucune règle entrante ne leur est nécessaire. Seul ce
+# qui ÉCOUTE sur le poste a besoin d'une règle, et la seule ici est SelfFarm en LAN.
 #
 # Idempotent : relançable sans casser.
 
@@ -30,7 +29,7 @@ LAN_SUBNET="${LAN_SUBNET:-192.168.1.0/24}"
 SELFFARM_PORT="${SELFFARM_PORT:-8003}"
 
 echo "═══════════════════════════════════════════════════════════════"
-echo "  Hardening UFW — Pierroons"
+echo "  Pare-feu UFW — poste SelfFarm-Lite"
 echo "═══════════════════════════════════════════════════════════════"
 echo ""
 echo "  LAN subnet       : $LAN_SUBNET"
@@ -109,8 +108,8 @@ echo "════════════════════════�
 echo ""
 echo "✅ Hardening UFW appliqué."
 echo ""
-echo "Trafic SORTANT autorisé (allow outgoing) → GFN, Discord, Twitch,"
-echo "Steam, navigation, mises à jour, jeux web : tout fonctionne natif."
+echo "Trafic SORTANT autorisé (allow outgoing) : navigation, mises à jour et"
+echo "toute application qui initie ses propres connexions continuent de marcher."
 echo ""
 echo "Trafic ENTRANT autorisé (allow incoming) :"
 echo "  • SelfFarm-Lite TCP $SELFFARM_PORT depuis $LAN_SUBNET seulement"
