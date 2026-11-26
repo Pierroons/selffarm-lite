@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 from pathlib import Path
@@ -17,6 +18,8 @@ from self_dnja.models import Hypotheses
 from self_dnja.pdf import pdf_bytes
 
 from webapp import __version__
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/dnja", tags=["dnja"])
 
@@ -50,18 +53,46 @@ _LIBELLES_PUBLICS: dict[str, tuple[str, str]] = {
 }
 
 
+# 64 Kio : ce fichier porte des libellés, pas un jeu de données. Il est relu à
+# CHAQUE requête, sans cache : un fichier de 60 Mo coûtait une seconde par page,
+# dans la boucle d'événements, donc pour toutes les requêtes en cours.
+_LIBELLES_TAILLE_MAX = 64 * 1024
+
+
 def _libelles_locaux() -> dict:
-    """Contenu de examples/libelles.local.json, ou {} si absent ou illisible.
+    """Contenu de examples/libelles.local.json, ou {} si le fichier ne convient pas.
 
     Relu à chaque appel, sans cache : le fichier peut apparaître entre deux
     requêtes, et un cache rendrait son absence définitive pour le processus.
+
+    Trois refus AVANT de lire, et chacun répond à une panne mesurée :
+    - **un fichier régulier seulement.** Un tube nommé à cette place bloque
+      l'ouverture, donc la boucle d'événements, donc l'application entière — pas
+      une page, toutes. Un dossier ou un lien cassé repassent par le même refus.
+    - **une taille de libellés.** Voir la constante ci-dessus.
+    - **une forme attendue.** Un JSON *valide* de mauvaise forme franchissait les
+      gardes : une racine en liste rendait 500 sur les quatre routes DNJA.
+    Et `RecursionError` est attrapée : un JSON profond de 200 000 niveaux est
+    syntaxiquement valide, et son erreur n'est ni OSError ni ValueError.
     """
     try:
+        if not _LIBELLES_LOCAUX.is_file():
+            return {}
+        taille = _LIBELLES_LOCAUX.stat().st_size
+        if taille > _LIBELLES_TAILLE_MAX:
+            log.warning("libelles.local.json ignoré : %d o pour un plafond de %d",
+                        taille, _LIBELLES_TAILLE_MAX)
+            return {}
         with _LIBELLES_LOCAUX.open(encoding="utf-8") as fh:
             data = json.load(fh)
-    except (OSError, ValueError):
+    except (OSError, ValueError, RecursionError) as exc:
+        log.warning("libelles.local.json illisible, libellés par défaut : %s", exc)
         return {}
-    return data if isinstance(data, dict) else {}
+    if not isinstance(data, dict):
+        log.warning("libelles.local.json : objet attendu à la racine, %s reçu",
+                    type(data).__name__)
+        return {}
+    return data
 
 
 def _perso_env() -> bool:
@@ -81,7 +112,13 @@ def _list_examples() -> list[dict]:
     out = []
     show_private = _perso_env()
     labels = dict(_LIBELLES_PUBLICS)
-    for slug, valeur in (_libelles_locaux().get("libelles") or {}).items():
+    nommes = _libelles_locaux().get("libelles")
+    if nommes is not None and not isinstance(nommes, dict):
+        # Une liste, une chaîne ou un nombre rendait 500 ici même, par .items().
+        log.warning("libelles.local.json : « libelles » doit être un objet, %s reçu",
+                    type(nommes).__name__)
+        nommes = None
+    for slug, valeur in (nommes or {}).items():
         if isinstance(valeur, dict):
             labels[str(slug)] = (str(valeur.get("label") or slug), str(valeur.get("desc") or ""))
     for path in sorted(EXAMPLES_DIR.glob("hypotheses-*.yaml")):

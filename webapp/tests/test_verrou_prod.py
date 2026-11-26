@@ -5,6 +5,7 @@ Un faux `lsattr`, en tête du PATH, répond selon le nom de chaque entrée."""
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -137,18 +138,76 @@ def test_un_lien_dans_un_dossier_MODIFIABLE_fait_sortir_1(prod, tmp_path):
     (racine / "webapp" / "lien.py").symlink_to(ailleurs)
     r = _mesurer(racine, outils, MODIFIABLES="webapp")
     assert r.returncode == 1
-    assert "lien(s) symbolique(s) dans un dossier modifiable" in r.stdout
+    assert "lien(s) symbolique(s) que le gel ne protège pas" in r.stdout
     assert "webapp/lien.py" in r.stdout
 
 
-def test_un_lien_dans_un_dossier_FIGE_est_tenu_pour_sur(prod, tmp_path):
+def test_un_lien_vers_une_cible_FIGEE_est_tenu_pour_sur(prod, tmp_path):
     """Sans quoi le script rendrait 1 à chaque déploiement : un venv Python pose
-    quatre liens vers son interpréteur, et leurs dossiers sont figés — mesuré sur
-    la prod le 25/11/2026. Un dossier figé n'accepte ni création ni suppression
-    d'entrée, le lien ne peut donc pas y être remplacé."""
+    quatre liens vers son interpréteur. Un dossier figé n'accepte ni création ni
+    suppression d'entrée, le lien ne peut donc pas y être remplacé ; et sa cible
+    étant figée, elle ne peut pas être réécrite. C'est le cas du lien `lib64`,
+    mesuré sur la cible le 25/11/2026."""
     racine, outils = prod
     ailleurs = tmp_path / "python3.13"
     ailleurs.write_text("")
     (racine / ".venv" / "bin" / "python3").symlink_to(ailleurs)
     r = _mesurer(racine, outils)
     assert r.returncode == 0, r.stdout
+
+
+def test_un_lien_vers_une_cible_REECRIVABLE_fait_sortir_1(prod, tmp_path):
+    """Le trou que la relecture du 25/11/2026 a trouvé, et que ce banc scellait.
+
+    Le gel protège le lien, jamais ce qu'il désigne. Un lien posé pendant la
+    fenêtre d'un déploiement, pointant vers un dossier de données, donne du code
+    exécuté et réécrivable à volonté — et l'ancienne règle le comptait « figé »
+    parce que son dossier parent l'était. Parent figé ne suffit pas.
+    """
+    racine, outils = prod
+    cible = racine / "data" / "charge_utile.py"      # dans un dossier élagué du gel
+    cible.write_text("")
+    (racine / "webapp" / "greffon.py").symlink_to(cible)
+    r = _mesurer(racine, outils, MODIFIABLES="charge_utile.py")
+    assert r.returncode == 1, r.stdout
+    assert "cible réécrivable" in r.stdout
+    assert "webapp/greffon.py" in r.stdout
+
+
+def test_un_lien_vers_une_cible_ABSENTE_fait_sortir_1(prod):
+    """Une cible absente aujourd'hui est une cible que le compte de service crée
+    demain, dans un dossier que le gel ne couvre pas."""
+    racine, outils = prod
+    (racine / "webapp" / "casse.py").symlink_to(racine / "data" / "jamais-ecrit.py")
+    r = _mesurer(racine, outils)
+    assert r.returncode == 1, r.stdout
+    assert "cible absente" in r.stdout
+
+
+def test_sans_argument_la_mesure_est_impossible(prod):
+    """Le code 1 dit « au moins une entrée modifiable » : son lecteur affiche alors
+    « PROD NON REVERROUILLÉE ». Une erreur d'appel n'est pas un défaut de gel."""
+    _, outils = prod                  # l'arbre importe peu : le script n'y arrive pas
+    environ = {**os.environ, "PATH": f"{outils}:{os.environ['PATH']}"}
+    for args in ([], [""]):
+        r = subprocess.run(["bash", str(SCRIPT), *args], capture_output=True, text=True,
+                           env=environ, check=False)
+        assert r.returncode == 2, f"args={args!r} → {r.returncode} : {r.stdout}{r.stderr}"
+        assert "mesure impossible" in r.stdout
+
+
+def test_la_liste_des_dossiers_elagues_est_celle_du_gel():
+    """Un nom ajouté à EXCLUS aveugle la mesure en silence, et tous les tests
+    restent verts : ils ne mesurent que ce qu'ils ont planté. La liste se déclare
+    donc ici, et elle doit rester le miroir de celle du script d'immutabilité de
+    la machine — qui, lui, n'est pas dans ce dépôt. Un ajout fait rougir, et c'est
+    voulu : il se justifie des deux côtés ou pas du tout.
+    """
+    attendus = {"data", "uploads", "logs", "cache", "tmp", "sessions", "node_modules"}
+    source = SCRIPT.read_text(encoding="utf-8")   # le script seul : pas d'arbre à monter
+    debut = source.index("EXCLUS=(")
+    bloc = source[debut:source.index(")", source.index("-prune", debut))]
+    trouves = set(re.findall(r"-name (\S+)", bloc))
+    assert trouves == attendus, (
+        f"la liste élaguée a changé : en trop {trouves - attendus}, "
+        f"manquants {attendus - trouves}. Le script de la machine dit-il la même chose ?")

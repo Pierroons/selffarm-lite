@@ -15,6 +15,8 @@ doivent tenir ensemble, et la seconde est celle qu'on oublie :
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -91,6 +93,98 @@ def test_un_slug_absent_est_ignore_au_lieu_d_etre_propose(examples):
     la page ne doit pas les proposer, sinon elle ouvre sur une erreur."""
     _ecrire_local(examples, {"compare": {"a": PRIVES[0], "b": "hypotheses-inexistant"}})
     assert route_dnja._defauts_compare(route_dnja._list_examples()) == (PUBLIC, PUBLIC)
+
+
+@pytest.mark.parametrize("contenu,raison", [
+    ('{"libelles": ["a"]}', "liste"),
+    ('{"libelles": "texte"}', "chaîne"),
+    ('{"libelles": 42}', "nombre"),
+    ('{"libelles": true}', "booléen"),
+    ('["a"]', "racine qui n'est pas un objet"),
+    ("[" * 20000 + "]" * 20000, "20 000 niveaux d'imbrication"),
+])
+def test_un_json_valide_de_mauvaise_forme_ne_fait_pas_tomber_les_routes(
+        examples, monkeypatch, contenu, raison):
+    """Ces six formes rendaient 500 sur les quatre routes DNJA.
+
+    Le JSON est valide et la racine est parfois le bon type : les gardes qui
+    n'éprouvent que la lisibilité les laissaient toutes passer, et `.items()`
+    levait ensuite `AttributeError`. L'imbrication profonde, elle, lève
+    `RecursionError`, qui n'est ni `OSError` ni `ValueError`.
+    """
+    monkeypatch.setenv("SELFFARM_ENV", "perso")
+    _ecrire_local(examples, contenu)
+    listes = route_dnja._list_examples()          # ne doit pas lever
+    route_dnja._defauts_compare(listes)           # ne doit pas lever
+    par_slug = {e["slug"]: e for e in listes}
+    assert par_slug[PRIVES[0]]["label"] == PRIVES[0], f"{raison} : libellés par défaut attendus"
+
+
+def test_un_fichier_qui_n_est_pas_un_fichier_regulier_est_refuse(examples, monkeypatch):
+    """Un tube nommé à cette place bloquait l'ouverture, donc la boucle
+    d'événements, donc TOUTES les pages — pas seulement celles du module."""
+    monkeypatch.setenv("SELFFARM_ENV", "perso")
+    chemin = examples / "libelles.local.json"
+    os.mkfifo(chemin)
+    try:
+        assert route_dnja._libelles_locaux() == {}
+    finally:
+        chemin.unlink()
+    chemin.mkdir()
+    try:
+        assert route_dnja._libelles_locaux() == {}
+    finally:
+        chemin.rmdir()
+
+
+def test_un_fichier_trop_gros_est_ignore(examples):
+    """Relu à CHAQUE requête, sans cache : 60 Mo coûtaient une seconde par page,
+    dans la boucle d'événements."""
+    _ecrire_local(examples, '{"libelles":{}}' + " " * (route_dnja._LIBELLES_TAILLE_MAX + 1))
+    assert route_dnja._libelles_locaux() == {}
+
+
+def test_la_barriere_de_chargement_refuse_un_scenario_prive(examples, monkeypatch):
+    """`_load_example` porte sa propre barrière, distincte de celle de la liste :
+    un scénario peut être invisible dans l'interface et servi par son nom. Aucun
+    test ne la couvrait, donc une régression y serait passée inaperçue en CI.
+    """
+    from fastapi import HTTPException
+    (examples / f"{PRIVES[0]}.yaml").write_text("horizon_annees: 4\n", encoding="utf-8")
+    with pytest.raises(HTTPException) as refus:
+        route_dnja._load_example(PRIVES[0])
+    assert refus.value.status_code == 404
+    with pytest.raises(HTTPException) as refus:
+        route_dnja._load_example("../../etc/passwd")
+    assert refus.value.status_code == 404
+    monkeypatch.setenv("SELFFARM_ENV", "perso")
+    with pytest.raises(Exception) as leve:      # le slug passe la barrière…
+        route_dnja._load_example(PRIVES[0])
+    assert not (isinstance(leve.value, HTTPException) and leve.value.status_code == 404), (
+        "en mode perso, la barrière ne doit plus refuser ce slug")
+
+
+def test_aucun_fichier_du_depot_ne_nomme_un_scenario_prive(examples):
+    """Le canari ne lisait qu'un fichier : il aurait manqué un slug recopié
+    ailleurs. Trois fichiers doivent au contraire le nommer — ceux qui excluent.
+    """
+    racine = Path(route_dnja.__file__).resolve().parents[2]
+    suivis = subprocess.run(["git", "-C", str(racine), "ls-files", "-z"],
+                            capture_output=True, text=True, timeout=60, check=True)
+    doivent_nommer = {".gitignore", ".dockerignore", "scripts/deploy.sh"}
+    coupables = []
+    for chemin in filter(None, suivis.stdout.split("\0")):
+        if chemin in doivent_nommer or chemin.startswith("webapp/tests/"):
+            continue
+        fichier = racine / chemin
+        try:
+            texte = fichier.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        for motif in route_dnja._PRIVATE_SCENARIO_PATTERNS:
+            if f"hypotheses-{motif}" in texte:
+                coupables.append(f"{chemin} (hypotheses-{motif}…)")
+    assert not coupables, f"un slug privé est nommé dans : {coupables}"
 
 
 def test_un_fichier_local_illisible_ne_casse_rien(examples, monkeypatch):
