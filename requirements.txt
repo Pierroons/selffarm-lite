@@ -39,7 +39,7 @@ cssselect2==0.10.1
     # via weasyprint
 fastapi==0.142.2
     # via selffarm-lite (pyproject.toml)
-fonttools==4.66.1
+fonttools==4.68.0
     # via weasyprint
 h11==0.16.0
     # via
