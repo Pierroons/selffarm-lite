@@ -18,7 +18,7 @@ python3 -m venv .venv
 
 ### Calcul prévisionnel (console/JSON)
 ```bash
-self-dnja calcul examples/hypotheses-pierroons-realiste.yaml
+self-dnja calcul examples/hypotheses-demo-publique.yaml
 self-dnja calcul hypotheses.yaml -o previsionnel.json
 ```
 
@@ -37,7 +37,7 @@ Exemple de sortie console :
 
 ## Format YAML d'hypothèses
 
-Voir `examples/hypotheses-pierroons-realiste.yaml` comme référence. Les blocs
+Voir `examples/hypotheses-demo-publique.yaml` comme référence. Les blocs
 principaux :
 
 - `activites` — 1 ou plusieurs activités productives (surface, rendement,

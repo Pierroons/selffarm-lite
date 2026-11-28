@@ -40,5 +40,5 @@ zxcvbn\.js$	dictionnaire de mots de passe courants (bibliothèque tierce)
 # Une wordlist française contient des mots communs qui sont aussi des noms
 # propres ou des toponymes. Aucune ici pour l'instant : la section est
 # reprise à l'identique dans les deux dépôts pour que l'écart entre eux
-# reste lisible.
-zxcvbn\.js$	dictionnaire de mots de passe courants (bibliothèque tierce)
+# reste lisible. zxcvbn est listé plus haut, sous « Bibliothèques tierces » :
+# il y était déjà, et l'avoir aussi ici contredisait le « aucune » ci-dessus.

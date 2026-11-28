@@ -40,13 +40,12 @@ log = logging.getLogger("self-dnja")
 # SMIC annuel brut 2026 (1 801,80 €/mois × 12) — conservé pour information.
 SMIC_ANNUEL_BRUT_2026 = Decimal("21621.60")
 
-# Seuil RDA DNJA appliqué pour l'instruction (Revenu Disponible Agricole, année cible).
-# Source : valeur (17 717 €/an, année cible) communiquée pour un dossier par une
-# Chambre d'agriculture via une étude PROAGRI. Cas particulier, NON généralisable
-# (peut varier selon département / région) et non vérifié au texte officiel.
-# ⚠️ À CONFIRMER (CdC DNJA V3 / Région concernée) avant tout usage normatif.
-# NB : ce seuil s'applique au RDA *après* cotisations sociales exploitant (méthode PROAGRI).
-EBE_UTH_SEUIL_DNJA_NA_2026 = Decimal(17717)
+# Seuil de Revenu Disponible Agricole (année cible) retenu pour l'instruction DNJA.
+# ⚠️ Valeur indicative, non vérifiée au texte officiel : elle peut varier selon le
+# département et la région, et n'a aucune portée normative ici. À confirmer auprès de
+# la Région concernée, dans le cahier des charges DNJA en vigueur, avant tout usage.
+# NB : le seuil se compare au RDA *après* cotisations sociales de l'exploitant.
+EBE_UTH_SEUIL_DNJA_2026 = Decimal(17717)
 
 # ── Bilan simplifié à fin d'horizon : ratios par défaut ──────────────────────
 #
@@ -70,7 +69,7 @@ RATIO_DETTES_CT_CA = Decimal("0.05")          # dettes fournisseurs et sociales
 RATIO_AUTOFINANCEMENT_IMMOS = Decimal("0.30")
 RATIO_SUBVENTIONS_ETALEES_IMMOS = Decimal("0.35")
 
-# Barème IR 2026 par part (simplifié, célibataire, sans réduction spécifique)
+# Barème IR 2026 par part (simplifié, une part, sans réduction spécifique)
 IR_TRANCHES_2026 = [
     (Decimal(11497), Decimal(0)),       # tranche à 0 %
     (Decimal(29315), Decimal("0.11")),    # 11 %
@@ -81,7 +80,7 @@ IR_TRANCHES_2026 = [
 
 
 def _impot_ir(base_imposable: Decimal) -> Decimal:
-    """Calcul IR progressif simplifié (part unique célibataire)."""
+    """Calcul IR progressif simplifié (une part de quotient familial)."""
     if base_imposable <= 0:
         return Decimal(0)
     impot = Decimal(0)
@@ -191,7 +190,8 @@ def calculer(h: Hypotheses, include_enrichissements: bool = True) -> Previsionne
         # RDA = EBE + produits fin CT − annuités emprunts LT/MT − frais fin dettes CT
         #       − cotisations sociales exploitant (MSA)
         # Les cotisations MSA de l'exploitant sont déduites pour obtenir le revenu
-        # réellement disponible — conforme à la présentation PROAGRI/CER de la Chambre
+        # réellement disponible — conforme à la présentation usuelle d'une étude
+        # économique d'installation
         # (leur EBE est net de MSA exploitant).
         rda = (
             ebe
@@ -234,10 +234,10 @@ def calculer(h: Hypotheses, include_enrichissements: bool = True) -> Previsionne
     # En société RDA se divise par nombre d'associés exploitants ; ici UTH=1 => RDA tel quel
     rda_cible = lignes[-1].rda
     ebe_uth = (rda_cible / h.uth).quantize(Decimal("0.01"))
-    atteint = ebe_uth >= EBE_UTH_SEUIL_DNJA_NA_2026
+    atteint = ebe_uth >= EBE_UTH_SEUIL_DNJA_2026
 
-    log.info("RDA année %d / UTH = %s € (seuil DNJA NA 2026 = %s €) → %s",
-             annee_cible, ebe_uth, EBE_UTH_SEUIL_DNJA_NA_2026,
+    log.info("RDA année %d / UTH = %s € (seuil DNJA 2026 = %s €) → %s",
+             annee_cible, ebe_uth, EBE_UTH_SEUIL_DNJA_2026,
              "OK" if atteint else "INSUFFISANT")
 
     previ = PrevisionnelDnja(
@@ -246,7 +246,7 @@ def calculer(h: Hypotheses, include_enrichissements: bool = True) -> Previsionne
         hypotheses=h,
         lignes=lignes,
         ebe_uth_atteint=atteint,
-        ebe_uth_seuil=EBE_UTH_SEUIL_DNJA_NA_2026,
+        ebe_uth_seuil=EBE_UTH_SEUIL_DNJA_2026,
         ebe_uth_annee_cible=ebe_uth,
     )
 

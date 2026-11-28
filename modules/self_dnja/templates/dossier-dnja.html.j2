@@ -184,13 +184,13 @@ ul.compact li {
 <div class="verdict ok">
     ✅ <strong>EBE/UTH année {{ lignes[-1].annee }} :
     {{ "{:,.0f}".format(ebe_uth_annee_cible|float).replace(",", " ") }} €</strong>
-    &mdash; seuil DNJA NA {{ "{:,.0f}".format(ebe_uth_seuil|float).replace(",", " ") }} € ATTEINT.
+    &mdash; seuil DNJA {{ "{:,.0f}".format(ebe_uth_seuil|float).replace(",", " ") }} € ATTEINT.
 </div>
 {% else %}
 <div class="verdict ko">
     ⚠️ <strong>EBE/UTH année {{ lignes[-1].annee }} :
     {{ "{:,.0f}".format(ebe_uth_annee_cible|float).replace(",", " ") }} €</strong>
-    &mdash; seuil DNJA NA {{ "{:,.0f}".format(ebe_uth_seuil|float).replace(",", " ") }} € NON ATTEINT.
+    &mdash; seuil DNJA {{ "{:,.0f}".format(ebe_uth_seuil|float).replace(",", " ") }} € NON ATTEINT.
     Le prévisionnel doit être renforcé (immobilisations, aides étalées, CA ajusté) avant instruction CDOA.
 </div>
 {% endif %}
@@ -810,10 +810,10 @@ Barème dégressif d'exonération JA appliqué :</p>
 (SelfFarm-Lite, AGPL-3.0-or-later) à partir d'un YAML d'hypothèses structurées.
 Les montants d'aides sont à jour au {{ genere_le }}, à reconfirmer en séance CDOA.
 Le critère retenu est le RDA (net des cotisations MSA exploitant) comparé au seuil
-appliqué par la Chambre ({{ ebe_uth_seuil }} € en année cible, à confirmer par le texte
-officiel CdC DNJA V3 / Région concernée). L'impôt sur le revenu est estimé avec
-l'abattement JA art. 73 B CGI (−50 % sur 5 premières années) et le barème IR par part 2026
-(célibataire sans enfant).
+d'instruction retenu ({{ ebe_uth_seuil }} € en année cible, valeur indicative à confirmer
+auprès de la Région concernée, dans le cahier des charges DNJA en vigueur). L'impôt sur le
+revenu est estimé avec l'abattement JA art. 73 B CGI (−50 % sur 5 premières années) et le
+barème IR par part 2026, pour une part de quotient familial.
 Ce document est un support de réflexion : il ne se substitue pas à l'étude économique
 officielle AITA qui devra être validée par une structure agréée.
 </div>

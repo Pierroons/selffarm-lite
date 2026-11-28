@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import logging
 import os
 import re
 from pathlib import Path
@@ -17,6 +19,8 @@ from self_dnja.pdf import pdf_bytes
 
 from webapp import __version__
 
+log = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/dnja", tags=["dnja"])
 
 TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
@@ -31,6 +35,64 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # que si SELFFARM_ENV=perso.
 _PRIVATE_SCENARIO_PATTERNS = ("pierroons", "perso")
 _SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+
+# ── OPSEC : un libellé de scénario, et le couple comparé par défaut, décrivent
+# une exploitation réelle — sa filière, son dossier d'installation. Ils vivent
+# donc hors du dépôt, dans examples/libelles.local.json, ignoré par git et par
+# Docker. Sans ce fichier, un scénario s'affiche sous son slug et la
+# comparaison part des deux premiers de la liste : l'application marche, elle
+# ne raconte simplement plus rien.
+_LIBELLES_LOCAUX = EXAMPLES_DIR / "libelles.local.json"
+
+# Seul libellé porté par le dépôt : la démo, dont le YAML est publié et fictif.
+_LIBELLES_PUBLICS: dict[str, tuple[str, str]] = {
+    "hypotheses-demo-publique": (
+        "Démo publique 🌻",
+        "JA fictif·ve — maraîchage bio + PPAM (données 100 % anonymisées)",
+    ),
+}
+
+
+# 64 Kio : ce fichier porte des libellés, pas un jeu de données. Il est relu à
+# CHAQUE requête, sans cache : un fichier de 60 Mo coûtait une seconde par page,
+# dans la boucle d'événements, donc pour toutes les requêtes en cours.
+_LIBELLES_TAILLE_MAX = 64 * 1024
+
+
+def _libelles_locaux() -> dict:
+    """Contenu de examples/libelles.local.json, ou {} si le fichier ne convient pas.
+
+    Relu à chaque appel, sans cache : le fichier peut apparaître entre deux
+    requêtes, et un cache rendrait son absence définitive pour le processus.
+
+    Trois refus AVANT de lire, et chacun répond à une panne mesurée :
+    - **un fichier régulier seulement.** Un tube nommé à cette place bloque
+      l'ouverture, donc la boucle d'événements, donc l'application entière — pas
+      une page, toutes. Un dossier ou un lien cassé repassent par le même refus.
+    - **une taille de libellés.** Voir la constante ci-dessus.
+    - **une forme attendue.** Un JSON *valide* de mauvaise forme franchissait les
+      gardes : une racine en liste rendait 500 sur les quatre routes DNJA.
+    Et `RecursionError` est attrapée : un JSON profond de 200 000 niveaux est
+    syntaxiquement valide, et son erreur n'est ni OSError ni ValueError.
+    """
+    try:
+        if not _LIBELLES_LOCAUX.is_file():
+            return {}
+        taille = _LIBELLES_LOCAUX.stat().st_size
+        if taille > _LIBELLES_TAILLE_MAX:
+            log.warning("libelles.local.json ignoré : %d o pour un plafond de %d",
+                        taille, _LIBELLES_TAILLE_MAX)
+            return {}
+        with _LIBELLES_LOCAUX.open(encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, ValueError, RecursionError) as exc:
+        log.warning("libelles.local.json illisible, libellés par défaut : %s", exc)
+        return {}
+    if not isinstance(data, dict):
+        log.warning("libelles.local.json : objet attendu à la racine, %s reçu",
+                    type(data).__name__)
+        return {}
+    return data
 
 
 def _perso_env() -> bool:
@@ -49,20 +111,16 @@ def _list_examples() -> list[dict]:
     """
     out = []
     show_private = _perso_env()
-    labels = {
-        "hypotheses-pierroons-chambre": ("Prévisionnel CHAMBRE 🏛️",
-                                          "Version officielle CDOA — matériel neuf, charges valorisées"),
-        "hypotheses-pierroons-perso": ("Prévisionnel PERSO 🔧",
-                                        "Vision réelle terrain — matériel DIY/occase, vraie marge"),
-        "hypotheses-pierroons-huile-cbd": ("Scénario huile CBD 🛢️",
-                                            "Installation graduelle mix fleurs + huile + maraîchage"),
-        "hypotheses-pierroons-realiste": ("Scénario réaliste 🌱",
-                                            "Ancien modèle fleurs brutes — à titre comparatif"),
-        "hypotheses-pierroons": ("Scénario optimiste ⭐",
-                                  "Ancien modèle optimiste pour comparatif"),
-        "hypotheses-demo-publique": ("Démo publique 🌻",
-                                      "JA fictif·ve Dordogne — maraîchage bio + PPAM (données 100 % anonymisées)"),
-    }
+    labels = dict(_LIBELLES_PUBLICS)
+    nommes = _libelles_locaux().get("libelles")
+    if nommes is not None and not isinstance(nommes, dict):
+        # Une liste, une chaîne ou un nombre rendait 500 ici même, par .items().
+        log.warning("libelles.local.json : « libelles » doit être un objet, %s reçu",
+                    type(nommes).__name__)
+        nommes = None
+    for slug, valeur in (nommes or {}).items():
+        if isinstance(valeur, dict):
+            labels[str(slug)] = (str(valeur.get("label") or slug), str(valeur.get("desc") or ""))
     for path in sorted(EXAMPLES_DIR.glob("hypotheses-*.yaml")):
         slug = path.stem
         if not show_private and _is_private_scenario(slug):
@@ -220,16 +278,36 @@ async def dnja_editor_save(request: Request):
     )
 
 
+def _defauts_compare(examples: list[dict]) -> tuple[str, str]:
+    """Couple de scénarios proposé à l'ouverture de /dnja/compare.
+
+    Il vient de examples/libelles.local.json quand il nomme deux scénarios
+    présents ; sinon ce sont les deux premiers de la liste. Un slug absent est
+    ignoré plutôt que proposé : la page ne doit pas nommer un scénario qu'elle
+    ne peut pas charger.
+    """
+    slugs = [e["slug"] for e in examples]
+    if not slugs:
+        return "", ""
+    voulu = _libelles_locaux().get("compare") or {}
+    a = voulu.get("a") if isinstance(voulu, dict) else None
+    b = voulu.get("b") if isinstance(voulu, dict) else None
+    defaut_a = a if a in slugs else slugs[0]
+    defaut_b = b if b in slugs else (slugs[1] if len(slugs) > 1 else slugs[0])
+    return defaut_a, defaut_b
+
+
 @router.get("/compare", response_class=HTMLResponse)
 async def dnja_compare_index(request: Request):
     examples = _list_examples()
+    defaut_a, defaut_b = _defauts_compare(examples)
     return templates.TemplateResponse(
         request, "dnja/compare.html",
         {
             "version": __version__,
             "examples": examples,
-            "default_a": "hypotheses-pierroons-chambre" if any(e["slug"] == "hypotheses-pierroons-chambre" for e in examples) else examples[0]["slug"],
-            "default_b": "hypotheses-pierroons-perso" if any(e["slug"] == "hypotheses-pierroons-perso" for e in examples) else (examples[1]["slug"] if len(examples) > 1 else examples[0]["slug"]),
+            "default_a": defaut_a,
+            "default_b": defaut_b,
         },
     )
 

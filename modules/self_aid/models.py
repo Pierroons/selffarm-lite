@@ -2,8 +2,8 @@
 Modèles Pydantic pour la BDD d'aides publiques.
 
 Une `Aide` = 1 dispositif public (ex: DNJA, CI-AB, exo MSA JA, AITA). Chaque
-aide est sourcée à une source primaire officielle avec date MAJ vue,
-conformément au référentiel `reference_sources_officielles_myself.md`.
+aide est sourcée à une source primaire officielle, avec la date à laquelle cette
+source a été vue : une valeur sans sa date ne se cite pas.
 """
 
 from __future__ import annotations

@@ -586,14 +586,20 @@ fi
 # une fois.
 if [ "$PAR_CIBLES" = "0" ]; then
   echo
-  echo "6. Texte des documents bureautiques (historique complet)"
+  # Le titre dit la portée RÉELLE : cet étage lit "${PORTEE[@]}", donc la plage
+  # quand --range la borne. Il annonçait « historique complet » dans les deux cas.
+  if [ -n "$RANGE" ]; then
+    echo "6. Texte des documents bureautiques des commits à publier ($RANGE)"
+  else
+    echo "6. Texte des documents bureautiques (historique complet)"
+  fi
   DOCS=$(git -C "$ROOT" rev-list --objects "${PORTEE[@]}" 2>/dev/null \
          | awk 'NF>=2 {sha=$1; $1=""; sub(/^ /,""); print sha"\t"$0}' \
          | grep -iE '\.(docx|odt|pptx|xlsx|pdf)$' | sort -u -t$'\t' -k1,1 || true)
   DOC_N=$(printf '%s' "$DOCS" | grep -c . || true)
   C6=0
   if [ "${DOC_N:-0}" = "0" ]; then
-    ok "aucun document bureautique dans l'historique"
+    ok "aucun document bureautique dans le périmètre lu"
   else
     while IFS=$'\t' read -r blob chemin; do
       [ -z "$blob" ] && continue

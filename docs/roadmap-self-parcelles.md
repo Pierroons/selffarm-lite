@@ -46,7 +46,7 @@ class Parcelle(BaseModel):
     numero: str
     geometry: GeoJSONPolygon
     surface_m2: int
-    cultures_par_campagne: dict[int, str]  # {2026: "chanvre_cbd_bio", 2027: ...}
+    cultures_par_campagne: dict[int, str]  # {2026: "ble_tendre", 2027: ...}
 ```
 
 Table SQL :

@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from self_dnja.engine import EBE_UTH_SEUIL_DNJA_NA_2026, calculer
+from self_dnja.engine import EBE_UTH_SEUIL_DNJA_2026, calculer
 from self_dnja.models import (
     Activite,
     Aide,
@@ -206,14 +206,14 @@ def test_ebe_uth_seuil_atteint():
     r = calculer(hyp)
     # 20 kg × 2500 € × 1 = 50000 € → EBE/UTH dépasse 22 000 €
     assert r.ebe_uth_atteint is True
-    assert r.ebe_uth_annee_cible > EBE_UTH_SEUIL_DNJA_NA_2026
+    assert r.ebe_uth_annee_cible > EBE_UTH_SEUIL_DNJA_2026
 
 
 def test_ebe_uth_seuil_non_atteint_revenu_insuffisant():
     hyp = _minimal_hyp()  # 10 000 € CA année 4 = bien en-dessous
     r = calculer(hyp)
     assert r.ebe_uth_atteint is False
-    assert r.ebe_uth_annee_cible < EBE_UTH_SEUIL_DNJA_NA_2026
+    assert r.ebe_uth_annee_cible < EBE_UTH_SEUIL_DNJA_2026
 
 
 def test_rendement_t_ha_conversion_en_kg():
@@ -246,12 +246,16 @@ def test_activite_sans_quantite_ni_rendement_echoue():
         )
 
 
-def test_exemple_yaml_pierroons_se_charge():
-    """Les YAML d'exemple doivent se charger sans erreur."""
-    for filename in ["hypotheses-pierroons.yaml", "hypotheses-pierroons-realiste.yaml"]:
+def test_exemple_yaml_publie_se_charge():
+    """La fixture publiée doit se charger, se valider et se calculer.
+
+    Elle a remplacé deux YAML nominatifs, que le dépôt ignore : le test les
+    sautait donc partout sauf sur la machine de l'auteur — un vert qui ne
+    mesurait rien en CI. Un fichier absent est désormais un échec, pas un saut.
+    """
+    for filename in ["hypotheses-demo-publique.yaml"]:
         path = EXAMPLES_DIR / filename
-        if not path.exists():
-            pytest.skip(f"{filename} absent")
+        assert path.exists(), f"{filename} doit être publié : c'est la seule fixture du dépôt"
         data = yaml.safe_load(path.read_text())
         hyp = Hypotheses.model_validate(data)
         result = calculer(hyp)
